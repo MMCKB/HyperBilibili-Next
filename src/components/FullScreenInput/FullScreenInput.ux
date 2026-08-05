@@ -1,0 +1,137 @@
+<import name="input-method" src="@components/InputMethod/InputMethod.ux"></import>
+<import name="emoji-picker" src="@components/EmojiPicker/EmojiPicker.ux"></import>
+
+<template>
+    <div class="inputpanel">
+        <input-method if="{{global_show && !emojimode}}" style="position: absolute" hide={{keyboardHide}} @complete="InputEvent" @delete="InputDelete" screentype="{{screentype}}" vibratemode="short"></input-method>
+        <div class="inputactions">
+            <div style="margin-left: 35px" @click="ExitInput">
+                <image class="inputaction_img" src="/common/textinput_back.png"></image>
+            </div>
+            <div style="margin-left: 75px" @click="InputFinish">
+                <image class="inputaction_img" src="/common/textinput_finish.png"></image>
+            </div>
+            <!-- 表情按钮 -->
+            <div class="emojibtn" @click="OpenEmoji">
+                <text class="emojibtn_text">表情</text>
+            </div>
+        </div>
+        <div class="inputshow">
+            <text class="inputshow_text">{{ input_text }}</text>
+        </div>
+        <!-- 表情选择面板 -->
+        <emoji-picker if="{{emojimode}}" @selectemoji="AppendEmoji" @close="CloseEmoji"></emoji-picker>
+    </div>
+</template>
+
+<script>
+export default {
+    props: {
+        keyboardHide: {
+            default: false
+        },
+        // 初始文本（用于在已有内容基础上继续编辑）
+        initialText: {
+            default: ""
+        }
+    },
+    data: {
+        global_show: false,
+        input_text: "",
+        screentype: "",
+        emojimode: false
+    },
+    InputEvent(evt){
+        this.input_text += evt.detail.content
+    },
+    InputDelete(){
+        this.input_text = this.input_text.slice(0, -1)
+    },
+    ExitInput(){
+        this.$emit("exit")
+    },
+    InputFinish(){
+        this.$emit("send", {
+            content: this.input_text
+        })
+    },
+    OpenEmoji(){
+        // 打开表情面板时隐藏键盘
+        this.emojimode = true
+    },
+    CloseEmoji(){
+        this.emojimode = false
+    },
+    // 选择表情后追加到输入文本
+    AppendEmoji(evt){
+        this.emojimode = false
+        this.input_text += evt.detail.content
+    },
+    async InitScreenType(){
+        this.screentype = global.DEVICE_INFO.screenShape
+        // 用传入的初始文本初始化输入框
+        this.input_text = this.initialText || ""
+        this.global_show = true
+    },
+    onInit(){
+        this.InitScreenType()
+    }
+}
+</script>
+
+<style lang="less">
+@import '@less/global.less';
+
+.inputpanel {
+  position: absolute;
+  width: @screenWidth;
+  height: @screenHeight;
+  background-color: black;
+  justify-content: center;
+}
+
+.inputactions {
+  flex-direction: row;
+  align-items: center;
+  width: 50%;
+  position: absolute;
+  margin-top: 30px;
+  height: 65px;
+  align-items: center;
+}
+
+.inputaction_img {
+  width: 35px;
+  height: 35px;
+  object-fit: scale-down;
+}
+
+.inputshow {
+  width: 65%;
+  position: absolute;
+  margin-top: 100px;
+}
+
+.inputshow_text {
+  font-size: 24px;
+}
+
+.emojibtn {
+  width: 60px;
+  height: 48px;
+  border-radius: 48px;
+  background-color: #3D3D3D;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 0px;
+  left: 170px;
+}
+
+.emojibtn_text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ff7da8;
+  text-align: center;
+}
+</style>

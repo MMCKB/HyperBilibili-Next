@@ -1,0 +1,128 @@
+∑
+entry∑
+openpage-scrollü
+	keyframes2è[{"time":0,"transform":{"translateX":"0px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateX":"500px","scaleX":0.75,"scaleY":0.75}}]∑
+fromback-scrollü
+	keyframes2è[{"time":0,"transform":{"translateY":"232px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateY":"0px","scaleX":0.75,"scaleY":0.75}}]∑
+backpage-scrollü
+	keyframes2è[{"time":0,"transform":{"translateX":"0px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateX":"500px","scaleX":0.75,"scaleY":0.75}}]q
+page
+	display2flex
+flexDirection2column
+
+alignItems2center
+width2100%
+height2100%˘
+scroll
+	display2flex
+flexDirection2column
+
+alignItems2center
+width2100%
+height2100%"
+animationName2openpage-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2reverseò
+scroll-backanim"
+animationName2backpage-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2normalù
+scroll-frombackanim"
+animationName2fromback-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2reverse
+text
+color2white
+
+feedlist
+width2313px˜
+item
+	marginTop210px
+borderRadius233px
+backgroundColor2#222222
+flexDirection2row
+width2313px
+
+alignItems2
+flex-start
+
+paddingTop214px
+paddingRight218px
+paddingBottom214px
+paddingLeft218pxh
+
+avatararea
+flexDirection2column
+
+alignItems2center
+width278px
+marginRight28pxé
+avatar
+
+minWidth260px
+	minHeight260px
+
+maxWidth260px
+	maxHeight260px
+	objectFit2
+scale-down
+borderRadius250%±
+
+avatarname
+
+fontSize216px
+
+fontWeightÿ
+	marginTop26px
+color2#b0b0b0
+textOverflow2ellipsis
+lines
+
+maxWidth276px
+	textAlign2centerY
+
+infoarea
+flexDirection2column
+justifyContent2
+flex-start
+width2195px#
+infoarea-full
+width2277pxá
+
+title_text
+
+fontSize221px
+
+fontWeightÿ
+	maxHeight232px
+color2#5fb8ff
+textOverflow2ellipsis
+linesÉ
+	content
+
+fontSize219px
+
+fontWeightÙ
+	marginTop26px
+color2#d0d0d0
+lines
+textOverflow2ellipsisÖ
+	mycontent
+
+fontSize219px
+
+fontWeightÙ
+	marginTop26px
+color2#5fb8ff
+lines
+textOverflow2ellipsisW
+time
+
+fontSize216px
+
+fontWeightÙ
+	marginTop26px
+color2#585858

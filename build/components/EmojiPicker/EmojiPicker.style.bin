@@ -1,0 +1,115 @@
+˝
+entry∑
+openpage-scrollü
+	keyframes2è[{"time":0,"transform":{"translateX":"0px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateX":"500px","scaleX":0.75,"scaleY":0.75}}]∑
+fromback-scrollü
+	keyframes2è[{"time":0,"transform":{"translateY":"232px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateY":"0px","scaleX":0.75,"scaleY":0.75}}]∑
+backpage-scrollü
+	keyframes2è[{"time":0,"transform":{"translateX":"0px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateX":"500px","scaleX":0.75,"scaleY":0.75}}]q
+page
+	display2flex
+flexDirection2column
+
+alignItems2center
+width2100%
+height2100%˘
+scroll
+	display2flex
+flexDirection2column
+
+alignItems2center
+width2100%
+height2100%"
+animationName2openpage-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2reverseò
+scroll-backanim"
+animationName2backpage-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2normalù
+scroll-frombackanim"
+animationName2fromback-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2reverse
+text
+color2whiteÉ
+emojipicker
+
+position2absolute
+width2100%
+height2100%
+backgroundColor2#000000
+flexDirection2columné
+header
+flexDirection2row
+
+alignItems2center
+justifyContent2center
+width2100%
+height285px
+	marginTop215pxD
+title
+
+fontSize224px
+
+fontWeightÿ
+color2#ffffffã
+
+closebtn
+
+position2absolute
+left220px
+width250px
+height250px
+justifyContent2center
+
+alignItems2centerN
+closebtn_img
+width235px
+height235px
+	objectFit2
+scale-downs
+emoji_scroll
+	display2flex
+flexDirection2column
+
+alignItems2center
+width2100%
+
+flexm
+
+emoji_grid
+flexDirection2row 
+justifyContent2space-around
+width2100%
+	marginTop28pxë
+
+emoji_item
+width255px
+height255px
+justifyContent2center
+
+alignItems2center
+backgroundColor2#262626
+borderRadius212px
+	marginTop24px
+marginRight24px
+marginBottom24px
+
+marginLeft24px
+borderTopWidth22px
+borderRightWidth22px
+borderBottomWidth22px
+borderLeftWidth22px*
+borderTopColor2rgba(255,255,255,0.06),
+borderRightColor2rgba(255,255,255,0.06)-
+borderBottomColor2rgba(255,255,255,0.06)+
+borderLeftColor2rgba(255,255,255,0.06)K
+	emoji_img
+width242px
+height242px
+	objectFit2
+scale-down

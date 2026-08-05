@@ -1,0 +1,87 @@
+<template>
+    <div class="sendbox">
+        <div class="textbox" @click="GoInput">
+            <text class="textbox_text">{{input_text || "点此输入文字"}}</text>
+        </div>
+        <div class="emojibtn" @click="GoEmoji">
+            <text class="emojibtn_text">表情</text>
+        </div>
+        <image @click="GoSend" src="/common/dmpage_sendbtn.png" style="margin-left: 230px; margin-top: 12px"></image>
+    </div>
+</template>
+
+<script>
+export default {
+  props: ["input_text"],
+  onInit(){
+    this.$watch("input_text","onInputTextChanged")
+  },
+  GoInput(){
+    this.$emit("clickinput")
+  },
+  GoSend(){
+    this.$emit("clicksend")
+  },
+  GoEmoji(){
+    this.$emit("clickemoji")
+  },
+  onInputTextChanged(newV, oldV){
+    this.input_text = newV
+  }
+}
+</script>
+
+<style lang="less">
+@import '@less/global.less';
+
+.sendbox {
+  width: 320px;
+  height: 73px;
+  border-radius: 48px;
+  background-color: #262626ef;
+  position: absolute;
+  bottom: 55px
+}
+
+.textbox {
+  width: 145px;
+  height: 48px;
+  border-radius: 48px;
+  background-color: #3D3D3D;
+  align-items: center;
+  padding: 15px;
+  display: flex;
+  justify-content: center;
+  position: absolute;
+  top: 12px;
+  left: 20px;
+}
+
+.textbox_text {
+  font-size: 20px;
+  font-weight: 600;
+  text-overflow: ellipsis;
+  width: 130px;
+  max-width: 130px;
+  lines: 1;
+}
+
+.emojibtn {
+  width: 50px;
+  height: 48px;
+  border-radius: 48px;
+  background-color: #3D3D3D;
+  align-items: center;
+  justify-content: center;
+  position: absolute;
+  top: 12px;
+  left: 175px;
+}
+
+.emojibtn_text {
+  font-size: 18px;
+  font-weight: 600;
+  color: #ff7da8;
+  text-align: center;
+}
+</style>

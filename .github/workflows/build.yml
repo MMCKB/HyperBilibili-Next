@@ -1,0 +1,184 @@
+name: Build RPK
+
+on:
+  push:
+    branches:
+      - main
+      - master
+      - 'next-gen**'
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+  pull_request:
+    branches:
+      - main
+      - master
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 构建目标设备
+        required: true
+        type: choice
+        default: rw5
+        options:
+          - rw5
+          - s3s4
+          - all
+
+# 同一时间只允许一次构建，避免重复产物
+concurrency:
+  group: build-${{ github.ref }}-${{ github.event.inputs.target || 'rw5' }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # Release 创建需要 contents: write 权限
+    # (默认 GITHUB_TOKEN 只有只读权限,会导致 403)
+    permissions:
+      contents: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - target: rw5
+            script: scripts/build_rw5.py
+            design_width: 432
+            device_name: RedmiWatch5_6
+          - target: s3s4
+            script: scripts/build_s3s4.py
+            design_width: 466
+            device_name: S3S4
+
+    # 注意：job 级 if 在 matrix 展开前求值，无法访问 matrix 上下文
+    # 因此在第一步 compute-should-run 中决定是否执行实际构建
+    steps:
+      - name: 判断是否需要构建该目标
+        id: should_run
+        shell: bash
+        run: |
+          set -euo pipefail
+          EVENT="${{ github.event_name }}"
+          INPUT_TARGET="${{ github.event.inputs.target }}"
+          MATRIX_TARGET="${{ matrix.target }}"
+          SHOULD_RUN="false"
+          if [ "$EVENT" != "workflow_dispatch" ]; then
+            # push / pr 事件：默认只构建 rw5（目标设备）
+            if [ "$MATRIX_TARGET" == "rw5" ]; then
+              SHOULD_RUN="true"
+            fi
+          else
+            # 手动触发：按 inputs.target 过滤
+            if [ "$INPUT_TARGET" == "all" ] || [ "$INPUT_TARGET" == "$MATRIX_TARGET" ]; then
+              SHOULD_RUN="true"
+            fi
+          fi
+          echo "should_run=$SHOULD_RUN" >> $GITHUB_OUTPUT
+          echo "事件=$EVENT, 输入目标=$INPUT_TARGET, 矩阵目标=$MATRIX_TARGET, 是否构建=$SHOULD_RUN"
+
+      - name: 检出代码
+        if: steps.should_run.outputs.should_run == 'true'
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: 安装 Node.js
+        if: steps.should_run.outputs.should_run == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: 安装 Python
+        if: steps.should_run.outputs.should_run == 'true'
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.x'
+
+      - name: 安装 Yarn 1.x
+        if: steps.should_run.outputs.should_run == 'true'
+        run: |
+          npm install -g yarn@1.22.22
+          yarn --version
+
+      - name: 缓存 node_modules
+        if: steps.should_run.outputs.should_run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            .yarn/cache
+          key: ${{ runner.os }}-yarn-${{ matrix.target }}-${{ hashFiles('yarn.lock', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-yarn-${{ matrix.target }}-
+            ${{ runner.os }}-yarn-
+
+      - name: 安装依赖
+        if: steps.should_run.outputs.should_run == 'true'
+        run: yarn install --frozen-lockfile --network-timeout 600000
+
+      - name: 构建 RPK (${{ matrix.device_name }}, designWidth=${{ matrix.design_width }})
+        if: steps.should_run.outputs.should_run == 'true'
+        run: python3 ${{ matrix.script }}
+
+      - name: 重命名产物
+        if: steps.should_run.outputs.should_run == 'true'
+        id: artifact
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts
+          # 查找 dist 目录下的 rpk 文件（文件名含空格和版本号，使用通配符匹配）
+          RPK_FILE=$(find dist -maxdepth 1 -type f -name "*.rpk" | head -n 1)
+          if [ -z "$RPK_FILE" ]; then
+            echo "未找到 RPK 产物"
+            exit 1
+          fi
+          # 提取版本号用于产物命名（空格替换为下划线以保证文件名可移植性）
+          VERSION=$(python3 -c "import json; print(json.load(open('src/manifest.json'))['versionName'].replace(' ', '_'))")
+          COMMIT_SHA=${GITHUB_SHA::7}
+          TARGET_NAME="hyperbilibili-${{ matrix.device_name }}-v${VERSION}-${COMMIT_SHA}.rpk"
+          cp "$RPK_FILE" "artifacts/$TARGET_NAME"
+          echo "rpk_path=artifacts/$TARGET_NAME" >> $GITHUB_OUTPUT
+          echo "rpk_name=$TARGET_NAME" >> $GITHUB_OUTPUT
+          echo "✅ 产物: $TARGET_NAME"
+          ls -lh artifacts/
+
+      - name: 上传构建产物
+        if: steps.should_run.outputs.should_run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: rpk-${{ matrix.device_name }}
+          path: artifacts/*.rpk
+          if-no-files-found: error
+          retention-days: 30
+          compression-level: 0
+
+      - name: 发布到 Release
+        # 仅 push 到默认分支或手动触发时发布，PR 不发布（无权限且无意义）
+        if: steps.should_run.outputs.should_run == 'true' && github.event_name != 'pull_request'
+        uses: softprops/action-gh-release@v2
+        with:
+          # tag 用 commit 短码，保证唯一且可追溯
+          tag_name: v${{ matrix.device_name }}-${{ github.sha }}
+          name: ${{ matrix.device_name }} 构建产物 (${{ github.sha }})
+          body: |
+            设备: ${{ matrix.device_name }}
+            提交: ${{ github.sha }}
+            触发: ${{ github.event_name }}
+          # 同名 tag/Release 更新而非报错（便于重试）
+          make_latest: 'false'
+          prerelease: true
+          files: ${{ steps.artifact.outputs.rpk_path }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 上传构建日志（失败时）
+        if: failure() && steps.should_run.outputs.should_run == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-logs-${{ matrix.device_name }}
+          path: |
+            build/
+            .temp_workspace/
+          retention-days: 7
+          if-no-files-found: ignore

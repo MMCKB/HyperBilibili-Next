@@ -1,0 +1,94 @@
+ò
+entry∑
+openpage-scrollü
+	keyframes2è[{"time":0,"transform":{"translateX":"0px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateX":"500px","scaleX":0.75,"scaleY":0.75}}]∑
+fromback-scrollü
+	keyframes2è[{"time":0,"transform":{"translateY":"232px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateY":"0px","scaleX":0.75,"scaleY":0.75}}]∑
+backpage-scrollü
+	keyframes2è[{"time":0,"transform":{"translateX":"0px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateX":"500px","scaleX":0.75,"scaleY":0.75}}]q
+page
+	display2flex
+flexDirection2column
+
+alignItems2center
+width2100%
+height2100%˘
+scroll
+	display2flex
+flexDirection2column
+
+alignItems2center
+width2100%
+height2100%"
+animationName2openpage-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2reverseò
+scroll-backanim"
+animationName2backpage-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2normalù
+scroll-frombackanim"
+animationName2fromback-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2reverse
+text
+color2whiteë
+	sendbox
+width2320px
+height273px
+borderRadius248px
+backgroundColor2	#262626f0
+
+position2absolute
+bottom255px¡
+	textbox
+width2145px
+height248px
+borderRadius248px
+backgroundColor2#3d3d3d
+
+alignItems2center
+
+paddingTop215px
+paddingRight215px
+paddingBottom215px
+paddingLeft215px
+	display2flex
+justifyContent2center
+
+position2absolute
+top212px
+left220pxá
+textbox_text
+
+fontSize220px
+
+fontWeightÿ
+textOverflow2ellipsis
+width2130px
+
+maxWidth2130px
+lines—
+
+emojibtn
+width250px
+height248px
+borderRadius248px
+backgroundColor2#3d3d3d
+
+alignItems2center
+justifyContent2center
+
+position2absolute
+top212px
+left2175pxc
+emojibtn_text
+
+fontSize218px
+
+fontWeightÿ
+color2#ff7da8
+	textAlign2center

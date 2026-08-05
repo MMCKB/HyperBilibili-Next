@@ -1,0 +1,7 @@
+originType=undefined
+toolkit=2.0.4-beta.3
+timeStamp=2026-08-04T16:47:00.621Z
+node=v24.15.0
+platform=linux
+arch=x64
+component=true

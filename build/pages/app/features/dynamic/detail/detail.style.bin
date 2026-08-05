@@ -1,0 +1,178 @@
+©
+entry∑
+openpage-scrollü
+	keyframes2è[{"time":0,"transform":{"translateX":"0px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateX":"500px","scaleX":0.75,"scaleY":0.75}}]∑
+fromback-scrollü
+	keyframes2è[{"time":0,"transform":{"translateY":"232px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateY":"0px","scaleX":0.75,"scaleY":0.75}}]∑
+backpage-scrollü
+	keyframes2è[{"time":0,"transform":{"translateX":"0px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateX":"500px","scaleX":0.75,"scaleY":0.75}}]q
+page
+	display2flex
+flexDirection2column
+
+alignItems2center
+width2100%
+height2100%˘
+scroll
+	display2flex
+flexDirection2column
+
+alignItems2center
+width2100%
+height2100%"
+animationName2openpage-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2reverseò
+scroll-backanim"
+animationName2backpage-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2normalù
+scroll-frombackanim"
+animationName2fromback-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2reverse
+text
+color2whiteŸ
+user
+
+alignItems2center
+width276%
+	display2flex
+flexDirection2row
+
+paddingTop210px
+paddingRight210px
+paddingBottom210px
+paddingLeft210px
+backgroundColor2	#00000000 
+
+userinfo
+
+marginLeft220px
+	display2flex
+flexDirection2column
+
+paddingTop20px
+paddingRight20px
+paddingBottom20px
+paddingLeft20px
+backgroundColor2	#00000000u
+
+userface
+borderRadius250%
+
+minWidth265px
+	minHeight265px
+
+maxWidth265px
+	maxHeight265px4
+
+decorate
+
+position2absolute
+right20pxq
+
+username
+
+fontSize224px
+
+fontWeightÿ
+lines
+
+maxWidth2260px
+textOverflow2ellipsis√
+ctx
+width276%
+	display2flex
+flexDirection2column
+
+paddingTop210px
+paddingRight210px
+paddingBottom210px
+paddingLeft210px
+backgroundColor2	#00000000W
+dyn-content-text
+
+fontSize222px
+
+fontWeightÿ
+textOverflow2ellipsis¸
+ctx-forwarded-box
+width2100%
+borderRadius225px
+	display2flex
+flexDirection2column
+
+paddingTop210px
+paddingRight210px
+paddingBottom210px
+paddingLeft210px
+backgroundColor2#222222
+	marginTop25pxO
+txt-at
+color2#2886f8
+
+maxWidth2200px
+textOverflow2ellipsis<
+ctx-forwarded-txt
+
+fontWeightÿ
+
+fontSize218px˙
+ctx-article-box
+width2100%
+borderRadius225px
+	display2flex
+flexDirection2column
+
+paddingTop215px
+paddingRight215px
+paddingBottom215px
+paddingLeft215px
+backgroundColor2#262626
+	marginTop25pxP
+ctx-article-title
+
+fontSize222px
+
+fontWeightÿ
+color2#ffffffO
+ctx-article-tip
+
+fontSize216px
+color2#ff7da8
+	marginTop25pxl
+	actionbar
+flexDirection2row
+width290%
+	marginTop220px 
+justifyContent2space-around”
+	actionbtn
+flexDirection2row
+
+alignItems2center
+backgroundColor2	#262626b0
+borderRadius230px
+
+paddingTop210px
+paddingRight220px
+paddingBottom210px
+paddingLeft220pxM
+actionbtn_text
+
+fontSize220px
+
+fontWeightÿ
+color2#d0d0d0/
+actionbtn_text
+liked
+color2#ff7da8P
+actionbtn_count
+
+fontSize218px
+color2#888888
+
+marginLeft28px

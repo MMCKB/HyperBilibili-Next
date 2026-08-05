@@ -1,0 +1,25 @@
+export const BilibiliClientDynamicMethods = {
+    async getDynamicList(this: any, host_mid: number = 0, offset: number = 0): Promise<any>{
+        let url = `https://api.bilibili.com/x/polymer/web-dynamic/v1/feed/all?platform=web`
+        if (host_mid) url += `&host_mid=${host_mid}`;
+        if (offset) url += `&offset=${offset}`;
+
+        const response = await this.getRequest(url);
+        return response.data.data;
+    },
+
+    // 点赞/取消点赞动态
+    // up: 1=点赞, 0=取消点赞
+    // 接口: POST x/dynamic/feed/dyn/thumb, body为JSON, URL带csrf, 无需WBI签名
+    async LikeDynamic(this: any, dyn_id_str: string, up: number) {
+        const url = `https://api.bilibili.com/x/dynamic/feed/dyn/thumb?csrf=${this.biliJct}`;
+        const body = JSON.stringify({
+            dyn_id_str,
+            up,
+            spmid: "333.1368.0.0",
+            from_spmid: ""
+        });
+        const response = await this.postRequest(url, body, "application/json");
+        return response.data;
+    }
+}

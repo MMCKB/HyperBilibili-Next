@@ -1,0 +1,88 @@
+ì
+entry∑
+openpage-scrollü
+	keyframes2è[{"time":0,"transform":{"translateX":"0px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateX":"500px","scaleX":0.75,"scaleY":0.75}}]∑
+fromback-scrollü
+	keyframes2è[{"time":0,"transform":{"translateY":"232px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateY":"0px","scaleX":0.75,"scaleY":0.75}}]∑
+backpage-scrollü
+	keyframes2è[{"time":0,"transform":{"translateX":"0px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateX":"500px","scaleX":0.75,"scaleY":0.75}}]q
+page
+	display2flex
+flexDirection2column
+
+alignItems2center
+width2100%
+height2100%˘
+scroll
+	display2flex
+flexDirection2column
+
+alignItems2center
+width2100%
+height2100%"
+animationName2openpage-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2reverseò
+scroll-backanim"
+animationName2backpage-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2normalù
+scroll-frombackanim"
+animationName2fromback-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2reverse
+text
+color2whiteÅ
+
+inputpanel
+
+position2absolute
+width2100%
+height2100%
+backgroundColor2black
+justifyContent2centerè
+inputactions
+flexDirection2row
+width250%
+
+position2absolute
+	marginTop230px
+height265px
+
+alignItems2centerQ
+inputaction_img
+width235px
+height235px
+	objectFit2
+scale-downK
+	inputshow
+width265%
+
+position2absolute
+	marginTop2100px&
+inputshow_text
+
+fontSize224px–
+
+emojibtn
+width260px
+height248px
+borderRadius248px
+backgroundColor2#3d3d3d
+
+alignItems2center
+justifyContent2center
+
+position2absolute
+top20px
+left2170pxc
+emojibtn_text
+
+fontSize218px
+
+fontWeightÿ
+color2#ff7da8
+	textAlign2center

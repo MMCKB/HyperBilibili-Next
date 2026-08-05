@@ -1,0 +1,139 @@
+<template>
+  <div class="coinpicker">
+    <!-- 顶部标题与关闭 -->
+    <div class="header">
+      <text class="title">投币</text>
+      <div class="closebtn" @click="Close">
+        <image class="closebtn_img" src="/common/textinput_back.png"></image>
+      </div>
+    </div>
+
+    <!-- 22娘形象 -->
+    <image class="mascot" src="/common/coin_22niang.jpg" alt="/common/fullgray.png"></image>
+
+    <text class="tip">选择投币数量</text>
+
+    <!-- 投币数量选项 -->
+    <div class="options">
+      <div class="option" @click="Select(1)">
+        <image class="coin_icon" src="/common/vidtool_coin.png"></image>
+        <text class="option_text">投 1 个币</text>
+      </div>
+      <div class="option" @click="Select(2)">
+        <image class="coin_icon" src="/common/vidtool_coin.png"></image>
+        <image class="coin_icon" src="/common/vidtool_coin.png"></image>
+        <text class="option_text">投 2 个币</text>
+      </div>
+    </div>
+
+    <text class="cancel" @click="Close">取消</text>
+  </div>
+</template>
+
+<script>
+export default {
+  Select(multiply) {
+    this.$emit("select", { multiply: multiply })
+  },
+  Close() {
+    this.$emit("close")
+  }
+}
+</script>
+
+<style lang="less">
+@import '@less/global.less';
+
+.coinpicker {
+  position: absolute;
+  width: @screenWidth;
+  height: @screenHeight;
+  background-color: #000000;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 85px;
+  margin-top: 15px;
+}
+
+.title {
+  font-size: 26px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.closebtn {
+  position: absolute;
+  left: 20px;
+  width: 50px;
+  height: 50px;
+  justify-content: center;
+  align-items: center;
+}
+
+.closebtn_img {
+  width: 35px;
+  height: 35px;
+  object-fit: scale-down;
+}
+
+.mascot {
+  width: 180px;
+  height: 180px;
+  margin-top: 10px;
+  border-radius: 20px;
+  object-fit: scale-down;
+}
+
+.tip {
+  font-size: 22px;
+  font-weight: 600;
+  color: #d0d0d0;
+  margin-top: 18px;
+}
+
+.options {
+  flex-direction: row;
+  justify-content: space-around;
+  width: 100%;
+  margin-top: 25px;
+}
+
+.option {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: #262626;
+  border-radius: 20px;
+  width: 42%;
+  padding: 18px 0px;
+  border-width: 2px;
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
+.coin_icon {
+  width: 32px;
+  height: 32px;
+  object-fit: scale-down;
+  margin: 2px;
+}
+
+.option_text {
+  font-size: 20px;
+  font-weight: 600;
+  color: #f6c453;
+  margin-top: 8px;
+}
+
+.cancel {
+  font-size: 20px;
+  color: #888888;
+  margin-top: 30px;
+}
+</style>

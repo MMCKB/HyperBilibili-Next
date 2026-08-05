@@ -1,0 +1,221 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="online-image" src="@components//BetterOnlineImage/BetterOnlineImage.ux"></import>
+<import name="videoshow" src="@components/Video/Video.ux"></import>
+<import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
+      <title-bar title="dynamic.detail.title"></title-bar>
+      <div class="user">
+        <image class="userface" onclick="OpenUser(dyn.modules.module_author.mid)" src="{{dyn.modules.module_author.face}}@75w_75h" alt="/common/fullgray.png"></image>
+        <div class="userinfo">
+          <text class="username" style="margin-bottom: 3px">
+            {{ dyn.modules.module_author.name }}
+          </text>
+          <text style="font-size: 18px; color: #5e5e5e" if="{{ dyn.modules.module_author.pub_time }}">
+            {{ dyn.modules.module_author.pub_time }}
+          </text>
+          <text style="font-size: 18px; color: #5e5e5e">
+            {{ pubAction }}
+          </text>
+        </div>
+      </div>
+      <div class="ctx">
+        <!-- 动态文本desc 不为空时渲染 -->
+        <text class="dyn-content-text" if="{{dyn.modules.module_dynamic.desc.text}}">
+          {{ dyn.modules.module_dynamic.desc.text }}
+        </text>
+
+        <!-- 纯文本动态 不展示任何内容 -->
+        <text if="{{dyn.type == 'DYNAMIC_TYPE_WORD'}}"></text>
+        <!-- 图文动态 直接列表图片渲染 -->
+        <online-image elif="{{dyn.type == 'DYNAMIC_TYPE_DRAW'}}" for="{{dyn.modules.module_dynamic.major.draw.items}}"
+          src="{{$item.src}}@350w" loading-anim="true"></online-image>
+        <!-- 视频投稿动态 展示视频跳转 -->
+        <videoshow elif="{{dyn.type == 'DYNAMIC_TYPE_AV'}}" bvid="{{dyn.modules.module_dynamic.major.archive.bvid}}">
+        </videoshow>
+        <!-- 转发动态 显示原动态简略信息 -->
+        <div elif="{{dyn.type == 'DYNAMIC_TYPE_FORWARD'}}" class="ctx-forwarded-box" @click="JumpToOrigDetail">
+          <div style="flex-direction: row">
+            <text class="ctx-forwarded-txt">转发自</text>
+            <text class="ctx-forwarded-txt txt-at">@{{ dyn.orig.modules.module_author.name }}</text>
+            <text class="ctx-forwarded-txt">的动态：</text>
+          </div>
+          <text class="ctx-forwarded-txt" if="{{dyn.orig.modules.module_dynamic.desc.text}}">
+            {{ dyn.orig.modules.module_dynamic.desc.text }}
+          </text>
+          <text class="ctx-forwarded-txt" else>[暂无文本内容]</text>
+          <text class="ctx-forwarded-txt" style="color: gray">点击可查看详情</text>
+        </div>
+
+        <text else>该类型动态暂不支持展示</text>
+      </div>
+
+      <!-- 操作栏：点赞 + 评论入口 -->
+      <div class="actionbar">
+        <div class="actionbtn" @click="ToggleLike">
+          <text class="actionbtn_text {{liked ? 'liked' : ''}}">{{ liked ? '已赞' : '点赞' }}</text>
+          <text class="actionbtn_count">{{ likeCount }}</text>
+        </div>
+        <div class="actionbtn" @click="GoReplyArea">
+          <text class="actionbtn_text">评论</text>
+          <text class="actionbtn_count">{{ replyCount }}</text>
+        </div>
+        <div class="actionbtn" @click="SendComment">
+          <text class="actionbtn_text">发评论</text>
+        </div>
+      </div>
+
+      <text style="margin-top: 30px"></text>
+    </scroll>
+    <!-- 全屏输入（发表评论，带表情面板） -->
+    <full-screen-input style="position: absolute" if="{{replymode}}" @send="DoSendComment" @exit="ExitInput"></full-screen-input>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import prompt from "@system.prompt"
+
+export default {
+  public: {
+    dyn: null,
+    pubAction: "N/A",
+    scrclass: ""
+  },
+  private: {
+    liked: false,
+    likeCount: 0,
+    replyCount: 0,
+    replymode: false
+  },
+  ToggleLike() {
+    // 点赞/取消点赞动态
+    const dynId = this.dyn.id_str
+    const newUp = this.liked ? 0 : 1
+    global.biliclient.LikeDynamic(dynId, newUp).then((result) => {
+      if (result.code === 0) {
+        this.liked = !this.liked
+        this.likeCount = this.liked ? this.likeCount + 1 : Math.max(0, this.likeCount - 1)
+        prompt.showToast({
+          message: this.liked ? "已点赞" : "已取消点赞",
+          duration: 1500
+        })
+      } else {
+        prompt.showToast({
+          message: `操作失败：${result.message}`,
+          duration: 3000
+        })
+      }
+    }).catch((e) => {
+      prompt.showToast({ message: `点赞失败：${e}`, duration: 3000 })
+    })
+  },
+  GoReplyArea() {
+    // 进入评论区
+    // 动态评论的 oid=comment_id_str, type=comment_type（在 dyn.basic 中）
+    router.push({
+      uri: "pages/reply/replys",
+      params: {
+        type: this.dyn.basic.comment_type,
+        oid: this.dyn.basic.comment_id_str,
+        replycount: this.replyCount
+      }
+    })
+  },
+  SendComment() {
+    // 打开全屏输入发表评论
+    this.replymode = true
+  },
+  DoSendComment(evt) {
+    this.replymode = false
+    const content = evt.detail.content
+    if (!content || content.length === 0) {
+      prompt.showToast({ message: "评论内容不得为空！", duration: 2000 })
+      return
+    }
+    // 动态评论: oid=comment_id_str, type=comment_type
+    global.biliclient.GiveReply(this.dyn.basic.comment_type, this.dyn.basic.comment_id_str, content).then((result) => {
+      const msg = result.code === 0 ? "发送成功" : `发送失败：${result.message}`
+      prompt.showToast({ message: msg, duration: result.code === 0 ? 2000 : 4000 })
+      if (result.code === 0) {
+        this.replyCount = this.replyCount + 1
+      }
+    }).catch((e) => {
+      prompt.showToast({ message: `发送失败：${e}`, duration: 3000 })
+    })
+  },
+  ExitInput() {
+    this.replymode = false
+  },
+  JumpToOrigDetail() {
+    router.push({
+      uri: "pages/app/features/dynamic/detail",
+      params: {
+        dyn: this.dyn.orig,
+        pubAction: "发布了动态"
+      }
+    })
+  },
+  OpenUser(id) {
+    router.push({
+      uri: "pages/user",
+      params: {
+        uid: id
+      }
+    })
+  },
+  onInit() {
+    // 来自子组件push的object传递会变成字符串
+    // 因此需要进行类型检查和手动parse
+    if (typeof this.dyn != Object) {
+      this.dyn = JSON.parse(this.dyn)
+    }
+
+    // 初始化点赞和评论数据
+    const stat = this.dyn.modules.module_stat || {}
+    const likeStat = stat.like || {}
+    const commentStat = stat.comment || {}
+    this.liked = !!likeStat.status
+    this.likeCount = likeStat.count || 0
+    this.replyCount = commentStat.count || 0
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./detail.less";
+
+.actionbar {
+  flex-direction: row;
+  width: 90%;
+  margin-top: 20px;
+  justify-content: space-around;
+}
+
+.actionbtn {
+  flex-direction: row;
+  align-items: center;
+  background-color: #262626af;
+  border-radius: 30px;
+  padding: 10px 20px;
+}
+
+.actionbtn_text {
+  font-size: 20px;
+  font-weight: 600;
+  color: #d0d0d0;
+}
+
+.actionbtn_text.liked {
+  color: #ff7da8;
+}
+
+.actionbtn_count {
+  font-size: 18px;
+  color: #888888;
+  margin-left: 8px;
+}
+</style>

@@ -1,0 +1,308 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+
+<template>
+    <div class="page">
+        <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
+            <title-bar title="{{pageTitle}}" static></title-bar>
+
+            <image style="position: absolute; margin-top: 245px" if="{{anims.show_loading}}" src="{{anims.loading_src.value}}">
+            </image>
+
+            <div class="feedlist" for="{{items}}" if="{{show_list}}">
+                <div class="item">
+                    <!-- 左侧：头像+昵称（可点击进入用户详情） -->
+                    <div class="avatararea" if="{{showAvatar}}" @click="GoUser($item.uid)">
+                        <image class="avatar" src="{{avatarPrefix + $item.avatar + avatarSuffix}}" alt="/common/fullgray.png">
+                        </image>
+                        <text class="avatarname">{{$item.username}}</text>
+                    </div>
+                    <!-- 右侧：标题(可点击进评论区)+内容+时间 -->
+                    <div class="infoarea {{showAvatar ? '' : 'infoarea-full'}}">
+                        <text class="title_text" if="{{$item.title}}" @click="GoReply($item.oid)">{{$item.title}}</text>
+                        <text class="content">{{$item.content}}</text>
+                        <!-- 回复我的：我写的评论（蓝色） -->
+                        <text class="mycontent" if="{{$item.myContent}}">{{$item.myContent}}</text>
+                        <text class="time">{{$item.timeText}}</text>
+                    </div>
+                </div>
+            </div>
+
+            <text style="font-size: 20px; margin-top: 30px; color: #585858" show="{{showEmptyTip && !anims.show_loading}}">
+                {{ $t("messages.noMoreMessages") }}
+            </text>
+
+            <text style="margin-top: 25px" static></text>
+        </scroll>
+    </div>
+</template>
+
+<script>
+import router from "@system.router"
+
+export default {
+    public: {
+        feedType: "reply"
+    },
+    private: {
+        pageTitle: "",
+        items: [],
+        show_list: false,
+        showEmptyTip: false,
+        showAvatar: true,
+        avatarPrefix: "",
+        avatarSuffix: "@75w_75h",
+        anims: {
+            show_loading: false
+        },
+        scrclass: ""
+    },
+    // 将时间戳格式化为"刚刚/x分钟前/x小时前/MM-DD"
+    formatTime(timestamp) {
+        if (!timestamp) return ""
+        const now = Math.floor(Date.now() / 1000)
+        const diff = now - timestamp
+        if (diff < 60) return "刚刚"
+        if (diff < 3600) return Math.floor(diff / 60) + "分钟前"
+        if (diff < 86400) return Math.floor(diff / 3600) + "小时前"
+        if (diff < 604800) return Math.floor(diff / 86400) + "天前"
+        const date = new Date(timestamp * 1000)
+        const month = (date.getMonth() + 1).toString().padStart(2, "0")
+        const day = date.getDate().toString().padStart(2, "0")
+        return month + "-" + day
+    },
+    // 规范化头像URL（B站头像协议头不一致）
+    normalizeAvatar(url) {
+        if (!url) return ""
+        const str = String(url)
+        if (str.startsWith("//")) return "https:" + str
+        if (str.startsWith("http://")) return "https://" + str.slice(7)
+        return str
+    },
+    // BV 号转 avid（标准算法，用于跳转评论区）
+    bv2av(bvid) {
+        if (!bvid) return ""
+        const table = "fZodR9XQDSUm21yCkr6zBqivYlhT8nNJxbsg4Wt3pHEo76Ma5FKGcALdP80wIue"
+        const tr = {}
+        for (let i = 0; i < table.length; i++) {
+            tr[table[i]] = i
+        }
+        const s = [11, 10, 3, 8, 4, 6]
+        const xor = 177451812
+        const add = 8728348608
+        let r = 0
+        for (let i = 0; i < 6; i++) {
+            if (tr[bvid[s[i]]] === undefined) return ""
+            r += tr[bvid[s[i]]] * Math.pow(58, i)
+        }
+        return String((r - add) ^ xor)
+    },
+    // 截断过长文本
+    truncate(text, maxLen) {
+        if (!text) return ""
+        const str = String(text)
+        if (str.length <= maxLen) return str
+        return str.slice(0, maxLen) + "..."
+    },
+    // 根据 feedType 把原始数据统一成 { uid, avatar, username, title, content, oid, timeText }
+    normalizeItem(type, raw) {
+        const user = raw.user || {}
+        const item = raw.item || {}
+        // 用户昵称：reply 用 nickname，like/at 可能用 uname
+        const username = user.nickname || user.uname || user.name || ""
+        // 视频 avid（用于跳转评论区）
+        const oid = item.subject_id || item.oid || raw.subject_id || ""
+        // 头像
+        const avatar = this.normalizeAvatar(user.avatar || user.face || "")
+
+        if (type === "reply") {
+            // 回复我的：source_content=别人回复我的, target_reply_content=我写的被回复的评论
+            const replyContent = item.source_content || item.root_reply_content || ""
+            const myContent = item.target_reply_content || ""
+            return {
+                uid: user.mid || user.uid || "",
+                avatar: avatar,
+                username: this.truncate(username, 10),
+                title: this.truncate(item.title, 20),
+                content: this.truncate("回复:" + replyContent, 60),
+                myContent: myContent ? this.truncate(myContent, 60) : "",
+                oid: oid,
+                timeText: this.formatTime(item.time || raw.reply_time || raw.ctime)
+            }
+        }
+        if (type === "like") {
+            // 收到的赞：users 数组 + item + counts(数字)
+            const users = raw.users || []
+            const firstUser = users[0] || {}
+            const likeCount = (typeof raw.counts === "number") ? raw.counts : 1
+            const prefix = likeCount > 1 ? ("等" + likeCount + "人") : ""
+            const likeAvatar = this.normalizeAvatar(firstUser.avatar || firstUser.face || "")
+            const likeUsername = firstUser.nickname || firstUser.uname || firstUser.name || ""
+            // 从 item.uri 解析 BV 号转 avid，用于跳转评论区
+            const bvMatch = item.uri ? String(item.uri).match(/BV\w+/) : null
+            const likeOid = bvMatch ? this.bv2av(bvMatch[0]) : ""
+            return {
+                uid: firstUser.mid || firstUser.uid || "",
+                avatar: likeAvatar,
+                username: this.truncate(likeUsername, 10),
+                title: this.truncate(item.title, 20),
+                content: prefix + "赞了你",
+                myContent: "",
+                oid: likeOid,
+                timeText: this.formatTime(raw.like_time || item.ctime || raw.ctime)
+            }
+        }
+        if (type === "at") {
+            // @我的：user + item
+            return {
+                uid: user.mid || user.uid || "",
+                avatar: avatar,
+                username: this.truncate(username, 10),
+                title: this.truncate(item.title, 20),
+                content: this.truncate(item.content || item.source_content || item.desc, 60),
+                myContent: "",
+                oid: oid,
+                timeText: this.formatTime(item.time || raw.at_time || raw.ctime)
+            }
+        }
+        if (type === "sysmsg") {
+            // 系统通知：title + content(JSON字符串,取.web) + time_at(字符串) + source.logo
+            const title = raw.title || raw.notify_title || raw.msg_title || ""
+            let contentText = raw.content || raw.text || raw.notify_content || raw.body || raw.msg_content || ""
+            // content 可能是 JSON 字符串，需解析取 .web 字段
+            try {
+                if (typeof contentText === "string" && contentText.indexOf("{") === 0) {
+                    const parsed = JSON.parse(contentText)
+                    contentText = parsed.web || parsed.text || parsed.content || contentText
+                }
+            } catch (e) {}
+            const timeAt = raw.time_at || raw.time || ""
+            const logo = raw.source ? (raw.source.logo || "") : ""
+            return {
+                uid: "",
+                avatar: this.normalizeAvatar(logo),
+                username: "",
+                title: this.truncate(title, 22),
+                content: this.truncate(contentText, 100),
+                myContent: "",
+                oid: "",
+                timeText: timeAt
+            }
+        }
+        return {
+            uid: "",
+            avatar: "",
+            username: "",
+            title: "",
+            content: "",
+            myContent: "",
+            oid: "",
+            timeText: ""
+        }
+    },
+    // 从多种可能的数据路径中提取 items 数组
+    extractItems(rawData) {
+        if (!rawData) return []
+        // 收到的赞：数据在 data.total.items
+        if (rawData.total && Array.isArray(rawData.total.items)) return rawData.total.items
+        // 常见路径：data.items
+        if (rawData.items && Array.isArray(rawData.items)) return rawData.items
+        // 系统通知：data.system_notify_list
+        if (rawData.system_notify_list && Array.isArray(rawData.system_notify_list)) return rawData.system_notify_list
+        // sys_msg 可能用 sys_msgs
+        if (rawData.sys_msgs && Array.isArray(rawData.sys_msgs)) return rawData.sys_msgs
+        // 可能用 sys_msg_list
+        if (rawData.sys_msg_list && Array.isArray(rawData.sys_msg_list)) return rawData.sys_msg_list
+        // 可能用 pageData
+        if (rawData.pageData && Array.isArray(rawData.pageData)) return rawData.pageData
+        // 可能用 list
+        if (rawData.list && Array.isArray(rawData.list)) return rawData.list
+        // data 本身是数组
+        if (Array.isArray(rawData)) return rawData
+        return []
+    },
+    async LoadFeed() {
+        try {
+            this.anims.show_loading = true
+            let rawData = null
+            if (this.feedType === "reply") {
+                rawData = await global.biliclient.getReplyFeed(1, 20)
+            } else if (this.feedType === "like") {
+                rawData = await global.biliclient.getLikeFeed()
+            } else if (this.feedType === "at") {
+                rawData = await global.biliclient.getAtFeed(1, 20)
+            } else if (this.feedType === "sysmsg") {
+                rawData = await global.biliclient.getSysMsgFeed()
+            }
+
+            global.logger.log("[msgfeed] rawData: " + JSON.stringify(rawData))
+
+            const rawItems = this.extractItems(rawData)
+            global.logger.log("[msgfeed] rawItems count: " + rawItems.length)
+
+            // 过滤并规范化
+            const normalized = rawItems.map((raw) => this.normalizeItem(this.feedType, raw))
+            this.items.splice(0, this.items.length, ...normalized)
+
+            this.anims.show_loading = false
+            this.showEmptyTip = normalized.length === 0
+            this.show_list = normalized.length > 0
+        } catch (e) {
+            global.logger.error("加载消息列表失败: " + e.toString())
+            this.anims.show_loading = false
+            this.showEmptyTip = true
+            this.show_list = false
+        }
+    },
+    // 点击头像进入用户详情
+    GoUser(uid) {
+        if (!uid) return
+        router.push({
+            uri: "pages/user",
+            params: {
+                uid: uid
+            }
+        })
+    },
+    // 点击视频标题进入评论区
+    GoReply(oid) {
+        if (!oid) return
+        router.push({
+            uri: "pages/reply/replys",
+            params: {
+                type: 1,
+                oid: oid
+            }
+        })
+    },
+    onInit() {
+        // 路由参数 feedType 会自动注入 public 字段
+        if (!this.feedType) {
+            this.feedType = "reply"
+        }
+        // 设置标题与是否显示头像
+        if (this.feedType === "reply") {
+            this.pageTitle = this.$t("messages.replyMe")
+            this.showAvatar = true
+        } else if (this.feedType === "like") {
+            this.pageTitle = this.$t("messages.recvLike")
+            this.showAvatar = true
+        } else if (this.feedType === "at") {
+            this.pageTitle = this.$t("messages.atMe")
+            this.showAvatar = true
+        } else if (this.feedType === "sysmsg") {
+            this.pageTitle = this.$t("messages.systemNotification")
+            this.showAvatar = false
+        }
+        global.animengine.defaults.loading.CreateLoadingAnimation(this)
+        this.LoadFeed()
+    },
+    onBackPress() {
+        router.back()
+    }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./msgfeed.less";
+</style>

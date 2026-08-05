@@ -1,0 +1,84 @@
+î
+entry∑
+openpage-scrollü
+	keyframes2è[{"time":0,"transform":{"translateX":"0px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateX":"500px","scaleX":0.75,"scaleY":0.75}}]∑
+fromback-scrollü
+	keyframes2è[{"time":0,"transform":{"translateY":"232px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateY":"0px","scaleX":0.75,"scaleY":0.75}}]∑
+backpage-scrollü
+	keyframes2è[{"time":0,"transform":{"translateX":"0px","scaleX":1,"scaleY":1}},{"time":100,"transform":{"translateX":"500px","scaleX":0.75,"scaleY":0.75}}]q
+page
+	display2flex
+flexDirection2column
+
+alignItems2center
+width2100%
+height2100%˘
+scroll
+	display2flex
+flexDirection2column
+
+alignItems2center
+width2100%
+height2100%"
+animationName2openpage-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2reverseò
+scroll-backanim"
+animationName2backpage-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2normalù
+scroll-frombackanim"
+animationName2fromback-scroll!
+animationTimingFunction2ease
+animationDuration2500ms
+animationDirection2reverse
+text
+color2white©
+	setbase
+width2370px
+height292px
+borderRadius230px
+backgroundColor2#262626
+
+alignItems2center
+flexDirection2row
+	marginTop26px_
+	seticon
+
+marginLeft225px
+width255px
+height255px
+	objectFit2
+scale-downM
+setext_small
+
+fontSize230px
+
+fontWeightÿ
+
+marginLeft215pxt
+countset_num
+
+position2absolute
+right220px
+
+fontSize230px
+
+fontWeightÿ
+color2#ff7da82
+arrow
+
+position2absolute
+right220pxé
+section_title
+
+fontSize226px
+
+fontWeightÿ
+color2#999999
+
+marginLeft225px
+	marginTop220px
+marginBottom25px
