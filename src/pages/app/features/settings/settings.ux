@@ -80,7 +80,7 @@ export default {
     countset: {
       fresh_type_max: 3,
       fresh_type_min: 1,
-      home_vid_count_max: 14,
+      home_vid_count_max: 20,
       home_vid_count_min: 1,
       search_vid_count_max: 20,
       search_vid_count_min: 1
