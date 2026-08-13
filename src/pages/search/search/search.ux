@@ -40,7 +40,7 @@
 
 <script>
 import router from "@system.router"
-import { SearchHistoryManager } from "../../searchhistory"
+import { SearchHistoryManager } from "../../../searchhistory"
 import prompt from "@system.prompt"
 export default {
   private: {

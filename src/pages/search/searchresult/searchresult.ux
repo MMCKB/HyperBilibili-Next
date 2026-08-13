@@ -153,7 +153,7 @@ export default {
   },
   OpenArticle(item) {
     router.push({
-      uri: "pages/article/articlesave",
+      uri: "pages/article/articleshow",
       params: {
         cvid: "cv" + item.id,
         cvtitle: item.title
