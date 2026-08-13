@@ -24,7 +24,7 @@ export const BilibiliClientHistoryMethods = {
     // 从稍后再看删除单个视频
     async removeFromWatchLater(this: any, aid: string): Promise<any> {
         const url = `https://api.bilibili.com/x/v2/history/toview/del`;
-        const body = `id=${aid}&csrf=${this.biliJct}`;
+        const body = `aid=${aid}&csrf=${this.biliJct}`;
         const response = await this.postRequest(url, body, "application/x-www-form-urlencoded");
         return response.data;
     },
