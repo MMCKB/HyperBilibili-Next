@@ -36,19 +36,6 @@
         <!-- 视频投稿动态 展示视频跳转 -->
         <videoshow elif="{{dyn.type == 'DYNAMIC_TYPE_AV'}}" bvid="{{dyn.modules.module_dynamic.major.archive.bvid}}">
         </videoshow>
-        <!-- 专栏动态 展示专栏标题与跳转入口 -->
-        <div elif="{{dyn.type == 'DYNAMIC_TYPE_ARTICLE'}}" class="ctx-article-box" @click="OpenArticle">
-          <text class="ctx-article-title">{{ dyn.modules.module_dynamic.major.article.title }}</text>
-          <text class="ctx-article-summary" if="{{dyn.modules.module_dynamic.major.article.summary}}">
-            {{ dyn.modules.module_dynamic.major.article.summary }}
-          </text>
-          <text class="ctx-article-jump">点击阅读专栏</text>
-        </div>
-        <!-- 剧集/番剧动态 展示封面与标题 -->
-        <div elif="{{dyn.type == 'DYNAMIC_TYPE_PGC'}}" class="ctx-pgc-box">
-          <image class="ctx-pgc-cover" src="{{dyn.modules.module_dynamic.major.pgc.cover}}@200w_280h"></image>
-          <text class="ctx-pgc-title">{{ dyn.modules.module_dynamic.major.pgc.title }}</text>
-        </div>
         <!-- 转发动态 显示原动态简略信息 -->
         <div elif="{{dyn.type == 'DYNAMIC_TYPE_FORWARD'}}" class="ctx-forwarded-box" @click="JumpToOrigDetail">
           <div style="flex-direction: row">
@@ -109,17 +96,6 @@ export default {
       uri: "pages/tools/picturedetail",
       params: {
         img_uri: src
-      }
-    })
-  },
-  OpenArticle() {
-    const cvid = this.dyn.modules.module_dynamic.major.article.id
-    const title = this.dyn.modules.module_dynamic.major.article.title
-    router.push({
-      uri: "pages/article/articleshow",
-      params: {
-        cvid: "cv" + cvid,
-        cvtitle: title
       }
     })
   },
