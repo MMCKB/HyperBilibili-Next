@@ -33,18 +33,12 @@
 
 <script>
 export default {
-  data: {
-    coins: 0,
-    coinsLoaded: false
-  },
-  async onLoad() {
-    try {
-      const nav = await global.biliclient.getNavInfo()
-      this.coins = (nav && typeof nav.money === "number") ? nav.money : 0
-      this.coinsLoaded = true
-    } catch (e) {
-      global.logger.error("[CoinPicker] getNavInfo error:", e.toString())
-      this.coinsLoaded = false
+  props: {
+    coins: {
+      default: 0
+    },
+    coinsLoaded: {
+      default: false
     }
   },
   Select(multiply) {
