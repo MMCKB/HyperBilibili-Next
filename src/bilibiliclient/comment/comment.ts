@@ -40,9 +40,10 @@ export const BilibiliClientCommentMethods = {
     },
 
     // 回复二级评论（对话树）
-    async GiveTreeReply(this: any, type: string, oid: string, parent: string, root: string, message: string) {
+    // dialog 为被回复评论的 dialog 字段，B站要求回复二级评论时必须传入，否则返回 -400
+    async GiveTreeReply(this: any, type: string, oid: string, parent: string, root: string, dialog: string, message: string) {
         const url = "https://api.bilibili.com/x/v2/reply/add";
-        const body = `type=${type}&oid=${oid}&parent=${parent}&root=${root}&message=${encodeURIComponent(message)}&plat=1&csrf=${this.biliJct}`;
+        const body = `type=${type}&oid=${oid}&parent=${parent}&root=${root}&dialog=${dialog}&message=${encodeURIComponent(message)}&plat=1&csrf=${this.biliJct}`;
         const response = await this.postRequest(url, body, "application/x-www-form-urlencoded");
         return response.data;
     },

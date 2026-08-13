@@ -17,8 +17,12 @@
     <div class="replycontentdiv" onclick="ShowTools(reply)">
       <text class="replycontent">{{ reply.content.message }}</text>
     </div>
+    <!-- 评论区图片（需在设置-性能设置中开启） -->
+    <div class="replypictures" if="{{hasPictures}}">
+      <image class="replypicture" for="{{reply.content.pictures}}" src="{{$item.img_src}}@120w_120h" @click="OpenPicture($item.img_src)"></image>
+    </div>
     <div class="bottom_bar">
-      <div class="reply_replybtn" onclick="Reply(reply.rpid)">
+      <div class="reply_replybtn" onclick="Reply(reply.rpid, reply.dialog)">
         <text class="reply_replytext">回复</text>
       </div>
       <div class="replystat" style="margin-left: 25px">
@@ -37,6 +41,18 @@
 import router from "@system.router"
 export default {
   props: ["reply", "secmode"],
+  private: {
+    // 是否在评论区显示图片（受设置-性能设置控制）
+    enableCommentPictures: false,
+    // 当前评论是否有可显示的图片
+    hasPictures: false
+  },
+  onInit() {
+    this.enableCommentPictures = global.settings.SETTINGS.enableCommentPictures
+    if (this.enableCommentPictures && this.reply && this.reply.content && this.reply.content.pictures && this.reply.content.pictures.length > 0) {
+      this.hasPictures = true
+    }
+  },
   OpenUser(id) {
     router.push({
       uri: "pages/user",
@@ -45,14 +61,24 @@ export default {
       }
     })
   },
+  OpenPicture(src) {
+    router.push({
+      uri: "pages/tools/picturedetail",
+      params: {
+        img_uri: src
+      }
+    })
+  },
   ShowTools(reply) {
     this.$emit("showTools", {
       reply: reply
     })
   },
-  Reply(rpid) {
+  Reply(rpid, dialog) {
+    // 传递 dialog 字段，回复二级评论时 B站接口要求必填，否则返回 -400
     this.$emit("reply", {
-      rpid: rpid
+      rpid: rpid,
+      dialog: dialog
     })
   }
 }
@@ -63,7 +89,7 @@ export default {
 
 .reply {
   width: 319px;
-  height: 200px;
+  min-height: 200px;
   border-radius: 25px;
   background-color: #262626;
   flex-direction: column;
@@ -105,6 +131,23 @@ export default {
   font-size: 20px;
   font-weight: 600;
   text-overflow: ellipsis;
+}
+
+.replypictures {
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: 253px;
+  margin-top: 8px;
+  margin-left: 33px;
+}
+
+.replypicture {
+  width: 70px;
+  height: 70px;
+  border-radius: 8px;
+  margin-right: 6px;
+  margin-bottom: 6px;
+  object-fit: cover;
 }
 
 .reply_replybtn {

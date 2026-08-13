@@ -38,6 +38,18 @@
           <text class="text devname">@一個小果冻</text>
         </div>
       </div>
+      <text class="text gr" style="margin-top: 30px">{{ $t("about.contributors") }}</text>
+      <div class="developers" style="margin-top: 15px">
+        <div class="developer">
+          <text class="text devname">@MMCKB</text>
+        </div>
+        <div class="developer">
+          <text class="text devname">@fwzjszd</text>
+        </div>
+        <div class="developer">
+          <text class="text devname">@Trae</text>
+        </div>
+      </div>
       <text class="text" style="color: #9e9e9e; margin-top: 12px">
         {{ $t("about.moreResources") }}
       </text>

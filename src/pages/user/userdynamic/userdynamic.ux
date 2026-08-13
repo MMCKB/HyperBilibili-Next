@@ -1,9 +1,108 @@
+<import name="switch-bar" src="@components/SwitchBar/SwitchBar.ux"></import>
+<import name="dyn-show" src="@components/DynShow/DynShow.ux"></import>
+
 <template>
-  <div></div>
+  <div class="page">
+    <image style="position: absolute; left: 0px" src="{{getBgImg}}" static></image>
+    <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="true">
+      <switch-bar title="user.dynamices" static></switch-bar>
+      <div class="waterfall" if="{{show_content && has_content}}">
+        <div class="waterfall-column">
+          <dyn-show for="{{dynamic.render_split_1}}" dyn="{{$item}}"></dyn-show>
+        </div>
+        <div class="waterfall-column">
+          <dyn-show for="{{dynamic.render_split_2}}" dyn="{{$item}}"></dyn-show>
+        </div>
+      </div>
+      <text class="nocontent" if="{{show_content && !has_content}}">{{ $t("user.nocontent") }}</text>
+      <text style="margin-top: 25px" static></text>
+    </scroll>
+    <image style="position: absolute; margin-top: 245px" if="{{anims.show_loading}}" src="{{anims.loading_src.value}}"></image>
+  </div>
 </template>
 
 <script>
- export default {}
+export default {
+  public: {
+    uid: 1
+  },
+  private: {
+    scrclass: "",
+    show_content: false,
+    has_content: false,
+    anims: {
+      show_loading: false
+    },
+    dynamic: {
+      render_split_1: [],
+      render_split_2: []
+    }
+  },
+  computed: {
+    getBgImg() {
+      return this.$app.$def.bgimg.GetBackgroundImageSrc();
+    }
+  },
+  SplitWaterfallArea(arr) {
+    const arr1 = [];
+    const arr2 = [];
+    arr.forEach((value, index) => {
+      if (index % 2 === 0) {
+        arr1.push(value);
+      } else {
+        arr2.push(value);
+      }
+    });
+    return { arr1, arr2 };
+  },
+  async LoadUserDynamics() {
+    try {
+      this.anims.loading.start();
+      var dynamic = await global.biliclient.getUserDynamicListByUID(this.uid);
+      var items = (dynamic && dynamic.items) ? dynamic.items : [];
+      var split_result = this.SplitWaterfallArea(items);
+
+      this.dynamic.render_split_1.splice(0, this.dynamic.render_split_1.length, ...split_result.arr1);
+      this.dynamic.render_split_2.splice(0, this.dynamic.render_split_2.length, ...split_result.arr2);
+      this.has_content = items.length > 0;
+
+      this.anims.loading.stop();
+      this.anims.show_loading = false;
+      this.show_content = true;
+    } catch (e) {
+      global.logger.error(e.toString());
+      this.anims.loading.stop();
+      this.anims.show_loading = false;
+      this.show_content = true;
+      this.has_content = false;
+    }
+  },
+  onReady() {
+    global.animengine.defaults.loading.CreateLoadingAnimation(this);
+    this.LoadUserDynamics();
+  }
+}
 </script>
 
-<style></style>
+<style lang="less">
+@import "@less/global.less";
+
+.waterfall {
+  flex-direction: row;
+  justify-content: center;
+  width: 400px;
+}
+
+.waterfall-column {
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: flex-start;
+  margin-top: 0px;
+}
+
+.nocontent {
+  font-size: 22px;
+  color: #9e9e9e;
+  margin-top: 50px;
+}
+</style>

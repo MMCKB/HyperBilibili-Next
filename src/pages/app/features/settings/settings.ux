@@ -20,6 +20,11 @@
         <text class="setext_small">{{ $t("settings.enableFullAnimation") }}</text>
         <text class="countset_num">{{ enableFullAnimation ? "开" : "关" }}</text>
       </div>
+      <div class="setbase" onclick="SwitchSet('enable_comment_pictures')">
+        <div class="seticon"></div>
+        <text class="setext_small">{{ $t("settings.enableCommentPictures") }}</text>
+        <text class="countset_num">{{ enableCommentPictures ? "开" : "关" }}</text>
+      </div>
       <div class="setbase" onclick="ItemsChangeSet('startup_page')">
         <image class="seticon" src="/common/settings_startuppage.png"></image>
         <text class="setext_small">{{ $t("settings.startupPage") }}</text>
@@ -64,6 +69,7 @@ export default {
     fresh_type: 3,
     home_vid_count: 10,
     enableFullAnimation: false,
+    enableCommentPictures: false,
     startupPage: "主页",
     countset: {
       fresh_type_max: 3,
@@ -102,6 +108,17 @@ export default {
         prompt.showToast({
           message: "开启此选项会导致首页等页面在低性能设备上严重卡顿，因此建议保持关闭！",
           duration: 6000
+        });
+      }
+      this.UpdateNumView();
+    } else if (name === "enable_comment_pictures") {
+      this.enableCommentPictures = !this.enableCommentPictures;
+      global.settings.saveSettings({ enableCommentPictures: this.enableCommentPictures });
+
+      if (this.enableCommentPictures) {
+        prompt.showToast({
+          message: "已开启评论区图片显示，加载图片可能影响低性能设备流畅度。",
+          duration: 4000
         });
       }
       this.UpdateNumView();
@@ -163,6 +180,7 @@ export default {
     this.fresh_type = global.settings.SETTINGS.fresh_type
     this.home_vid_count = global.settings.SETTINGS.home_vid_count
     this.enableFullAnimation = global.settings.SETTINGS.enableFullAnimation
+    this.enableCommentPictures = global.settings.SETTINGS.enableCommentPictures
     this.startupPage = global.settings.SETTINGS.startupPage
   },
   onInit() {

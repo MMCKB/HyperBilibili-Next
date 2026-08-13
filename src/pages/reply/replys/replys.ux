@@ -13,7 +13,7 @@
       <image style="position: absolute; margin-top: 245px" if="{{anims.show_loading}}" src="{{anims.loading_src.value}}"></image>
       <list class="replylist">
         <list-item type="replies"
-          style="width: 100%; justify-content: center; margin-top: 10px; height: {{PlaceHolderShowCheck($item.rpid)}}"
+          style="width: 100%; justify-content: center; margin-top: 10px; min-height: {{PlaceHolderShowCheck($item.rpid)}}"
           for="{{replies}}">
           <reply secmode={{secmode}} reply="{{$item}}" @show-tools="ShowTools" @reply="Reply"></reply>
         </list-item>
@@ -48,6 +48,8 @@ export default {
     },
     replymode: false,
     reply_target: null,
+    // 被回复评论的 dialog 字段，回复二级评论时 B站接口要求必填
+    reply_dialog: "",
     scrclass: ""
   },
   async SendReply(evt) {
@@ -67,14 +69,15 @@ export default {
             this.oid,
             this.reply_target,
             this.rootrpid,
+            this.reply_dialog,
             content
-          )
+        )
         : await global.biliclient.GiveSecReply(
             this.type,
             this.oid,
             this.reply_target,
             content
-          )
+        )
 
       if (result.code === 0) {
         prompt.showToast({message: "发送成功"})
@@ -96,6 +99,7 @@ export default {
     this.replymode = true
     this.input_text.content = ""
     this.reply_target = evt.detail.rpid
+    this.reply_dialog = evt.detail.dialog
   },
   ShowTools(evt) {
     const uri = this.secmode ? "pages/tools/textdetail" : "pages/reply/replytools"

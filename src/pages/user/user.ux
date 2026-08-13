@@ -22,7 +22,7 @@
           </div>
         </scroll>
       </div>
-      <div class="ctxcard" style="margin-top: 10px" if="{{loaded}}" @click="WIPTips">
+      <div class="ctxcard" style="margin-top: 10px" if="{{loaded}}" @click="GoUserDynamics">
         <div class="ctxdesc">
           <div style="width: 290px;">
             <text class="desctxt">{{ $t("user.dynamices") }}</text>
@@ -90,9 +90,12 @@ export default {
       }
     })
   },
-  WIPTips(){
-    prompt.showToast({
-      message: "该功能仍未开发完毕"
+  GoUserDynamics(){
+    router.push({
+      uri: "pages/user/userdynamic",
+      params: {
+        uid: this.uid
+      }
     })
   },
   onInit(){

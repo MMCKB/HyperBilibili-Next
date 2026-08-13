@@ -14,6 +14,7 @@
           <img show="{{resultList.length > 0}}" style="position: absolute;top:43px;left:355px;" src="./assets/full/down.png" @click="onBtnClick('down')" />
           <!-- 带变量的相对路径在 aiot-tookit 2.0.3 中编译出错，已反馈，暂时注释掉 -->
           <!-- <img src="./assets/full/{{lang}}.png" style="position: absolute;top:38px;left:7px;width:67px;height:52px;" @click="onBtnClick('lang')" show="{{downFlag==='' && !numFlag}}" /> -->
+          <text style="position: absolute;top:0px;left:7px;width:67px;height:35px;background-color:#3D3D3D;border-radius:8px;color:#ff7da8;font-size:16px;text-align:center;" @click="onBtnClick('emoji')" show="{{downFlag==='' && !numFlag}}">表情</text>
           <img src="./assets/full/cn.png" style="position: absolute;top:38px;left:7px;width:67px;height:52px;" @click="onBtnClick('lang')" show="{{downFlag==='' && !numFlag && lang === 'cn'}}" />
           <img src="./assets/full/en.png" style="position: absolute;top:38px;left:7px;width:67px;height:52px;" @click="onBtnClick('lang')" show="{{downFlag==='' && !numFlag && lang === 'en'}}" />
           <div style="position: absolute;top:-4px;left:78px;width:324px;" show="{{downFlag==='' && !numFlag && cval}}">
@@ -78,6 +79,7 @@
           <img show="{{resultList.length > 0}}" style="position: absolute;top:44px;left:338px;" src="./assets/full/down.png" @click="onBtnClick('down')" />
           <!-- 带变量的相对路径在 aiot-tookit 2.0.3 中编译出错，已反馈，暂时注释掉 -->
           <!-- <img src="./assets/t9/{{lang}}.png" style="position: absolute;top:35px;left:31px;width: 60px;height: 60px;" @click="onBtnClick('lang')" show="{{downFlag==='' && !numFlag}}" /> -->
+          <text style="position: absolute;top:0px;left:31px;width:60px;height:30px;background-color:#3D3D3D;border-radius:8px;color:#ff7da8;font-size:14px;text-align:center;" @click="onBtnClick('emoji')" show="{{downFlag==='' && !numFlag}}">表情</text>
           <img src="./assets/t9/cn.png" style="position: absolute;top:35px;left:31px;width: 60px;height: 60px;" @click="onBtnClick('lang')" show="{{downFlag==='' && !numFlag && lang === 'cn'}}" />
           <img src="./assets/t9/en.png" style="position: absolute;top:35px;left:31px;width: 60px;height: 60px;" @click="onBtnClick('lang')" show="{{downFlag==='' && !numFlag && lang === 'en'}}" />
           <div style="position: absolute;top:-4px;left:95px;width:145px;height:40px;" show="{{downFlag==='' && !numFlag && cval}}">
@@ -376,6 +378,9 @@ export default {
         this.cval = "";
         this.clearWaiting();
         this.resetReslutList();
+        break;
+      case "emoji":
+        this.$emit("openemoji", {});
         break;
       case "lang":
         if (this.lang === "cn") {

@@ -6,6 +6,8 @@ interface SettingsInterface {
   // 专栏articleshow的每页dom节点裁切数量（单页最大dom数）
   article_split_dom_count: number;
   enableFullAnimation: boolean;
+  // 是否在评论区加载并显示图片（会影响低性能设备流畅度）
+  enableCommentPictures: boolean;
   startupPage: string;
 
   // 下面的设置项将不在设置页面中展示
@@ -21,6 +23,7 @@ export let SETTINGS: SettingsInterface = {
   home_vid_count: 10,
   article_split_dom_count: 9999,
   enableFullAnimation: false,
+  enableCommentPictures: false,
   startupPage: "主页",
 
   agreedAllAgreements: false, // 是否已同意所有协议（用户协议 隐私协议 etc.）

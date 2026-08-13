@@ -3,7 +3,7 @@
 
 <template>
     <div class="inputpanel">
-        <input-method if="{{global_show && !emojimode}}" style="position: absolute" hide={{keyboardHide}} @complete="InputEvent" @delete="InputDelete" screentype="{{screentype}}" vibratemode="short"></input-method>
+        <input-method if="{{global_show && !emojimode}}" style="position: absolute" hide={{keyboardHide}} @complete="InputEvent" @delete="InputDelete" @openemoji="OpenEmoji" screentype="{{screentype}}" vibratemode="short"></input-method>
         <div class="inputactions">
             <div style="margin-left: 35px" @click="ExitInput">
                 <image class="inputaction_img" src="/common/textinput_back.png"></image>
@@ -11,8 +11,8 @@
             <div style="margin-left: 75px" @click="InputFinish">
                 <image class="inputaction_img" src="/common/textinput_finish.png"></image>
             </div>
-            <!-- 表情按钮 -->
-            <div class="emojibtn" @click="OpenEmoji">
+            <!-- 表情按钮（圆屏时由键盘内 cn/en 上方的入口触发，此处仅在方屏/胶囊屏显示） -->
+            <div class="emojibtn" if="{{screentype !== 'circle'}}" @click="OpenEmoji">
                 <text class="emojibtn_text">表情</text>
             </div>
         </div>
