@@ -28,5 +28,30 @@ export const BilibiliClientFavFolderMethods = {
         if (keyword) url += `&keyword=${keyword}`;
         const response = await this.getRequest(url);
         return response.data.data;
+    },
+
+    // 新建收藏夹
+    // title: 标题  intro: 简介  privacy: 0公开 10私密
+    async createFavFolder(this: any, title: string, intro: string = "", privacy: number = 0): Promise<any> {
+        const url = `https://api.bilibili.com/x/v3/fav/folder/add`;
+        const body = `title=${encodeURIComponent(title)}&intro=${encodeURIComponent(intro)}&privacy=${privacy}&csrf=${this.biliJct}`;
+        const response = await this.postRequest(url, body, "application/x-www-form-urlencoded");
+        return response.data;
+    },
+
+    // 编辑收藏夹（重命名/改简介/改隐私）
+    async editFavFolder(this: any, mediaId: string, title: string, intro: string = "", privacy: number = 0): Promise<any> {
+        const url = `https://api.bilibili.com/x/v3/fav/folder/edit`;
+        const body = `media_id=${mediaId}&title=${encodeURIComponent(title)}&intro=${encodeURIComponent(intro)}&privacy=${privacy}&csrf=${this.biliJct}`;
+        const response = await this.postRequest(url, body, "application/x-www-form-urlencoded");
+        return response.data;
+    },
+
+    // 删除收藏夹
+    async deleteFavFolder(this: any, mediaIds: string): Promise<any> {
+        const url = `https://api.bilibili.com/x/v3/fav/folder/del`;
+        const body = `media_ids=${mediaIds}&csrf=${this.biliJct}`;
+        const response = await this.postRequest(url, body, "application/x-www-form-urlencoded");
+        return response.data;
     }
 }

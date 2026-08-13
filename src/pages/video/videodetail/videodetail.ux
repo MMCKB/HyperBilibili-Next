@@ -57,6 +57,27 @@
       @exit="ExitInput"></full-screen-input>
     <!-- 投币选择面板（22娘，可选投1个或2个币） -->
     <coin-picker if="{{coinpickermode}}" @select="DoCoin" @close="ExitCoinPicker"></coin-picker>
+
+    <!-- 收藏夹选择面板 -->
+    <div class="favpicker" if="{{favFolderPickerVisible}}">
+      <div class="favpicker-header">
+        <text class="favpicker-title">{{ $t("fav.selectFolder") }}</text>
+        <div class="favpicker-close" @click="HideFavFolderPicker">
+          <image class="favpicker-close-img" src="/common/textinput_back.png"></image>
+        </div>
+      </div>
+      <scroll class="favpicker-scroll" scroll-y="true">
+        <div class="favfolder-item" for="{{favFolders}}" @click="ToggleFolder($item.id)">
+          <div class="favfolder-check {{ $item.selected ? 'checked' : '' }}">
+            <text class="favfolder-check-text" if="{{$item.selected}}">✓</text>
+          </div>
+          <text class="favfolder-name">{{$item.title}}</text>
+        </div>
+        <text class="favpicker-empty" if="{{favFolders.length === 0}}">{{ $t("fav.noFolders") }}</text>
+      </scroll>
+      <default-button text="fav.confirm" margin-top="15px" @click="ConfirmAddToFav"></default-button>
+      <text class="favpicker-cancel" @click="HideFavFolderPicker">{{ $t("fav.cancel") }}</text>
+    </div>
   </div>
 </template>
 
