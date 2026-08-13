@@ -82,10 +82,19 @@ export default {
     const myUid = global.biliclient.accountInfo.mid
     this.isSelf = (this.uid.toString() === myUid.toString())
 
-    // 判断关注状态：relation.attribute 为 2(关注) 或 6(悄悄关注) 表示已关注
-    const attr = this.user && this.user.relation ? this.user.relation.attribute : 0
-    this.followed = (attr === 2 || attr === 6)
-    this.followBtnKey = this.followed ? "user.followed" : "user.follow"
+    // 通过专用关系接口查询关注状态（比 user.relation 字段更可靠）
+    // attribute: 0=未关注 2=已关注 6=互粉 128=已拉黑
+    if (!this.isSelf) {
+      try {
+        const relation = await global.biliclient.getRelation(this.uid)
+        const attr = relation ? relation.attribute : 0
+        this.followed = (attr === 2 || attr === 6)
+      } catch (e) {
+        global.logger.error("getRelation failed:", e.toString())
+        this.followed = false
+      }
+      this.followBtnKey = this.followed ? "user.followed" : "user.follow"
+    }
 
     this.anims.loading.stop()
     this.anims.show_loading = false

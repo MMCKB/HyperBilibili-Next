@@ -88,6 +88,14 @@ export const BilibiliClientUserMethods = {
         return response.data;
     },
 
+    // 查询当前登录用户与目标用户的关系
+    // 返回 data.attribute: 0=未关注 2=已关注 6=互粉 128=已拉黑
+    async getRelation(this: any, uid: String): Promise<any> {
+        const url = `https://api.bilibili.com/x/relation?fid=${uid}`;
+        const response = await this.getRequest(url);
+        return response.data.data;
+    },
+
     // 根据UID批量获取用户信息
     async getMultiUserInfoByUID(this: any, uids: Array<String>) {
         const url = "https://api.bilibili.com/x/polymer/pc-electron/v1/user/cards";
