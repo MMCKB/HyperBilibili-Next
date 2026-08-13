@@ -11,7 +11,7 @@
       <title-bar title="图片预览"></title-bar>
       <div class="scroll_toolbar">
           <text style="font-size: 24px; font-weight: 600">{{ $t("picturedetail.scaleTip") }}</text>
-          <slider style="margin-top: 5px" min="50" max="500" step="10" value="{{initialSliderValue}}"
+          <slider style="margin-top: 5px" min="10" max="500" step="10" value="{{initialSliderValue}}"
               @change="UpdateImageStyle"></slider>
       </div>
     </div>
