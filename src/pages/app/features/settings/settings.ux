@@ -4,7 +4,7 @@
   <div class="page">
     <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="true">
       <switch-bar title="settings.title"></switch-bar>
-      <img src="/common/settings_version.jpg" @click="GoAbout"></img>
+      <img src="/common/settings_version.png" @click="GoAbout"></img>
       <div class="setbase" onclick="ClickCountSet('fresh_type')">
         <image class="seticon" src="/common/settings_freshtype.png"></image>
         <text class="setext_small">{{ $t("settings.videoPushRelevance") }}</text>
