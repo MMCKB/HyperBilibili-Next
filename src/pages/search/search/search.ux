@@ -20,7 +20,9 @@
         <div class="history-chips">
           <div class="history-chip" for="{{history}}">
             <text class="chip-text" @click="GoSearchHistory($item)">{{$item}}</text>
-            <text class="chip-del" @click="RemoveHistory($item)">✕</text>
+            <div class="chip-del" @click="RemoveHistory($item)">
+              <text class="chip-del-text">×</text>
+            </div>
           </div>
         </div>
       </div>
