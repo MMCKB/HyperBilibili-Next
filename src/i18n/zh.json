@@ -120,6 +120,7 @@
         "title": "设置",
         "videoPushRelevance": "视频推荐相关性",
         "videoPushCount": "首页视频推荐数",
+        "searchVidCount": "搜索视频显示数",
         "enableFullAnimation": "启用完整动画",
         "enableCommentPictures": "评论区图片显示",
         "startupPage": "起始页面",

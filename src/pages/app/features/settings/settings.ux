@@ -15,6 +15,11 @@
         <text class="setext_small">{{ $t("settings.videoPushCount") }}</text>
         <text class="countset_num">{{ home_vid_count }}</text>
       </div>
+      <div class="setbase" onclick="ClickCountSet('search_vid_count')">
+        <div class="seticon"></div>
+        <text class="setext_small">{{ $t("settings.searchVidCount") }}</text>
+        <text class="countset_num">{{ search_vid_count }}</text>
+      </div>
       <div class="setbase" onclick="SwitchSet('enable_full_anim')">
         <image class="seticon" src="/common/settings_enablefullanim.png"></image>
         <text class="setext_small">{{ $t("settings.enableFullAnimation") }}</text>
@@ -68,6 +73,7 @@ export default {
   private: {
     fresh_type: 3,
     home_vid_count: 10,
+    search_vid_count: 10,
     enableFullAnimation: false,
     enableCommentPictures: false,
     startupPage: "主页",
@@ -75,7 +81,9 @@ export default {
       fresh_type_max: 3,
       fresh_type_min: 1,
       home_vid_count_max: 14,
-      home_vid_count_min: 1
+      home_vid_count_min: 1,
+      search_vid_count_max: 20,
+      search_vid_count_min: 1
     },
     scrclass: ""
   },
@@ -137,6 +145,12 @@ export default {
         max: this.countset.home_vid_count_max,
         min: this.countset.home_vid_count_min,
         key: "home_vid_count"
+      },
+      "search_vid_count": {
+        current: this.search_vid_count,
+        max: this.countset.search_vid_count_max,
+        min: this.countset.search_vid_count_min,
+        key: "search_vid_count"
       }
     };
 
@@ -179,6 +193,7 @@ export default {
   UpdateNumView() {
     this.fresh_type = global.settings.SETTINGS.fresh_type
     this.home_vid_count = global.settings.SETTINGS.home_vid_count
+    this.search_vid_count = global.settings.SETTINGS.search_vid_count
     this.enableFullAnimation = global.settings.SETTINGS.enableFullAnimation
     this.enableCommentPictures = global.settings.SETTINGS.enableCommentPictures
     this.startupPage = global.settings.SETTINGS.startupPage

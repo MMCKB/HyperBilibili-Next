@@ -3,6 +3,8 @@ import { storage } from "./tsimports"
 interface SettingsInterface {
   fresh_type: number; //视频推荐相关度，范围1-3，根据大数据推送
   home_vid_count: number;
+  // 搜索结果视频显示数量，范围1-20
+  search_vid_count: number;
   // 专栏articleshow的每页dom节点裁切数量（单页最大dom数）
   article_split_dom_count: number;
   enableFullAnimation: boolean;
@@ -21,6 +23,7 @@ interface SettingsInterface {
 export let SETTINGS: SettingsInterface = {
   fresh_type: 3,
   home_vid_count: 10,
+  search_vid_count: 10,
   article_split_dom_count: 9999,
   enableFullAnimation: false,
   enableCommentPictures: false,

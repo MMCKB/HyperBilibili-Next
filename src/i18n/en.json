@@ -119,6 +119,7 @@
         "title": "Settings",
         "videoPushRelevance": "Video Recommendation Relevance",
         "videoPushCount": "Number of Recommended Videos on Homepage",
+        "searchVidCount": "Search Video Count",
         "enableFullAnimation": "Enable Full Animation",
         "enableCommentPictures": "Comment Images",
         "startupPage": "Startup Page",

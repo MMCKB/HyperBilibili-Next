@@ -260,7 +260,7 @@ export default {
     this.anims.loading.start()
     
     // 搜索视频和推荐用户
-    this.search = await global.biliclient.searchContents(this.keyword, 10)
+    this.search = await global.biliclient.searchContents(this.keyword, global.settings.SETTINGS.search_vid_count)
     // 深度搜索用户
     var users = await global.biliclient.searchContentWithType(this.keyword, "bili_user")
     this.search.users = users.result
