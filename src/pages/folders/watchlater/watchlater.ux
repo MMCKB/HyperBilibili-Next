@@ -1,0 +1,235 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="online-image" src="@components/BetterOnlineImage/BetterOnlineImage.ux"></import>
+
+<template>
+    <div class="page">
+      <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
+        <title-bar title="watchlater.title"></title-bar>
+        <image style="position: absolute; margin-top: 245px" if="{{anims.show_loading}}" src="{{anims.loading_src.value}}">
+        </image>
+
+        <div class="toolbar" if="{{!anims.show_loading && watchlater.length > 0}}">
+          <text class="counttext">{{ countText }}</text>
+          <text class="clear-btn" @click="ConfirmClearAll">{{ $t("watchlater.clearAll") }}</text>
+        </div>
+
+        <div class="watchlaterlist" if="{{!anims.show_loading}}">
+          <div class="item" for="{{watchlater}}">
+            <div class="item-card" @click="OpenVideo($item.bvid)">
+              <image class="cover" src="{{$item.pic}}@160w_100h"></image>
+              <div class="info">
+                <text class="title">{{$item.title}}</text>
+                <text class="up">UP：{{$item.owner.name}}</text>
+              </div>
+            </div>
+            <div class="del-btn" @click="RemoveItem($item)">
+              <text class="del-text">×</text>
+            </div>
+          </div>
+          <text class="empty" if="{{watchlater.length === 0}}">{{ $t("watchlater.empty") }}</text>
+        </div>
+        <text style="margin-top: 25px"></text>
+      </scroll>
+    </div>
+</template>
+
+<script>
+import router from "@system.router"
+import prompt from "@system.prompt"
+export default {
+  private: {
+    watchlater: [],
+    countText: "",
+    anims: {
+      show_loading: false
+    },
+    scrclass: ""
+  },
+  async LoadWatchLater(){
+    this.anims.show_loading = true
+    this.watchlater = []
+    this.anims.loading.start()
+
+    try {
+      const data = await global.biliclient.getWatchLaterList()
+      const list = (data && data.list) || []
+      this.watchlater = list.map(item => {
+        let pic = item.pic || ""
+        if (pic && !(pic.startsWith("http://") || pic.startsWith("https://"))) {
+          pic = "https:" + pic
+        }
+        return {
+          aid: item.aid,
+          bvid: item.bvid,
+          title: item.title,
+          pic: pic,
+          owner: {
+            name: item.owner && item.owner.name,
+            mid: item.owner && item.owner.mid
+          }
+        }
+      })
+      this.countText = this.$t("watchlater.count").replace("{count}", this.watchlater.length.toString())
+    } catch (error) {
+      global.logger.error("[watchlater] 加载稍后再看时发生错误:", error.toString())
+    } finally {
+      this.anims.show_loading = false
+      this.anims.loading.stop()
+    }
+  },
+  OpenVideo(bvid) {
+    router.push({
+      uri: "pages/video/videodetail",
+      params: { bvid }
+    })
+  },
+  async RemoveItem(item){
+    try {
+      const result = await global.biliclient.removeFromWatchLater(item.aid)
+      if (result.code === 0) {
+        prompt.showToast({ message: "已移除", duration: 1500 })
+        await this.LoadWatchLater()
+      } else {
+        prompt.showToast({ message: `移除失败：${result.message || result.code}`, duration: 2000 })
+      }
+    } catch (error) {
+      global.logger.error("[watchlater] RemoveItem error:", error.toString())
+      prompt.showToast({ message: "移除失败", duration: 2000 })
+    }
+  },
+  ConfirmClearAll(){
+    prompt.showDialog({
+      title: "",
+      message: this.$t("watchlater.clearConfirm"),
+      buttons: [
+        { text: this.$t("watchlater.confirm"), color: "#FF7DA8" },
+        { text: this.$t("watchlater.cancel"), color: "#9e9e9e" }
+      ],
+      success: (data) => {
+        if (data.index === 0) {
+          this.ClearAll()
+        }
+      }
+    })
+  },
+  async ClearAll(){
+    try {
+      const result = await global.biliclient.clearWatchLater()
+      if (result.code === 0) {
+        prompt.showToast({ message: this.$t("watchlater.cleared"), duration: 1500 })
+        await this.LoadWatchLater()
+      } else {
+        prompt.showToast({ message: `清空失败：${result.message || result.code}`, duration: 2000 })
+      }
+    } catch (error) {
+      global.logger.error("[watchlater] ClearAll error:", error.toString())
+      prompt.showToast({ message: "清空失败", duration: 2000 })
+    }
+  },
+  onInit(){
+    global.animengine.defaults.loading.CreateLoadingAnimation(this)
+    this.LoadWatchLater()
+  },
+  async onShow(){
+    if (this.watchlater.length > 0 || this.anims.show_loading === false) {
+      await this.LoadWatchLater()
+    }
+  }
+}
+</script>
+
+<style lang="less">
+@import '@less/global.less';
+
+.toolbar {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  width: 90%;
+  margin-top: 5px;
+  padding-right: 10px;
+}
+
+.counttext {
+  font-size: 18px;
+  color: #9e9e9e;
+}
+
+.clear-btn {
+  font-size: 18px;
+  color: #FF7DA8;
+  padding: 4px 8px;
+}
+
+.watchlaterlist {
+  width: 90%;
+  align-items: center;
+  flex-direction: column;
+}
+
+.item {
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.item-card {
+  flex: 1;
+  flex-direction: row;
+  align-items: center;
+  background-color: #262626af;
+  border-radius: 20px;
+  padding: 10px;
+}
+
+.cover {
+  width: 80px;
+  height: 50px;
+  border-radius: 8px;
+  object-fit: cover;
+}
+
+.info {
+  flex: 1;
+  flex-direction: column;
+  margin-left: 10px;
+}
+
+.title {
+  font-size: 18px;
+  font-weight: 600;
+  lines: 2;
+  text-overflow: ellipsis;
+}
+
+.up {
+  font-size: 14px;
+  color: #9e9e9e;
+  margin-top: 4px;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+
+.del-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 18px;
+  background-color: #4a4a4a;
+  justify-content: center;
+  align-items: center;
+  margin-left: 8px;
+}
+
+.del-text {
+  font-size: 26px;
+  color: #ffffff;
+  text-align: center;
+}
+
+.empty {
+  font-size: 22px;
+  color: #9e9e9e;
+  margin-top: 40px;
+}
+</style>

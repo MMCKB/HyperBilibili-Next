@@ -45,6 +45,16 @@
     "history": {
         "title": "History"
     },
+    "watchlater": {
+        "title": "Watch Later",
+        "count": "{count} videos",
+        "clearAll": "Clear All",
+        "clearConfirm": "Are you sure to clear all watch later videos? This cannot be undone.",
+        "confirm": "Confirm",
+        "cancel": "Cancel",
+        "cleared": "Cleared",
+        "empty": "No watch later videos"
+    },
     "login": {
         "scanToLogin": "Scan to Login",
         "goToOfficialApp": "Please visit the official app",

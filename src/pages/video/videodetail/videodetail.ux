@@ -45,7 +45,7 @@
           <image class="vidtoolimg" src="/common/vidtool_aisummary.png"></image>
           <text class="vidtooltext">{{ $t("video.aisummary") }}</text>
         </div>
-        <div class="vidtool" @click="WIPTips">
+        <div class="vidtool" @click="AddToWatchLater()">
           <image class="vidtoolimg" src="/common/vidtool_watchlater.png"></image>
           <text class="vidtooltext">{{ $t("video.showLater") }}</text>
         </div>
@@ -108,6 +108,32 @@ export default {
     prompt.showToast({
       message: "该功能仍在开发中"
     })
+  },
+  async AddToWatchLater() {
+    try {
+      const result = await global.biliclient.addToWatchLater(this.bvid)
+      let message = ""
+      switch (result.code) {
+        case 0:
+          message = "已添加到稍后再看"
+          break
+        case 90001:
+          message = "稍后再看列表已满（最多100个）"
+          break
+        case 90003:
+          message = "稿件已被删除"
+          break
+        case -101:
+          message = "账号未登录"
+          break
+        default:
+          message = `添加失败：${result.message || result.code}`
+      }
+      prompt.showToast({ message, duration: result.code === 0 ? 2000 : 4000 })
+    } catch (error) {
+      global.logger.error("[AddToWatchLater] error:", error.toString())
+      prompt.showToast({ message: "添加失败", duration: 2000 })
+    }
   },
   async OpenPlayer() {
     const exists = await global.savedcontent.SavedContentManager.checkVideoAudioExists(this.bvid)

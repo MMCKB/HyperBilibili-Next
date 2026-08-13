@@ -119,6 +119,9 @@
             "pages/folders/history": {
                 "component": "history"
             },
+            "pages/folders/watchlater": {
+                "component": "watchlater"
+            },
             "pages/search/searchresult": {
                 "component": "searchresult"
             },

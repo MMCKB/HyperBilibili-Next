@@ -46,6 +46,16 @@
     "history": {
         "title": "历史记录"
     },
+    "watchlater": {
+        "title": "稍后再看",
+        "count": "共 {count} 个",
+        "clearAll": "清空",
+        "clearConfirm": "确定要清空所有稍后再看吗？此操作不可逆。",
+        "confirm": "确定",
+        "cancel": "取消",
+        "cleared": "已清空",
+        "empty": "暂无稍后再看的视频"
+    },
     "login": {
         "scanToLogin": "扫码登录",
         "goToOfficialApp": "请前往官方客户端",
