@@ -36,8 +36,7 @@
     },
     "favfolders": {
         "title": "收藏",
-        "count": "数量",
-        "manage": "管理收藏夹"
+        "count": "数量"
     },
     "foldervideos": {
         "title": "收藏夹",
@@ -56,29 +55,6 @@
         "cancel": "取消",
         "cleared": "已清空",
         "empty": "暂无稍后再看的视频"
-    },
-    "fav": {
-        "selectFolder": "选择收藏夹",
-        "noFolders": "暂无收藏夹",
-        "confirm": "收藏",
-        "cancel": "取消"
-    },
-    "favfolderManage": {
-        "title": "收藏夹管理",
-        "create": "新建收藏夹",
-        "public": "公开",
-        "private": "私密",
-        "empty": "暂无收藏夹，点击上方按钮新建",
-        "titleEmpty": "标题不能为空",
-        "createOk": "创建成功",
-        "createFail": "创建失败",
-        "editOk": "修改成功",
-        "editFail": "修改失败",
-        "deleteOk": "删除成功",
-        "deleteFail": "删除失败",
-        "deleteConfirm": "确定删除收藏夹「{name}」吗？收藏夹内的视频不会被删除。",
-        "confirm": "删除",
-        "cancel": "取消"
     },
     "login": {
         "scanToLogin": "扫码登录",
@@ -171,9 +147,6 @@
         "detail": {
             "title": "动态详情"
         }
-    },
-    "coin": {
-        "remaining": "剩余硬币"
     },
     "user": {
         "title": "用户主页",

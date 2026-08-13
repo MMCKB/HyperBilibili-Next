@@ -4,9 +4,6 @@
     <div class="page">
       <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
         <title-bar title="favfolders.title"></title-bar>
-        <div class="manage-btn" @click="GoManage">
-          <text class="manage-btn-text">{{ $t("favfolders.manage") }}</text>
-        </div>
         <image style="position: absolute; margin-top: 245px" if="{{anims.show_loading}}" src="{{anims.loading_src.value}}">
         </image>
         <list style="width: 77%; height: 100%" class="folderlist">
@@ -44,11 +41,6 @@ export default {
     router.push({
       uri: "pages/folders/favfolders/foldervideos",
       params: {mlid, vidcount}
-    })
-  },
-  GoManage() {
-    router.push({
-      uri: "pages/folders/favfolders/favfolder-manage"
     })
   },
   async LoadFolders() {

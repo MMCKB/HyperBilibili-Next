@@ -98,9 +98,6 @@
             "pages/folders/favfolders/foldervideos": {
                 "component": "foldervideos"
             },
-            "pages/folders/favfolders/favfolder-manage": {
-                "component": "favfolder-manage"
-            },
             "pages/app/entry/prepage": {
                 "component": "prepage"
             },

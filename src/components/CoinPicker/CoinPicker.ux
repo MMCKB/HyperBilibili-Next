@@ -12,7 +12,6 @@
     <image class="mascot" src="/common/vidtool_coin.png"></image>
 
     <text class="tip">选择投币数量</text>
-    <text class="coinbalance" if="{{coinsLoaded}}">{{ $t("coin.remaining") }}：{{ coins }}</text>
 
     <!-- 投币数量选项 -->
     <div class="options">
@@ -33,14 +32,6 @@
 
 <script>
 export default {
-  props: {
-    coins: {
-      default: 0
-    },
-    coinsLoaded: {
-      default: false
-    }
-  },
   Select(multiply) {
     this.$emit("select", { multiply: multiply })
   },
@@ -104,12 +95,6 @@ export default {
   font-weight: 600;
   color: #d0d0d0;
   margin-top: 30px;
-}
-
-.coinbalance {
-  font-size: 18px;
-  color: #f6c453;
-  margin-top: 8px;
 }
 
 .options {

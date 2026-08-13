@@ -35,8 +35,7 @@
     },
     "favfolders": {
         "title": "Favorites",
-        "count": "Count",
-        "manage": "Manage Folders"
+        "count": "Count"
     },
     "foldervideos": {
         "title": "Favorite Folder",
@@ -55,29 +54,6 @@
         "cancel": "Cancel",
         "cleared": "Cleared",
         "empty": "No watch later videos"
-    },
-    "fav": {
-        "selectFolder": "Select Folder",
-        "noFolders": "No folders",
-        "confirm": "Favorite",
-        "cancel": "Cancel"
-    },
-    "favfolderManage": {
-        "title": "Folder Management",
-        "create": "New Folder",
-        "public": "Public",
-        "private": "Private",
-        "empty": "No folders yet. Tap above to create one.",
-        "titleEmpty": "Title cannot be empty",
-        "createOk": "Created",
-        "createFail": "Create failed",
-        "editOk": "Updated",
-        "editFail": "Update failed",
-        "deleteOk": "Deleted",
-        "deleteFail": "Delete failed",
-        "deleteConfirm": "Delete folder \"{name}\"? Videos inside will not be removed.",
-        "confirm": "Delete",
-        "cancel": "Cancel"
     },
     "login": {
         "scanToLogin": "Scan to Login",
@@ -167,9 +143,6 @@
         "detail": {
             "title": "Dynamic Detail"
         }
-    },
-    "coin": {
-        "remaining": "Coins Left"
     },
     "user": {
         "title": "User",
