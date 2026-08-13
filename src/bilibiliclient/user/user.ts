@@ -79,6 +79,15 @@ export const BilibiliClientUserMethods = {
         return response.data.data
     },
 
+    // 修改与用户的关系（关注/取消关注等）
+    // act: 1=关注 2=取消关注 3=悄悄关注 4=取消悄悄关注 5=拉黑 6=取消拉黑
+    async modifyRelation(this: any, uid: String, act: Number): Promise<any> {
+        const url = `https://api.bilibili.com/x/relation/modify`;
+        const body = `fid=${uid}&act=${act}&re_src=11&csrf=${this.biliJct}`;
+        const response = await this.postRequest(url, body, "application/x-www-form-urlencoded");
+        return response.data;
+    },
+
     // 根据UID批量获取用户信息
     async getMultiUserInfoByUID(this: any, uids: Array<String>) {
         const url = "https://api.bilibili.com/x/polymer/pc-electron/v1/user/cards";

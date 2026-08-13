@@ -8,6 +8,11 @@
     <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
       <title-bar title="user.title"></title-bar>
       <user-info account-info="{{user}}" stat="{{stat}}" if="{{loaded}}" @viewfollowings="GoFollowings" @viewfollowers="GoFollowers"></user-info>
+      <div class="followbtn-wrap" if="{{loaded && !isSelf}}">
+        <div class="followbtn {{followed ? 'followbtn-on' : ''}}" @click="ToggleFollow">
+          <text class="followbtn-text">{{ $t(followBtnKey) }}</text>
+        </div>
+      </div>
       <div class="ctxcard" style="margin-top: 25px" if="{{loaded}}" @click="GoUserVideos">
         <div class="ctxdesc">
           <div style="width: 290px;">
@@ -52,6 +57,10 @@ export default {
     navnum: {},
     masterpiece: {},
     dynamiclist: {},
+    followed: false,
+    followBtnKey: "user.follow",
+    isSelf: false,
+    followBusy: false,
     anims: {
       show_loading: false
     },
@@ -69,9 +78,56 @@ export default {
     this.masterpiece = await global.biliclient.getUserMasterPieceByUID(this.uid)
     this.dynamiclist = await global.biliclient.getUserDynamicListByUID(this.uid)
 
+    // 判断是否为自己
+    const myUid = global.biliclient.accountInfo.mid
+    this.isSelf = (this.uid.toString() === myUid.toString())
+
+    // 判断关注状态：relation.attribute 为 2(关注) 或 6(悄悄关注) 表示已关注
+    const attr = this.user && this.user.relation ? this.user.relation.attribute : 0
+    this.followed = (attr === 2 || attr === 6)
+    this.followBtnKey = this.followed ? "user.followed" : "user.follow"
+
     this.anims.loading.stop()
     this.anims.show_loading = false
     this.loaded = true
+  },
+  async ToggleFollow(){
+    if(this.followBusy){
+      return
+    }
+    this.followBusy = true
+    try{
+      const act = this.followed ? 2 : 1
+      const resp = await global.biliclient.modifyRelation(this.uid, act)
+      if(resp && resp.code === 0){
+        this.followed = !this.followed
+        this.followBtnKey = this.followed ? "user.followed" : "user.follow"
+        prompt.showToast({
+          message: this.followed ? this.$t("user.followSuccess") : this.$t("user.unfollowSuccess"),
+          duration: 1500
+        })
+        // 刷新粉丝统计
+        try{
+          this.stat = await global.biliclient.getUserStatByUID(this.uid)
+          const upstat2 = await global.biliclient.getUserUpstatByUID(this.uid)
+          this.stat.likes = upstat2.likes
+        }catch(e){
+          global.logger.error("refresh stat failed:", e.toString())
+        }
+      }else{
+        prompt.showToast({
+          message: this.$t("user.followFailed"),
+          duration: 1500
+        })
+      }
+    }catch(error){
+      global.logger.error("ToggleFollow error:", error.toString())
+      prompt.showToast({
+        message: this.$t("user.followFailed"),
+        duration: 1500
+      })
+    }
+    this.followBusy = false
   },
   GoUserVideos(){
     router.push({

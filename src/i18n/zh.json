@@ -147,6 +147,11 @@
         "following": "关注",
         "follower": "粉丝",
         "likes": "获赞",
+        "follow": "关注",
+        "followed": "已关注",
+        "followSuccess": "关注成功",
+        "unfollowSuccess": "已取消关注",
+        "followFailed": "操作失败",
         "uservideos": {
             "title": "用户投稿"
         }

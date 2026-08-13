@@ -143,6 +143,11 @@
         "following": "Following",
         "follower": "Followers",
         "likes": "Likes",
+        "follow": "Follow",
+        "followed": "Followed",
+        "followSuccess": "Followed successfully",
+        "unfollowSuccess": "Unfollowed",
+        "followFailed": "Operation failed",
         "uservideos": {
             "title": "User contributions"
         }
