@@ -28,6 +28,13 @@
     text-overflow: ellipsis;
 }
 
+.history-list {
+    flex-direction: column;
+    width: 90%;
+    align-items: center;
+    margin-top: 10px;
+}
+
 .history-header {
     flex-direction: row;
     align-items: center;
@@ -47,13 +54,26 @@
     flex-direction: row;
     align-items: center;
     width: 100%;
-    margin-top: 12px;
-    padding-right: 15px;
+    height: 50px;
+    margin-top: 10px;
+    padding-right: 8px;
+}
+
+.history-text {
+    font-size: 22px;
+    font-weight: 500;
+    flex: 1;
+    lines: 1;
+    margin-left: 4px;
+    text-overflow: ellipsis;
 }
 
 .del-btn {
-    font-size: 18px;
+    font-size: 20px;
     color: #9e9e9e;
-    padding: 4px 0px 4px 12px;
-    margin-left: auto;
+    min-width: 44px;
+    height: 44px;
+    text-align: center;
+    margin-left: 8px;
+    padding: 0px 8px;
 }

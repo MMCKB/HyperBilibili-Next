@@ -53,6 +53,32 @@ export const BilibiliClientUserMethods = {
         return response.data.data
     },
 
+    // 获取单个用户的获赞数/播放数/阅读数
+    async getUserUpstatByUID(this: any, uid: String) {
+        const url = `https://api.bilibili.com/x/space/upstat`;
+        const response = await this.getRequestWbi(url, {
+            mid: uid
+        });
+
+        return response.data.data
+    },
+
+    // 获取用户关注列表（分页）
+    async getFollowingsByUID(this: any, uid: String, pn: Number, ps: Number = 20) {
+        const url = `https://api.bilibili.com/x/relation/followings`;
+        const response = await this.getRequest(`${url}?vmid=${uid}&pn=${pn}&ps=${ps}&order=desc`);
+
+        return response.data.data
+    },
+
+    // 获取用户粉丝列表（分页）
+    async getFollowersByUID(this: any, uid: String, pn: Number, ps: Number = 20) {
+        const url = `https://api.bilibili.com/x/relation/followers`;
+        const response = await this.getRequest(`${url}?vmid=${uid}&pn=${pn}&ps=${ps}&order=desc`);
+
+        return response.data.data
+    },
+
     // 根据UID批量获取用户信息
     async getMultiUserInfoByUID(this: any, uids: Array<String>) {
         const url = "https://api.bilibili.com/x/polymer/pc-electron/v1/user/cards";

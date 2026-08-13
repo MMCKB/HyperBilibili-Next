@@ -140,9 +140,18 @@
         "dynamices": "Dynamic",
         "nocontent": "There is no content to show at present.",
         "senddm": "Send DM",
+        "following": "Following",
+        "follower": "Followers",
+        "likes": "Likes",
         "uservideos": {
             "title": "User contributions"
         }
+    },
+    "userlist": {
+        "followingsTitle": "Followings",
+        "followersTitle": "Followers",
+        "noSign": "This user has not written anything",
+        "empty": "No data"
     },
     "sessionood": {
         "title": "Some problems have occurred",

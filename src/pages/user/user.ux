@@ -7,7 +7,7 @@
   <div class="page">
     <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
       <title-bar title="user.title"></title-bar>
-      <user-info account-info="{{user}}" if="{{loaded}}"></user-info>
+      <user-info account-info="{{user}}" stat="{{stat}}" if="{{loaded}}" @viewfollowings="GoFollowings" @viewfollowers="GoFollowers"></user-info>
       <div class="ctxcard" style="margin-top: 25px" if="{{loaded}}" @click="GoUserVideos">
         <div class="ctxdesc">
           <div style="width: 290px;">
@@ -63,6 +63,8 @@ export default {
 
     this.user = await global.biliclient.getUserInfoByUID(this.uid)
     this.stat = await global.biliclient.getUserStatByUID(this.uid)
+    const upstat = await global.biliclient.getUserUpstatByUID(this.uid)
+    this.stat.likes = upstat.likes
     this.navnum = await global.biliclient.getUserNavnumByUID(this.uid)
     this.masterpiece = await global.biliclient.getUserMasterPieceByUID(this.uid)
     this.dynamiclist = await global.biliclient.getUserDynamicListByUID(this.uid)
@@ -95,6 +97,24 @@ export default {
       uri: "pages/user/userdynamic",
       params: {
         uid: this.uid
+      }
+    })
+  },
+  GoFollowings(){
+    router.push({
+      uri: "pages/user/userlist",
+      params: {
+        uid: this.uid,
+        type: "followings"
+      }
+    })
+  },
+  GoFollowers(){
+    router.push({
+      uri: "pages/user/userlist",
+      params: {
+        uid: this.uid,
+        type: "followers"
       }
     })
   },

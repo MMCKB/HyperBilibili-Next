@@ -144,9 +144,18 @@
         "dynamices": "TA的动态",
         "nocontent": "暂无可展示内容",
         "senddm": "发送私信",
+        "following": "关注",
+        "follower": "粉丝",
+        "likes": "获赞",
         "uservideos": {
             "title": "用户投稿"
         }
+    },
+    "userlist": {
+        "followingsTitle": "关注列表",
+        "followersTitle": "粉丝列表",
+        "noSign": "这位用户很懒，什么都没写",
+        "empty": "暂无数据"
     },
     "sessionood": {
         "title": "遇到了一些问题",

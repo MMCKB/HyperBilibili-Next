@@ -12,14 +12,14 @@
       </div>
 
       <!-- 搜索记录 -->
-      <div if="{{history.length > 0}}">
+      <div class="history-list" if="{{history.length > 0}}">
         <div class="history-header" static>
           <text class="hottitle" static>{{ $t("search.history") }}</text>
           <text class="clearall-btn" @click="ClearAllHistory">{{ $t("search.clearAll") }}</text>
         </div>
         <div class="history-item" for="{{history}}" @click="GoSearchHistory($item)">
-          <text class="hotword-text">{{$item}}</text>
-          <text class="del-btn" @click="RemoveHistory($item)">✕</text>
+          <text class="history-text">{{$item}}</text>
+          <text class="del-btn" @click="RemoveHistory($event, $item)">✕</text>
         </div>
       </div>
 
@@ -92,7 +92,10 @@ export default {
       }
     })
   },
-  async RemoveHistory(keyword){
+  async RemoveHistory(evt, keyword){
+    if(evt && evt.stopPropagation){
+      evt.stopPropagation()
+    }
     await SearchHistoryManager.remove(keyword)
     await this.LoadHistory()
   },

@@ -12,18 +12,42 @@
             <image class="tagimg" if="{{is_senior_member}}" style="margin-left: 10px" src="/common/senior_member.png">
             </image>
         </div>
+        <div class="statbar" if="{{showStat}}">
+            <div class="stat-item" @click="ViewFollowings">
+                <text class="stat-num">{{ followingText }}</text>
+                <text class="stat-label">{{ $t("user.following") }}</text>
+            </div>
+            <div class="stat-item" @click="ViewFollowers">
+                <text class="stat-num">{{ followerText }}</text>
+                <text class="stat-label">{{ $t("user.follower") }}</text>
+            </div>
+            <div class="stat-item">
+                <text class="stat-num">{{ likesText }}</text>
+                <text class="stat-label">{{ $t("user.likes") }}</text>
+            </div>
+        </div>
     </div>
 </template>
 
 <script>
 export default {
-  props: ["accountInfo"],
+  props: ["accountInfo", "stat"],
   data: {
     name_text_class: "name",
     is_vip: false,
     is_senior_member: false,
     name: "",
-    level: ""
+    level: "",
+    showStat: false,
+    followingText: "0",
+    followerText: "0",
+    likesText: "0"
+  },
+  ViewFollowings() {
+    this.$emit("viewfollowings")
+  },
+  ViewFollowers() {
+    this.$emit("viewfollowers")
   },
   UpdateShow() {
     try{
@@ -38,6 +62,14 @@ export default {
       this.level = this.accountInfo.level_info?.current_level || this.accountInfo.level
 
       this.name = this.accountInfo.uname || this.accountInfo.name
+
+      const fmt = this.$app.$def.tools.formatNumber
+      if(this.stat && (this.stat.following !== undefined || this.stat.follower !== undefined || this.stat.likes !== undefined)){
+        this.showStat = true
+        this.followingText = fmt(this.stat.following || 0)
+        this.followerText = fmt(this.stat.follower || 0)
+        this.likesText = fmt(this.stat.likes || 0)
+      }
     }
     catch(error){
       global.logger.error("Error when updating show:", error.toString())

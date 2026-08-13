@@ -185,6 +185,9 @@
             "pages/user/uservideos": {
                 "component": "uservideos"
             },
+            "pages/user/userlist": {
+                "component": "userlist"
+            },
             "pages/app/features/settings/cleartmp": {
                 "component": "cleartmp"
             }

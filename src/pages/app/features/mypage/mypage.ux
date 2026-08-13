@@ -5,7 +5,7 @@
   <div class="page">
     <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
       <switch-bar title="mypage.title"></switch-bar>
-      <user-info account-info="{{accountInfo}}"></user-info>
+      <user-info account-info="{{accountInfo}}" stat="{{stat}}" @viewfollowings="GoFollowings" @viewfollowers="GoFollowers"></user-info>
       <div class="btnbase" style="margin-top: 40px" @click="GoMyFavFolders()">
         <image class="btnimg" src="/common/mypage_star.png"></image>
         <text class="btntext">{{ $t("mypage.favourite") }}</text>
@@ -37,6 +37,7 @@ import prompt from "@system.prompt"
 export default {
   private: {
     accountInfo: {},
+    stat: {},
     scrclass: ""
   },
   GoHistory(){
@@ -57,6 +58,34 @@ export default {
       uri: "pages/message/messages"
     })
   },
+  GoFollowings(){
+    router.push({
+      uri: "pages/user/userlist",
+      params: {
+        uid: global.biliclient.accountInfo.mid,
+        type: "followings"
+      }
+    })
+  },
+  GoFollowers(){
+    router.push({
+      uri: "pages/user/userlist",
+      params: {
+        uid: global.biliclient.accountInfo.mid,
+        type: "followers"
+      }
+    })
+  },
+  async LoadMyStat(){
+    try{
+      const myUid = global.biliclient.accountInfo.mid
+      this.stat = await global.biliclient.getUserStatByUID(myUid)
+      const upstat = await global.biliclient.getUserUpstatByUID(myUid)
+      this.stat.likes = upstat.likes
+    }catch(error){
+      global.logger.error("Error loading my stat:", error.toString())
+    }
+  },
   WIPTips() {
     prompt.showToast({
       message: "该功能还在开发中"
@@ -64,6 +93,7 @@ export default {
   },
   onInit() {
     this.accountInfo = global.biliclient.accountInfo
+    this.LoadMyStat()
   }
 }
 </script>

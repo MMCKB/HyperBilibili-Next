@@ -1,0 +1,180 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="online-image" src="@components/BetterOnlineImage/BetterOnlineImage.ux"></import>
+<import
+  name="floating-page-changer"
+  src="@components/FloatingPageChanger/FloatingPageChanger.ux"
+></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll {{scrclass}}" scroll-y="true">
+      <title-bar title="{{titleKey}}"></title-bar>
+      <div class="ulist" if="{{!anims.show_loading}}">
+        <div class="uitem" for="{{users}}" @click="OpenUser($item.mid)">
+          <image src="{{$item.face}}@60w_60h" alt="/common/fullgray.png" class="uavatar"></image>
+          <div class="uinfo">
+            <div class="uname-row">
+              <text class="uname">{{$item.uname}}</text>
+              <image if="{{$item.vip && $item.vip.status}}" src="/common/bilivip/{{$item.vip.label_theme}}.png" class="vipimg"></image>
+            </div>
+            <text class="usign" if="{{$item.sign}}">{{$item.sign}}</text>
+            <text class="usign" if="{{!$item.sign}}">{{ $t("userlist.noSign") }}</text>
+          </div>
+        </div>
+      </div>
+      <text class="bottom-gap" if="{{!anims.show_loading && users.length === 0}}">{{ $t("userlist.empty") }}</text>
+      <text class="bottom-gap" if="{{!anims.show_loading && users.length > 0}}"></text>
+    </scroll>
+    <floating-page-changer style="position: absolute" current_pn="{{current_pn}}" @backpn="BackPN"
+      @nextpn="NextPN"></floating-page-changer>
+    <image style="position: absolute; margin-top: 245px" if="{{anims.show_loading}}" src="{{anims.loading_src.value}}">
+    </image>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+
+export default {
+  public: {
+    uid: 1,
+    type: "followings"
+  },
+  private: {
+    users: [],
+    current_pn: 1,
+    total: 0,
+    ps: 20,
+    titleKey: "userlist.followingsTitle",
+    anims: {
+      show_loading: false
+    },
+    scrclass: ""
+  },
+  computed: {
+    maxpn() {
+      return Math.ceil(this.total / this.ps) || 1
+    }
+  },
+  OpenUser(id) {
+    router.push({
+      uri: "pages/user",
+      params: {
+        uid: id
+      }
+    })
+  },
+  BackPN() {
+    if (this.current_pn > 1) {
+      this.current_pn--
+      this.LoadUsers()
+    }
+  },
+  NextPN() {
+    if (this.current_pn < this.maxpn) {
+      this.current_pn++
+      this.LoadUsers()
+    }
+  },
+  async LoadUsers() {
+    this.anims.show_loading = true
+    this.anims.loading.start()
+
+    this.users = []
+    let data = null
+    if (this.type === "followers") {
+      this.titleKey = "userlist.followersTitle"
+      data = await global.biliclient.getFollowersByUID(this.uid, this.current_pn, this.ps)
+    } else {
+      this.titleKey = "userlist.followingsTitle"
+      data = await global.biliclient.getFollowingsByUID(this.uid, this.current_pn, this.ps)
+    }
+
+    if (data) {
+      this.total = data.total || 0
+      const list = data.list || []
+      this.users = list.map(u => {
+        if (u.face && !(u.face.startsWith("http://") || u.face.startsWith("https://"))) {
+          u.face = "https:" + u.face
+        }
+        return u
+      })
+    }
+
+    this.anims.show_loading = false
+    this.anims.loading.stop()
+  },
+  onInit() {
+    global.animengine.defaults.loading.CreateLoadingAnimation(this)
+    this.LoadUsers()
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+
+.ulist {
+  flex-direction: column;
+  width: 100%;
+  align-items: center;
+}
+
+.uitem {
+  flex-direction: row;
+  width: 337px;
+  height: 80px;
+  border-radius: 20px;
+  background-color: #262626af;
+  margin-top: 10px;
+  align-items: center;
+  padding-left: 12px;
+  padding-right: 12px;
+}
+
+.uavatar {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.uinfo {
+  flex-direction: column;
+  margin-left: 12px;
+  flex: 1;
+  lines: 1;
+}
+
+.uname-row {
+  flex-direction: row;
+  align-items: center;
+}
+
+.uname {
+  font-size: 24px;
+  font-weight: 600;
+  lines: 1;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.vipimg {
+  margin-left: 6px;
+  width: 28px;
+  height: 14px;
+  object-fit: contain;
+}
+
+.usign {
+  font-size: 16px;
+  color: #9e9e9e;
+  margin-top: 4px;
+  lines: 1;
+  text-overflow: ellipsis;
+}
+
+.bottom-gap {
+  margin-top: 30px;
+}
+</style>
