@@ -75,8 +75,18 @@ export default {
       global.logger.error("Error when updating show:", error.toString())
     }
   },
+  onStatChange(newV, oldV) {
+    if(newV && (newV.following !== undefined || newV.follower !== undefined || newV.likes !== undefined)){
+      const fmt = this.$app.$def.tools.formatNumber
+      this.showStat = true
+      this.followingText = fmt(newV.following || 0)
+      this.followerText = fmt(newV.follower || 0)
+      this.likesText = fmt(newV.likes || 0)
+    }
+  },
   onInit() {
     this.UpdateShow()
+    this.$watch("stat", "onStatChange")
   }
 }
 </script>
