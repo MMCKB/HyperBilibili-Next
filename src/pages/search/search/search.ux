@@ -17,9 +17,11 @@
           <text class="hottitle" static>{{ $t("search.history") }}</text>
           <text class="clearall-btn" @click="ClearAllHistory">{{ $t("search.clearAll") }}</text>
         </div>
-        <div class="history-item" for="{{history}}" @click="GoSearchHistory($item)">
-          <text class="history-text">{{$item}}</text>
-          <text class="del-btn" @click="RemoveHistory($event, $item)">✕</text>
+        <div class="history-chips">
+          <div class="history-chip" for="{{history}}">
+            <text class="chip-text" @click="GoSearchHistory($item)">{{$item}}</text>
+            <text class="chip-del" @click="RemoveHistory($item)">✕</text>
+          </div>
         </div>
       </div>
 
@@ -92,10 +94,7 @@ export default {
       }
     })
   },
-  async RemoveHistory(evt, keyword){
-    if(evt && evt.stopPropagation){
-      evt.stopPropagation()
-    }
+  async RemoveHistory(keyword){
     await SearchHistoryManager.remove(keyword)
     await this.LoadHistory()
   },
