@@ -96,7 +96,10 @@
     "search": {
         "title": "搜索",
         "clickToSearch": "点此搜索",
-        "hotSearch": "热搜榜"
+        "hotSearch": "热搜榜",
+        "history": "搜索记录",
+        "clearAll": "清空",
+        "historyCleared": "已清空搜索记录"
     },
     "searchresult": {
         "title": "搜索",

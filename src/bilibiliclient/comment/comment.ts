@@ -31,19 +31,21 @@ export const BilibiliClientCommentMethods = {
     },
 
     // 回复评论（发送二级评论）
-    // 回复一级评论时，root 与 parent 均为被回复评论的 rpid
+    // 回复一级评论（产生二级评论）
     async GiveSecReply(this: any, type: string, oid: string, parent: string, message: string) {
         const url = "https://api.bilibili.com/x/v2/reply/add";
-        const body = `type=${type}&oid=${oid}&parent=${parent}&root=${parent}&message=${encodeURIComponent(message)}&plat=1&csrf=${this.biliJct}`;
+        const body = `type=${type}&oid=${oid}&parent=${parent}&root=${parent}&dialog=0&message=${encodeURIComponent(message)}&plat=1&csrf=${this.biliJct}`;
         const response = await this.postRequest(url, body, "application/x-www-form-urlencoded");
         return response.data;
     },
 
     // 回复二级评论（对话树）
     // dialog 为被回复评论的 dialog 字段，B站要求回复二级评论时必须传入，否则返回 -400
+    // 旧端点 x/v2/reply/reply 返回的 dialog 可能为 undefined 或 0，此时回退到被回复评论自身 rpid（即 parent）作为对话锚点
     async GiveTreeReply(this: any, type: string, oid: string, parent: string, root: string, dialog: string, message: string) {
         const url = "https://api.bilibili.com/x/v2/reply/add";
-        const body = `type=${type}&oid=${oid}&parent=${parent}&root=${root}&dialog=${dialog}&message=${encodeURIComponent(message)}&plat=1&csrf=${this.biliJct}`;
+        const effDialog = dialog || parent;
+        const body = `type=${type}&oid=${oid}&parent=${parent}&root=${root}&dialog=${effDialog}&message=${encodeURIComponent(message)}&plat=1&csrf=${this.biliJct}`;
         const response = await this.postRequest(url, body, "application/x-www-form-urlencoded");
         return response.data;
     },

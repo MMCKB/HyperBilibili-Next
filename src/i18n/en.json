@@ -95,7 +95,10 @@
     "search": {
         "title": "Search",
         "clickToSearch": "Click to Search",
-        "hotSearch": "Trending Searches"
+        "hotSearch": "Trending Searches",
+        "history": "Search History",
+        "clearAll": "Clear All",
+        "historyCleared": "Search history cleared"
     },
     "searchresult": {
         "title": "Search",

@@ -29,9 +29,10 @@
 
         <!-- 纯文本动态 不展示任何内容 -->
         <text if="{{dyn.type == 'DYNAMIC_TYPE_WORD'}}"></text>
-        <!-- 图文动态 直接列表图片渲染 -->
-        <online-image elif="{{dyn.type == 'DYNAMIC_TYPE_DRAW'}}" for="{{dyn.modules.module_dynamic.major.draw.items}}"
-          src="{{$item.src}}@350w" loading-anim="true"></online-image>
+        <!-- 图文动态 直接列表图片渲染，点击可查看大图 -->
+        <div elif="{{dyn.type == 'DYNAMIC_TYPE_DRAW'}}" class="draw-pictures" for="{{dyn.modules.module_dynamic.major.draw.items}}">
+          <online-image class="draw-picture" src="{{$item.src}}@350w" loading-anim="true" @click="OpenPicture($item.src)"></online-image>
+        </div>
         <!-- 视频投稿动态 展示视频跳转 -->
         <videoshow elif="{{dyn.type == 'DYNAMIC_TYPE_AV'}}" bvid="{{dyn.modules.module_dynamic.major.archive.bvid}}">
         </videoshow>
@@ -89,6 +90,14 @@ export default {
     likeCount: 0,
     replyCount: 0,
     replymode: false
+  },
+  OpenPicture(src) {
+    router.push({
+      uri: "pages/tools/picturedetail",
+      params: {
+        img_uri: src
+      }
+    })
   },
   ToggleLike() {
     // 点赞/取消点赞动态

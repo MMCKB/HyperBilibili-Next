@@ -10,6 +10,19 @@
         <image src="/common/searchpage_search.png" style="margin-left: 25px" static></image>
         <text class="searchtip" style="margin-left: 15px" static>{{ $t("search.clickToSearch") }}</text>
       </div>
+
+      <!-- 搜索记录 -->
+      <div if="{{history.length > 0}}">
+        <div class="history-header" static>
+          <text class="hottitle" static>{{ $t("search.history") }}</text>
+          <text class="clearall-btn" @click="ClearAllHistory">{{ $t("search.clearAll") }}</text>
+        </div>
+        <div class="history-item" for="{{history}}" @click="GoSearchHistory($item)">
+          <text class="hotword-text">{{$item}}</text>
+          <text class="del-btn" @click="RemoveHistory($item)">✕</text>
+        </div>
+      </div>
+
       <div style="flex-direction: row; align-items: center; margin-top: 20px" static>
         <image src="/common/searchpage_fire.png" style="object-fit: scale-down" static></image>
         <text class="hottitle" static>{{ $t("search.hotSearch") }}</text>
@@ -27,11 +40,14 @@
 
 <script>
 import router from "@system.router"
+import { SearchHistoryManager } from "../../searchhistory"
+import prompt from "@system.prompt"
 export default {
   private: {
     hotwords: {},
     showHotwordsList: false,
     input_mode: false,
+    history: [],
     anims: {
       show_loading: false
     },
@@ -45,16 +61,19 @@ export default {
   ExitInput() {
     this.input_mode = false
   },
-  GoSearch(evt) {
+  async GoSearch(evt) {
+    const keyword = evt.detail.content
+    await SearchHistoryManager.add(keyword)
     this.hotwords = null
     router.push({
       uri: "pages/search/searchresult",
       params: {
-        keyword: evt.detail.content
+        keyword: keyword
       }
     })
   },
-  GoSearchHotWord(name){
+  async GoSearchHotWord(name){
+    await SearchHistoryManager.add(name)
     this.hotwords = null
     router.push({
       uri: "pages/search/searchresult",
@@ -62,6 +81,31 @@ export default {
         keyword: name
       }
     })
+  },
+  async GoSearchHistory(keyword){
+    await SearchHistoryManager.add(keyword)
+    this.hotwords = null
+    router.push({
+      uri: "pages/search/searchresult",
+      params: {
+        keyword: keyword
+      }
+    })
+  },
+  async RemoveHistory(keyword){
+    await SearchHistoryManager.remove(keyword)
+    await this.LoadHistory()
+  },
+  async ClearAllHistory(){
+    await SearchHistoryManager.clearAll()
+    await this.LoadHistory()
+    prompt.showToast({
+      message: this.$t("search.historyCleared"),
+      duration: 1500
+    })
+  },
+  async LoadHistory(){
+    this.history = await SearchHistoryManager.load()
   },
   OpenInput(){
     this.input_mode = true
@@ -79,8 +123,9 @@ export default {
   onInit() {
     global.animengine.defaults.loading.CreateLoadingAnimation(this)
   },
-  onShow(){
+  async onShow(){
     this.GetHotWords()
+    await this.LoadHistory()
   },
   onDestroy(){
     global.animengine.clearPageAnims("searchPage")
