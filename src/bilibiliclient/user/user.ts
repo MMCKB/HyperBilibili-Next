@@ -96,6 +96,13 @@ export const BilibiliClientUserMethods = {
         return response.data.data;
     },
 
+    // 获取当前登录用户的导航栏信息（包含硬币余额 money）
+    async getNavInfo(this: any): Promise<any> {
+        const url = `https://api.bilibili.com/x/web-interface/nav`;
+        const response = await this.getRequest(url);
+        return response.data.data;
+    },
+
     // 根据UID批量获取用户信息
     async getMultiUserInfoByUID(this: any, uids: Array<String>) {
         const url = "https://api.bilibili.com/x/polymer/pc-electron/v1/user/cards";

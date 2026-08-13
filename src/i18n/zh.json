@@ -148,6 +148,9 @@
             "title": "动态详情"
         }
     },
+    "coin": {
+        "remaining": "剩余硬币"
+    },
     "user": {
         "title": "用户主页",
         "videos": "TA的视频",
