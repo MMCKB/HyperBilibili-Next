@@ -144,6 +144,10 @@
     },
     "dynamic": {
         "title": "动态",
+        "send": "发动态",
+        "empty": "动态内容不能为空",
+        "sendOk": "发布成功",
+        "sendFail": "发布失败：",
         "detail": {
             "title": "动态详情"
         }

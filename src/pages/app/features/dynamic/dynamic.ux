@@ -1,11 +1,15 @@
 <import name="switch-bar" src="@components/SwitchBar/SwitchBar.ux"></import>
 <import name="dyn-show" src="@components/DynShow/DynShow.ux"></import>
+<import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
 
 <template>
   <div class="page">
     <image style="position: absolute; left: 0px" src="{{getBgImg}}" static></image>
     <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="true">
       <switch-bar title="dynamic.title" static></switch-bar>
+      <div class="send-btn" @click="OpenSendDynamic">
+        <text class="send-btn-text">{{ $t("dynamic.send") }}</text>
+      </div>
       <div class="waterfall" if="show_content">
         <div class="waterfall-column">
           <dyn-show for="{{dynamic.render_split_1}}" dyn="{{$item}}"></dyn-show>
@@ -18,14 +22,17 @@
       <text style="margin-top: 25px" static></text>
     </scroll>
     <image style="position: absolute; margin-top: 245px" if="{{anims.show_loading}}" src="{{anims.loading_src.value}}"></image>
+    <full-screen-input style="position: absolute" if="{{sendmode}}" @send="SendDynamic" @exit="ExitSendInput"></full-screen-input>
   </div>
 </template>
 
 <script>
+import prompt from "@system.prompt"
 export default {
   private: {
     scrclass: "",
     show_content: false,
+    sendmode: false,
     anims: {
       show_loading: false
     },
@@ -59,7 +66,7 @@ export default {
 
       var dynamic = await global.biliclient.getDynamicList();
       var split_result = this.SplitWaterfallArea(dynamic.items);
-      
+
       this.dynamic.render_split_1.splice(0, this.dynamic.render_split_1.length, ...split_result.arr1);
       this.dynamic.render_split_2.splice(0, this.dynamic.render_split_2.length, ...split_result.arr2);
 
@@ -68,6 +75,32 @@ export default {
       this.show_content = true;
     } catch (e) {
       global.logger.error(e.toString());
+    }
+  },
+  OpenSendDynamic() {
+    this.sendmode = true
+  },
+  ExitSendInput() {
+    this.sendmode = false
+  },
+  async SendDynamic(evt) {
+    this.sendmode = false
+    var content = evt.detail.content
+    if (!content || content.trim().length === 0) {
+      prompt.showToast({ message: this.$t("dynamic.empty"), duration: 2000 })
+      return
+    }
+    try {
+      var result = await global.biliclient.CreateTextDynamic(content.trim())
+      if (result.code === 0) {
+        prompt.showToast({ message: this.$t("dynamic.sendOk"), duration: 2000 })
+        this.LoadDynamics()
+      } else {
+        prompt.showToast({ message: this.$t("dynamic.sendFail") + (result.message || ""), duration: 3000 })
+      }
+    } catch (e) {
+      global.logger.error("[dynamic] SendDynamic error:", e.toString())
+      prompt.showToast({ message: this.$t("dynamic.sendFail"), duration: 3000 })
     }
   },
   onReady() {

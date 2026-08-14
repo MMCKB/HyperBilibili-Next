@@ -140,6 +140,10 @@
     },
     "dynamic": {
         "title": "Dynamic",
+        "send": "Post",
+        "empty": "Content cannot be empty",
+        "sendOk": "Posted successfully",
+        "sendFail": "Failed to post: ",
         "detail": {
             "title": "Dynamic Detail"
         }

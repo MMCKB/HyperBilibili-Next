@@ -21,5 +21,23 @@ export const BilibiliClientDynamicMethods = {
         });
         const response = await this.postRequest(url, body, "application/json");
         return response.data;
+    },
+
+    // 发布文字动态
+    // text: 动态文字内容
+    // 接口: POST x/dynamic/feed/create/dyn, body为JSON, URL带csrf
+    async CreateTextDynamic(this: any, text: string): Promise<any> {
+        const url = `https://api.bilibili.com/x/dynamic/feed/create/dyn?csrf=${this.biliJct}`;
+        const body = JSON.stringify({
+            dyn_req: {
+                content: {
+                    contents: [{ raw_text: text, type: 1, biz_id: "" }]
+                },
+                scene: 1,
+                up_choose_comment: 0
+            }
+        });
+        const response = await this.postRequest(url, body, "application/json");
+        return response.data;
     }
 }
