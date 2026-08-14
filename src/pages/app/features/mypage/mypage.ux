@@ -26,6 +26,11 @@
         <text class="btntext">{{ $t("mypage.messages") }}</text>
         <image src="/common/arrow_right.png"></image>
       </div>
+      <div class="btnbase" style="margin-top: 10px" @click="GoMyDynamic()">
+        <image class="btnimg" src="/common/mypage_dynamic.jpg"></image>
+        <text class="btntext">{{ $t("mypage.mydynamic") }}</text>
+        <image src="/common/arrow_right.png"></image>
+      </div>
       <text style="margin-top: 25px"></text>
     </scroll>
   </div>
@@ -56,6 +61,11 @@ export default {
   GoMessages(){
     router.push({
       uri: "pages/message/messages"
+    })
+  },
+  GoMyDynamic(){
+    router.push({
+      uri: "pages/user/mydynamic"
     })
   },
   GoWatchLater(){

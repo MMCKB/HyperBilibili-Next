@@ -77,7 +77,8 @@
         "favourite": "我的收藏",
         "history": "历史记录",
         "showLater": "稍后再看",
-        "messages": "我的消息"
+        "messages": "我的消息",
+        "mydynamic": "我的动态"
     },
     "networkerror": {
         "title": "Hmm...你似乎没有联网哦！",

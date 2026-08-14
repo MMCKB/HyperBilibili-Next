@@ -185,6 +185,9 @@
             "pages/user/userdynamic": {
                 "component": "userdynamic"
             },
+            "pages/user/mydynamic": {
+                "component": "mydynamic"
+            },
             "pages/user/uservideos": {
                 "component": "uservideos"
             },

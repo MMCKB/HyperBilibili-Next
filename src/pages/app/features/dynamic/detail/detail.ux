@@ -76,8 +76,8 @@
         </div>
       </div>
 
-      <!-- 管理操作栏：仅在自己的动态上显示 -->
-      <div class="managebar" if="{{isOwner}}">
+      <!-- 管理操作栏：仅在"我的动态"页面进入时显示 -->
+      <div class="managebar" if="{{manageable}}">
         <div class="managebtn pinbtn" @click="PinDynamic">
           <text class="managebtn_text">{{ isPinned ? $t("dynamic.unpin") : $t("dynamic.pin") }}</text>
         </div>
@@ -116,6 +116,7 @@ export default {
   public: {
     dyn: null,
     pubAction: "N/A",
+    manageable: false,
     scrclass: ""
   },
   private: {
@@ -123,7 +124,6 @@ export default {
     likeCount: 0,
     replyCount: 0,
     replymode: false,
-    isOwner: false,
     isPinned: false,
     confirmDelete: false
   },
@@ -271,6 +271,11 @@ export default {
       this.dyn = JSON.parse(this.dyn)
     }
 
+    // manageable 参数可能被序列化为字符串 "true"/"false"
+    if (typeof this.manageable === "string") {
+      this.manageable = this.manageable === "true"
+    }
+
     // 初始化点赞和评论数据
     const stat = this.dyn.modules.module_stat || {}
     const likeStat = stat.like || {}
@@ -278,11 +283,6 @@ export default {
     this.liked = !!likeStat.status
     this.likeCount = likeStat.count || 0
     this.replyCount = commentStat.count || 0
-
-    // 判断是否为本人动态（仅本人可置顶/删除）
-    const authorMid = this.dyn.modules.module_author.mid
-    const myMid = global.biliclient.accountInfo && global.biliclient.accountInfo.mid
-    this.isOwner = !!myMid && String(authorMid) === String(myMid)
 
     // 判断是否已置顶
     this.isPinned = !!(this.dyn.modules.module_author && this.dyn.modules.module_author.pinned)
