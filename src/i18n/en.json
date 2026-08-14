@@ -145,16 +145,6 @@
         "empty": "Content cannot be empty",
         "sendOk": "Posted successfully",
         "sendFail": "Failed to post: ",
-        "pin": "Pin",
-        "unpin": "Unpin",
-        "pinOk": "Pinned successfully",
-        "unpinOk": "Unpinned",
-        "pinFail": "Failed to pin: ",
-        "delete": "Delete",
-        "deleteConfirm": "Are you sure to delete this dynamic? This cannot be undone.",
-        "deleteOk": "Deleted successfully",
-        "deleteFail": "Failed to delete: ",
-        "cancel": "Cancel",
         "detail": {
             "title": "Dynamic Detail"
         }

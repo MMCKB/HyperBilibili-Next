@@ -12,10 +12,10 @@
       </div>
       <div class="waterfall" if="{{show_content && has_content}}">
         <div class="waterfall-column">
-          <dyn-show for="{{dynamic.render_split_1}}" dyn="{{$item}}" manageable="{{true}}"></dyn-show>
+          <dyn-show for="{{dynamic.render_split_1}}" dyn="{{$item}}"></dyn-show>
         </div>
         <div class="waterfall-column">
-          <dyn-show for="{{dynamic.render_split_2}}" dyn="{{$item}}" manageable="{{true}}"></dyn-show>
+          <dyn-show for="{{dynamic.render_split_2}}" dyn="{{$item}}"></dyn-show>
         </div>
       </div>
       <text class="nocontent" if="{{show_content && !has_content}}">{{ $t("user.nocontent") }}</text>

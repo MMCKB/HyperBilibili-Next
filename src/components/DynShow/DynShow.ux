@@ -29,9 +29,6 @@ export default {
     dyn: {
       type: Object,
       default: {}
-    },
-    manageable: {
-      default: false
     }
   },
   data: {
@@ -94,8 +91,7 @@ export default {
       uri: "pages/app/features/dynamic/detail",
       params: {
         dyn: this.dyn,
-        pubAction: this.generatePubAction(),
-        manageable: this.manageable
+        pubAction: this.generatePubAction()
       }
     })
   },
