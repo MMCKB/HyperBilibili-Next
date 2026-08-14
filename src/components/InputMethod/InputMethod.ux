@@ -162,28 +162,31 @@
           <img style="position: absolute;top:204px;left:78px;" src="./assets/full/up.png" @click="onBtnClick('down')" show="{{downFlag==='down'}}" />
         </div>
       </div>
-      <!-- 方屏67 -->
-      <div if="{{screentype==='rect'}}" style="width: 100%;height: 255px;flex-direction: column">
+            <!-- 方屏67 -->
+      <div if="{{screentype==='rect'}}" style="width: 100%;height: 336px;flex-direction: column">
         <!-- 九键布局（方屏） -->
-        <div if="{{keyboardtype=='T9'}}" style="position:absolute;top:-11px;width:100%;height:276px;justify-content: center;">
-          <!-- 九键候选横滚行：整词在前、单字随后 -->
-          <div style="position:absolute;top:42px;left:6px;width:100%;height:36px;padding-right:66px;" show="{{(lang === 'cn' || lang === 'jp') && !numFlag}}">
-            <scroll scroll-x="{{true}}" style="position:absolute;left:0px;width:100%;height:36px;">
-              <div style="height: 36px;padding-left:6px;padding-right:6px">
-                <text for="{{resultRow0}}" show="{{resultRow0.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultRow0[$idx])">{{resultRow0[$idx]}}</text>
-              </div>
-            </scroll>
+        <div if="{{keyboardtype=='T9'}}" style="width:100%;flex-direction: column;flex:1;">
+          <!-- 顶部区域：拼音小字行 + 候选横滚行 + waiting选择器（条件不满足时不渲染，避免空白） -->
+          <div style="width:100%;flex-direction:column;">
+            <!-- 拼音小字行 -->
+            <div if="{{lang==='cn' && downFlag==='' && !numFlag && cval}}" style="width:100%;height:26px;padding-left:6px;">
+              <text class="rect-t9-cvaltext">{{cvalDisplay}}_</text>
+            </div>
+            <!-- 候选横滚行：整词在前、单字随后 -->
+            <div if="{{lang==='cn' && !numFlag && resultRow0.length > 0}}" style="width:100%;height:36px;padding-left:6px;">
+              <scroll scroll-x="{{true}}" style="width:100%;height:36px;">
+                <div style="height: 36px;padding-right:6px">
+                  <text for="{{resultRow0}}" show="{{resultRow0.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultRow0[$idx])">{{resultRow0[$idx]}}</text>
+                </div>
+              </scroll>
+            </div>
+            <!-- 九键waiting选择器：字母模式下显示当前按键的多字母选择 -->
+            <div if="{{downFlag==='' && !numFlag && waitingList.length > 0}}" style="width:100%;height:40px;justify-content:flex-end;align-items:center;padding-right:6px;">
+              <text for="{{waitingList}}" class="waiting-keys" style="color:{{$idx===waitingIndex ? 'rgb(13,132,255)' : 'white'}};margin-left:8px;" @click="onSelectWaiting($idx)">{{waitingList[$idx]}}</text>
+            </div>
           </div>
-          <!-- 拼音小字行：键盘上方单独一行显示 cval -->
-          <div style="position:absolute;top:22px;left:6px;width:100%;height:26px;" show="{{(lang==='cn' || lang==='jp') && downFlag==='' && !numFlag && cval}}">
-            <text class="rect-t9-cvaltext">{{cvalDisplay}}_</text>
-          </div>
-          <!-- 九键waiting选择器：字母模式下显示当前按键的多字母选择 -->
-          <div style="position:absolute;top:82px;left:6px;right:76px;height:30px;justify-content:flex-end" show="{{downFlag==='' && !numFlag}}">
-            <text for="{{waitingList}}" class="waiting-keys" style="color:{{$idx===waitingIndex ? 'rgb(13,132,255)' : 'white'}};" @click="onSelectWaiting($idx)">{{waitingList[$idx]}}</text>
-          </div>
-          <!-- 九键字母模式 -->
-          <div if="{{!numFlag}}" style="top:77px;height:189px;width:100%;align-items: stretch;justify-content: space-between;flex-direction: column;padding:6px 3px">
+          <!-- 九键键盘区域 -->
+          <div if="{{!numFlag}}" style="flex:1;width:100%;align-items: stretch;justify-content: space-between;flex-direction: column;padding:4px 3px">
             <div class="keyboard-rows-rect-t9">
               <text class="calbtnt9 calbtnt9-rect" @click="onSelect('select')">选择</text>
               <text class="calbtnt9 calbtnt9-rect" for="{{item in keys['t9'][0]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
@@ -196,7 +199,7 @@
             </div>
           </div>
           <!-- 九键数字模式 -->
-          <div else style="top:77px;height:189px;width:100%;align-items: stretch;justify-content: space-between;flex-direction: column;padding:6px 3px">
+          <div else style="flex:1;width:100%;align-items: stretch;justify-content: space-between;flex-direction: column;padding:4px 3px">
             <div class="keyboard-rows-rect-t9">
               <text class="calbtnt9 calbtnt9-rect" @click="onSelect('1')">1</text>
               <text class="calbtnt9 calbtnt9-rect" @click="onSelect('2')">2</text>
@@ -220,9 +223,9 @@
           </div>
         </div>
         <!-- 全键盘布局（方屏） -->
-        <div else style="position:absolute;top:-11px;width:100%;height:276px;justify-content: center">
-          <progress percent="{{percent67}}" style="position:absolute;bottom: 12px;width:80px;color:#ffffff;stroke-width:6px;layer-color:#262626;"></progress>
-          <scroll id="keyboard67" scroll-x="{{true}}" onscroll="handelScroll">
+        <div else style="width:100%;flex-direction: column;flex:1;justify-content:center;">
+          <progress percent="{{percent67}}" style="width:80px;color:#ffffff;stroke-width:6px;layer-color:#262626;margin:0 auto;"></progress>
+          <scroll id="keyboard67" scroll-x="{{true}}" onscroll="handelScroll" style="flex:1;width:100%;">
             <div if="{{!numFlag}}" style="left: 6px; flex-direction: column;">
               <div static style="margin-left: 0px;margin-top: 0px;height: 60px;">
                 <text class="calbtn67" for="{{item in keys['full'][0]}}" @click="onSelect(item)">{{item}}</text>
@@ -235,7 +238,7 @@
                 <img static src="./assets/horizontal/space.png" style="width: 60px;height: 60px;" @click="onBtnClick('space')" />
               </div>
             </div>
-            <div if="{{numFlag && !numFlag_jp}}" style="left: 6px; flex-direction: column;">
+            <div if="{{numFlag}}" style="left: 6px; flex-direction: column;">
               <div static style="margin-left: 0px;margin-top: 0px;height: 60px;">
                 <text class="calbtn67" for="{{item in keys['sign'][0]}}" @click="onSelect(item)">{{item}}</text>
               </div>
@@ -246,21 +249,10 @@
                 <text class="calbtn67" for="{{item in keys['sign'][2]}}" @click="onSelect(item)">{{item}}</text>
               </div>
             </div>
-            <div if="{{numFlag_jp}}" style="left: 6px; flex-direction: column;">
-              <div static style="margin-left: 0px;margin-top: 0px;height: 60px;">
-                <text class="calbtn67" for="{{item in keys['sign_jp'][0]}}" @click="onSelect(item)">{{item}}</text>
-              </div>
-              <div static style="margin-left: 32px;margin-top: -5px;height: 60px;">
-                <text class="calbtn67" for="{{item in keys['sign_jp'][1]}}" @click="onSelect(item)">{{item}}</text>
-              </div>
-              <div static style="margin-left: 64px;margin-top: -5px;height: 60px;">
-                <text class="calbtn67" for="{{item in keys['sign_jp'][2]}}" @click="onSelect(item)">{{item}}</text>
-              </div>
-            </div>
           </scroll>
         </div>
         <!-- 九键底部控制栏 -->
-        <div if="{{keyboardtype=='T9'}}" style="width: 100%; flex-direction: row; justify-content: center; top:6px; padding:0 6px;">
+        <div if="{{keyboardtype=='T9'}}" style="width: 100%;height:60px; flex-direction: row; justify-content: center;align-items:center;padding:0 6px;">
           <img src="./assets/t9/cn.png" style="padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('lang')" if="{{downFlag==='' && !numFlag && lang==='cn'}}" />
           <img src="./assets/t9/en.png" style="padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('lang')" if="{{downFlag==='' && !numFlag && lang==='en'}}" />
           <img src="./assets/t9/123.png" style="padding: 6px;margin-left: 6px;width:94px;height:60px;" @click="onBtnClick('switchNum')" if="{{!numFlag}}" />
@@ -270,11 +262,10 @@
           <img src="./assets/t9/space.png" style="padding: 6px;margin-left: 6px;width: 60px;height: 60px;" @click="onBtnClick('space')" if="{{!numFlag}}" />
         </div>
         <!-- 全键盘底部控制栏 -->
-        <div else style="width: 100%; flex-direction: row; justify-content: center; top:6px; padding:0 6px;">
+        <div else style="width: 100%;height:60px; flex-direction: row; justify-content: center;align-items:center;padding:0 6px;">
           <img src="./assets/horizontal/cn.png" style="padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('lang')" if="{{downFlag==='' && !numFlag && lang==='cn'}}" />
-          <img src="./assets/horizontal/jp.png" style="padding:6px;width:60px;height:60px;" @click="onBtnClick('lang')" if="{{downFlag==='' && !numFlag && lang==='jp'}}" />
-          <div if="{{(lang === 'cn' || lang === 'jp') && !numFlag}}" style="margin-left: 6px;flex: 1;height: 60px;background-color:#262626;border-color: #333333; border-width: 3px; border-radius: 100px;flex-direction: row;align-items:center">
-            <!-- 候选横滚行：整词在前、单字随后（拼音已在键盘上方独立小字行显示，这里不放 cval） -->
+          <div if="{{lang==='cn' && !numFlag}}" style="margin-left: 6px;flex: 1;height: 60px;background-color:#262626;border-color: #333333; border-width: 3px; border-radius: 100px;flex-direction: row;align-items:center">
+            <!-- 候选横滚行：整词在前、单字随后 -->
             <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;width: 85%;height: 42px;">
               <div static style="position: absolute;left: 0px;height: 42px;padding-left:20px;padding-right:20px">
                 <text for="{{resultRow0}}" show="{{resultRow0.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultRow0[$idx])">{{resultRow0[$idx]}}</text>
@@ -282,8 +273,6 @@
             </scroll>
             <img if="{{resultRow0.length > 0}}" style="position:absolute;right: 8px; width: 60px;height: 40px;" src="./assets/horizontal/down2.png" @click="onBtnClick('down')" />
           </div>
-          <img src="./assets/horizontal/123.png" style="margin-left:6px;padding:6px;width:60px;height:60px;" @click="onBtnClick('switchNum_jp')" if="{{downFlag==='' && !numFlag && lang==='jp'}}" />
-
           <img src="./assets/horizontal/en.png" style="padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('lang')" if="{{downFlag==='' && !numFlag && lang==='en'}}" />
           <img src="./assets/horizontal/bigA.png" style="padding: 6px;margin-left: 6px;width:94px;height:60px;" @click="onBtnClick('switchLow')" if="{{downFlag==='' && upperFlag && lang==='en'&& !numFlag}}" />
           <img src="./assets/horizontal/a.png" style="padding: 6px;margin-left: 6px;width:94px;height:60px;" @click="onBtnClick('switchUpper')" if="{{downFlag==='' && !upperFlag && lang==='en'&& !numFlag}}" />
@@ -292,8 +281,8 @@
           <img if="{{!numFlag}}" src="./assets/horizontal/del.png" style="margin-left: 6px;padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('D')" />
           <img else src="./assets/horizontal/del2.png" style="margin-left: 6px;padding: 6px;" @click="onBtnClick('D')" />
         </div>
-        <!-- 这里使用show会导致每次输入都会加载全部候选列表，很卡 -->
-        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: 252px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down'}}">
+        <!-- 展开更多候选列表 -->
+        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: 336px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down'}}">
           <div static class="list67">
             <list static style="width:100%;height:100%;">
               <list-item type="waitingRows67" class="item67" for="{{itemArray in resultList2}}">
