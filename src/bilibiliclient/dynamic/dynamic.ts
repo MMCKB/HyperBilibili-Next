@@ -39,5 +39,33 @@ export const BilibiliClientDynamicMethods = {
         });
         const response = await this.postRequest(url, body, "application/json");
         return response.data;
+    },
+
+    // 置顶/取消置顶动态
+    // dyn_id_str: 动态ID
+    // 接口: POST x/dynamic/feed/beam, body为JSON, URL带csrf
+    async PinDynamic(this: any, dyn_id_str: string): Promise<any> {
+        const url = `https://api.bilibili.com/x/dynamic/feed/beam?csrf=${this.biliJct}`;
+        const body = JSON.stringify({
+            dyn_id_str,
+            spmid: "333.1368.0.0",
+            from_spmid: ""
+        });
+        const response = await this.postRequest(url, body, "application/json");
+        return response.data;
+    },
+
+    // 删除动态
+    // dyn_id_str: 动态ID
+    // 接口: POST x/dynamic/feed/create/dyn, body为JSON, URL带csrf
+    async DeleteDynamic(this: any, dyn_id_str: string): Promise<any> {
+        const url = `https://api.bilibili.com/x/dynamic/feed/remove/dyn?csrf=${this.biliJct}`;
+        const body = JSON.stringify({
+            dyn_id_str,
+            spmid: "333.1368.0.0",
+            from_spmid: ""
+        });
+        const response = await this.postRequest(url, body, "application/json");
+        return response.data;
     }
 }

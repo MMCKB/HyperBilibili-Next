@@ -148,6 +148,16 @@
         "empty": "动态内容不能为空",
         "sendOk": "发布成功",
         "sendFail": "发布失败：",
+        "pin": "置顶",
+        "unpin": "取消置顶",
+        "pinOk": "置顶成功",
+        "unpinOk": "已取消置顶",
+        "pinFail": "置顶失败：",
+        "delete": "删除",
+        "deleteConfirm": "确定要删除这条动态吗？此操作不可逆。",
+        "deleteOk": "删除成功",
+        "deleteFail": "删除失败：",
+        "cancel": "取消",
         "detail": {
             "title": "动态详情"
         }

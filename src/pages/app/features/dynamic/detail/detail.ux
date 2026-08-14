@@ -76,10 +76,35 @@
         </div>
       </div>
 
+      <!-- 管理操作栏：仅在自己的动态上显示 -->
+      <div class="managebar" if="{{isOwner}}">
+        <div class="managebtn pinbtn" @click="PinDynamic">
+          <text class="managebtn_text">{{ isPinned ? $t("dynamic.unpin") : $t("dynamic.pin") }}</text>
+        </div>
+        <div class="managebtn delbtn" @click="ConfirmDelete">
+          <text class="managebtn_text">{{ $t("dynamic.delete") }}</text>
+        </div>
+      </div>
+
       <text style="margin-top: 30px"></text>
     </scroll>
     <!-- 全屏输入（发表评论，带表情面板） -->
     <full-screen-input style="position: absolute" if="{{replymode}}" @send="DoSendComment" @exit="ExitInput"></full-screen-input>
+
+    <!-- 删除动态确认弹窗 -->
+    <div class="confirm-overlay" if="{{confirmDelete}}">
+      <div class="confirm-box">
+        <text class="confirm-title">{{ $t("dynamic.deleteConfirm") }}</text>
+        <div class="confirm-actions">
+          <div class="confirm-btn cancelbtn" @click="CancelDelete">
+            <text class="confirm-btn-text">{{ $t("dynamic.cancel") }}</text>
+          </div>
+          <div class="confirm-btn okbtn" @click="DoDeleteDynamic">
+            <text class="confirm-btn-text">{{ $t("dynamic.delete") }}</text>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -97,7 +122,10 @@ export default {
     liked: false,
     likeCount: 0,
     replyCount: 0,
-    replymode: false
+    replymode: false,
+    isOwner: false,
+    isPinned: false,
+    confirmDelete: false
   },
   OpenPicture(src) {
     router.push({
@@ -177,6 +205,48 @@ export default {
   ExitInput() {
     this.replymode = false
   },
+  PinDynamic() {
+    const dynId = this.dyn.id_str
+    global.biliclient.PinDynamic(dynId).then((result) => {
+      if (result.code === 0) {
+        this.isPinned = !this.isPinned
+        prompt.showToast({
+          message: this.isPinned ? this.$t("dynamic.pinOk") : this.$t("dynamic.unpinOk"),
+          duration: 1500
+        })
+      } else {
+        prompt.showToast({
+          message: this.$t("dynamic.pinFail") + (result.message || ""),
+          duration: 3000
+        })
+      }
+    }).catch((e) => {
+      prompt.showToast({ message: this.$t("dynamic.pinFail") + e, duration: 3000 })
+    })
+  },
+  ConfirmDelete() {
+    this.confirmDelete = true
+  },
+  CancelDelete() {
+    this.confirmDelete = false
+  },
+  DoDeleteDynamic() {
+    this.confirmDelete = false
+    const dynId = this.dyn.id_str
+    global.biliclient.DeleteDynamic(dynId).then((result) => {
+      if (result.code === 0) {
+        prompt.showToast({ message: this.$t("dynamic.deleteOk"), duration: 1500 })
+        router.back()
+      } else {
+        prompt.showToast({
+          message: this.$t("dynamic.deleteFail") + (result.message || ""),
+          duration: 3000
+        })
+      }
+    }).catch((e) => {
+      prompt.showToast({ message: this.$t("dynamic.deleteFail") + e, duration: 3000 })
+    })
+  },
   JumpToOrigDetail() {
     router.push({
       uri: "pages/app/features/dynamic/detail",
@@ -208,6 +278,14 @@ export default {
     this.liked = !!likeStat.status
     this.likeCount = likeStat.count || 0
     this.replyCount = commentStat.count || 0
+
+    // 判断是否为本人动态（仅本人可置顶/删除）
+    const authorMid = this.dyn.modules.module_author.mid
+    const myMid = global.biliclient.accountInfo && global.biliclient.accountInfo.mid
+    this.isOwner = !!myMid && String(authorMid) === String(myMid)
+
+    // 判断是否已置顶
+    this.isPinned = !!(this.dyn.modules.module_author && this.dyn.modules.module_author.pinned)
   }
 }
 </script>
@@ -245,5 +323,87 @@ export default {
   font-size: 18px;
   color: #888888;
   margin-left: 8px;
+}
+
+.managebar {
+  flex-direction: row;
+  width: 90%;
+  margin-top: 15px;
+  justify-content: space-around;
+}
+
+.managebtn {
+  border-radius: 30px;
+  padding: 10px 28px;
+  align-items: center;
+  justify-content: center;
+}
+
+.pinbtn {
+  background-color: #1e6fffaf;
+}
+
+.delbtn {
+  background-color: #ff4d4daf;
+}
+
+.managebtn_text {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.confirm-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  justify-content: center;
+  align-items: center;
+}
+
+.confirm-box {
+  width: 300px;
+  background-color: #2a2a2a;
+  border-radius: 20px;
+  padding: 25px 20px;
+  align-items: center;
+}
+
+.confirm-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #ffffff;
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.confirm-actions {
+  flex-direction: row;
+  justify-content: space-around;
+  width: 100%;
+}
+
+.confirm-btn {
+  border-radius: 20px;
+  padding: 10px 25px;
+  align-items: center;
+  justify-content: center;
+}
+
+.cancelbtn {
+  background-color: #4a4a4a;
+}
+
+.okbtn {
+  background-color: #ff4d4d;
+}
+
+.confirm-btn-text {
+  font-size: 20px;
+  font-weight: 600;
+  color: #ffffff;
 }
 </style>
