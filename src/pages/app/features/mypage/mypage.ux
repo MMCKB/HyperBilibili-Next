@@ -27,7 +27,7 @@
         <image src="/common/arrow_right.png"></image>
       </div>
       <div class="btnbase" style="margin-top: 10px" @click="GoMyDynamic()">
-        <image class="btnimg" src="/common/mypage_dynamic.jpg"></image>
+        <image class="btnimg" src="/common/arealist_updates.png"></image>
         <text class="btntext">{{ $t("mypage.mydynamic") }}</text>
         <image src="/common/arrow_right.png"></image>
       </div>

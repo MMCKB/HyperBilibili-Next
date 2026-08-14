@@ -208,7 +208,7 @@ export default {
   PinDynamic() {
     const dynId = this.dyn.id_str
     global.biliclient.PinDynamic(dynId).then((result) => {
-      if (result.code === 0) {
+      if (result && result.code === 0) {
         this.isPinned = !this.isPinned
         prompt.showToast({
           message: this.isPinned ? this.$t("dynamic.pinOk") : this.$t("dynamic.unpinOk"),
@@ -216,7 +216,7 @@ export default {
         })
       } else {
         prompt.showToast({
-          message: this.$t("dynamic.pinFail") + (result.message || ""),
+          message: this.$t("dynamic.pinFail") + (result && result.message ? result.message : ""),
           duration: 3000
         })
       }
@@ -234,12 +234,12 @@ export default {
     this.confirmDelete = false
     const dynId = this.dyn.id_str
     global.biliclient.DeleteDynamic(dynId).then((result) => {
-      if (result.code === 0) {
+      if (result && result.code === 0) {
         prompt.showToast({ message: this.$t("dynamic.deleteOk"), duration: 1500 })
         router.back()
       } else {
         prompt.showToast({
-          message: this.$t("dynamic.deleteFail") + (result.message || ""),
+          message: this.$t("dynamic.deleteFail") + (result && result.message ? result.message : ""),
           duration: 3000
         })
       }

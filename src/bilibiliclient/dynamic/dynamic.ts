@@ -52,12 +52,13 @@ export const BilibiliClientDynamicMethods = {
             from_spmid: ""
         });
         const response = await this.postRequest(url, body, "application/json");
+        if (!response) throw new Error("请求失败，未收到响应");
         return response.data;
     },
 
     // 删除动态
     // dyn_id_str: 动态ID
-    // 接口: POST x/dynamic/feed/create/dyn, body为JSON, URL带csrf
+    // 接口: POST x/dynamic/feed/remove/dyn, body为JSON, URL带csrf
     async DeleteDynamic(this: any, dyn_id_str: string): Promise<any> {
         const url = `https://api.bilibili.com/x/dynamic/feed/remove/dyn?csrf=${this.biliJct}`;
         const body = JSON.stringify({
@@ -66,6 +67,7 @@ export const BilibiliClientDynamicMethods = {
             from_spmid: ""
         });
         const response = await this.postRequest(url, body, "application/json");
+        if (!response) throw new Error("请求失败，未收到响应");
         return response.data;
     }
 }
