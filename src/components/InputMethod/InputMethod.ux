@@ -166,15 +166,26 @@
       <div if="{{screentype==='rect'}}" style="width: 100%;height: 255px;flex-direction: column">
         <!-- 九键布局（方屏） -->
         <div if="{{keyboardtype=='T9'}}" style="position:absolute;top:-11px;width:100%;height:276px;justify-content: center;">
+          <!-- 九键候选横滚行：整词在前、单字随后 -->
+          <div style="position:absolute;top:42px;left:6px;width:100%;height:36px;padding-right:66px;" show="{{(lang === 'cn' || lang === 'jp') && !numFlag}}">
+            <scroll scroll-x="{{true}}" style="position:absolute;left:0px;width:100%;height:36px;">
+              <div style="height: 36px;padding-left:6px;padding-right:6px">
+                <text for="{{resultRow0}}" show="{{resultRow0.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultRow0[$idx])">{{resultRow0[$idx]}}</text>
+              </div>
+            </scroll>
+          </div>
+          <!-- 拼音小字行：键盘上方单独一行显示 cval -->
+          <div style="position:absolute;top:22px;left:6px;width:100%;height:26px;" show="{{(lang==='cn' || lang==='jp') && downFlag==='' && !numFlag && cval}}">
+            <text class="rect-t9-cvaltext">{{cvalDisplay}}_</text>
+          </div>
+          <!-- 九键waiting选择器：字母模式下显示当前按键的多字母选择 -->
+          <div style="position:absolute;top:82px;left:6px;right:76px;height:30px;justify-content:flex-end" show="{{downFlag==='' && !numFlag}}">
+            <text for="{{waitingList}}" class="waiting-keys" style="color:{{$idx===waitingIndex ? 'rgb(13,132,255)' : 'white'}};" @click="onSelectWaiting($idx)">{{waitingList[$idx]}}</text>
+          </div>
           <!-- 九键字母模式 -->
           <div if="{{!numFlag}}" style="top:77px;height:189px;width:100%;align-items: stretch;justify-content: space-between;flex-direction: column;padding:6px 3px">
             <div class="keyboard-rows-rect-t9">
-              <text class="calbtnt9 calbtnt9-rect" @click="onSelect('select')">
-                选择
-                <span if="{{waitingList.length != 0}}" class="waiting-keys" style="color:rgb(13,132,255);" @click="onSelectWaiting(waitingIndex)">
-                  {{waitingList[waitingIndex].toUpperCase()}}
-                </span>
-              </text>
+              <text class="calbtnt9 calbtnt9-rect" @click="onSelect('select')">选择</text>
               <text class="calbtnt9 calbtnt9-rect" for="{{item in keys['t9'][0]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
             </div>
             <div class="keyboard-rows-rect-t9">
@@ -254,6 +265,7 @@
           <img src="./assets/t9/en.png" style="padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('lang')" if="{{downFlag==='' && !numFlag && lang==='en'}}" />
           <img src="./assets/t9/123.png" style="padding: 6px;margin-left: 6px;width:94px;height:60px;" @click="onBtnClick('switchNum')" if="{{!numFlag}}" />
           <img src="./assets/t9/back2.png" style="padding: 6px;margin-left: 6px;width:94px;height:60px;" @click="onBtnClick('switchCn')" if="{{numFlag}}" />
+          <img src="./assets/horizontal/down2.png" style="padding: 6px;margin-left: 6px;width: 60px;height: 40px;" @click="onBtnClick('down')" if="{{resultRow0.length > 0 && !numFlag}}" />
           <img src="./assets/t9/del.png" style="padding: 6px;margin-left: 6px;width: 60px;height: 60px;" @click="onBtnClick('D')" />
           <img src="./assets/t9/space.png" style="padding: 6px;margin-left: 6px;width: 60px;height: 60px;" @click="onBtnClick('space')" if="{{!numFlag}}" />
         </div>
@@ -1039,6 +1051,17 @@ export default {
   height:55px;
   margin:0 3px;
   width:unset;
+}
+
+.rect-t9-cvaltext {
+  color:#0d84ff;
+  font-size:22px;
+  font-weight:bold;
+  lines:1;
+  text-overflow:ellipsis;
+  text-align:left;
+  padding-left:6px;
+  width:100%;
 }
 
 @media (min-width: 230) and (max-width: 235) and (shape: circle) {
