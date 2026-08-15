@@ -87,7 +87,8 @@ export default {
   width: @screenWidth;
   height: @screenHeight;
   background-color: black;
-  justify-content: center;
+  justify-content: flex-end;
+  flex-direction: column;
 }
 
 .inputactions {
