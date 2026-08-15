@@ -590,27 +590,50 @@ export default {
       this.cvalList = tempCvalList;
     }
     // 屏幕类型自动检测：未显式传入 screentype 时按设备 screenShape 判定，
-    // 避免方屏设备因传参错误渲染出胶囊屏/圆屏布局
+    // 支持更多屏幕形状值（兼容不同设备返回格式）
     if (!this.screentype) {
       const detectScreen = () => {
         device.getInfo({
           success: (data) => {
-            const shape = data && data.screenShape;
-            this.screentype = shape === "circle" ? "circle" : shape === "rect" ? "rect" : "circle";
-            // 检测为异步回调，此处需同步执行宽度适配（否则下方同步分支已跑过）
-            if (this.screentype === "rect") {
+            const shape = (data && data.screenShape) || "";
+            const s = shape.toLowerCase();
+            if (s === "circle" || s === "round") {
+              this.screentype = "circle";
+            } else if (s === "rect" || s === "rectangle" || s === "rectangular" || s === "square") {
+              this.screentype = "rect";
+              this.adjustScreenWidth();
+            } else if (s === "pill" || s === "pill-shaped" || s === "capsule" || s === "band") {
+              this.screentype = "pill-shaped";
+              this.adjustScreenWidth();
+            } else {
+              // 默认按方屏处理（兼容未知矩形设备如 REDMI Watch 5）
+              this.screentype = "rect";
               this.adjustScreenWidth();
             }
           },
           fail: () => {
-            this.screentype = "circle";
+            this.screentype = "rect";
+            this.adjustScreenWidth();
           },
         });
       };
       detectScreen();
-    }
-    if (this.screentype === "rect" || this.screentype === "pill-shaped") {
-      this.adjustScreenWidth();
+    } else {
+      // 显式传入 screentype 时，验证并标准化值
+      const s = (this.screentype || "").toLowerCase();
+      if (s === "circle" || s === "round") {
+        this.screentype = "circle";
+      } else if (s === "rect" || s === "rectangle" || s === "rectangular" || s === "square") {
+        this.screentype = "rect";
+        this.adjustScreenWidth();
+      } else if (s === "pill" || s === "pill-shaped" || s === "capsule" || s === "band") {
+        this.screentype = "pill-shaped";
+        this.adjustScreenWidth();
+      } else {
+        // 无法识别时默认方屏（兼容 REDMI Watch 5 等新设备）
+        this.screentype = "rect";
+        this.adjustScreenWidth();
+      }
     }
     // 内部键盘类型初值：取自父组件传入的 keyboardtype（QWERTY/T9/NUM），后续可由选择面板切换
     this.kbType = this.keyboardtype || "QWERTY";
