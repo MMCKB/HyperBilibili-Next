@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - Dev
       - 'next-gen**'
     paths-ignore:
       - '**.md'
@@ -13,8 +14,19 @@ on:
     branches:
       - main
       - master
+      - Dev
   workflow_dispatch:
     inputs:
+      branch:
+        description: 要构建的分支
+        required: true
+        type: choice
+        default: Dev
+        options:
+          - Dev
+          - Next-main
+          - main
+          - master
       target:
         description: 构建目标设备
         required: true
@@ -27,7 +39,7 @@ on:
 
 # 同一时间只允许一次构建，避免重复产物
 concurrency:
-  group: build-${{ github.ref }}-${{ github.event.inputs.target || 'rw5' }}
+  group: build-${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.ref }}-${{ github.event.inputs.target || 'rw5' }}
   cancel-in-progress: true
 
 jobs:
@@ -82,6 +94,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
+          ref: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.branch || github.ref }}
 
       - name: 安装 Node.js
         if: steps.should_run.outputs.should_run == 'true'
