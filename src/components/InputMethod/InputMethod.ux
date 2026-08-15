@@ -1098,7 +1098,8 @@ export default {
 	width:100%;
 	position:absolute;
 	left:0;
-	bottom:0
+	bottom:0;
+	align-items: stretch;
 }
 .item {
 	height:52px;
