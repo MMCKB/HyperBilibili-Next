@@ -308,11 +308,11 @@
             </div>
           </scroll>
         </div>
-        <!-- 顶部切换按钮栏：所有键盘通用 -->
-        <div show="{{!kbSelectFlag}}" style="width:100%;height:56px;flex-direction:row;justify-content:flex-start;align-items:center;padding:0 12px;">
-          <text class="rect-kb-switch-btn" @click="onBtnClick('kbSelect')">切换</text>
-          <!-- 全键盘/九键的候选区 -->
-          <div if="{{(lang==='cn' || lang==='jp') && !numFlag && kbType!='T9' && kbType!='NUM'}}" style="flex:1;height:42px;margin-left:8px;background-color:#262626;border-color:#333333;border-width:3px;border-radius:100px;flex-direction:row;align-items:center;">
+        <!-- 底部单行：[空格] [候选栏/取消] [删除] -->
+        <div show="{{!kbSelectFlag}}" style="width:100%;height:56px;flex-direction:row;align-items:center;padding:0 6px;">
+          <img src="./assets/horizontal/space.png" style="width:48px;height:48px;margin-right:6px;" @click="onBtnClick('space')" />
+          <!-- 全键盘/九键候选区 -->
+          <div if="{{(lang==='cn' || lang==='jp') && !numFlag}}" style="flex:1;height:42px;background-color:#262626;border-color:#333333;border-width:3px;border-radius:100px;flex-direction:row;align-items:center;">
             <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;width:85%;height:42px;">
               <div static style="position:absolute;left:0px;height:42px;padding-left:20px;padding-right:20px;">
                 <text for="{{resultRow0}}" show="{{resultRow0.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultRow0[$idx])">{{resultRow0[$idx]}}</text>
@@ -320,28 +320,18 @@
             </scroll>
             <img if="{{resultRow0.length > 0}}" style="position:absolute;right:8px;width:60px;height:40px;" src="./assets/horizontal/down2.png" @click="onBtnClick('down')" />
           </div>
-          <div if="{{lang==='en' && !numFlag && kbType!='T9' && kbType!='NUM'}}" style="flex:1;height:42px;margin-left:8px;align-items:center;justify-content:center;" @click="onBtnClick('switchNum')">
-            <img src="./assets/horizontal/123.png" style="width:60px;height:60px;" />
+          <!-- 英文模式候选区 -->
+          <div if="{{lang==='en' && !numFlag}}" style="flex:1;height:42px;align-items:center;justify-content:center;" @click="onBtnClick('switchNum')">
+            <img src="./assets/horizontal/123.png" style="width:50px;height:50px;" />
           </div>
-          <!-- 九键的候选区 -->
-          <div if="{{kbType=='T9' && !numFlag}}" style="flex:1;height:42px;margin-left:8px;background-color:#262626;border-color:#333333;border-width:3px;border-radius:100px;flex-direction:row;align-items:center;">
-            <scroll id="cvalWaitingT9" scroll-x="{{true}}" style="position:absolute;width:85%;height:42px;">
-              <div static style="position:absolute;left:0px;height:42px;padding-left:20px;padding-right:20px;">
-                <text for="{{resultRow0}}" show="{{resultRow0.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultRow0[$idx])">{{resultRow0[$idx]}}</text>
-              </div>
-            </scroll>
-            <img if="{{resultRow0.length > 0}}" style="position:absolute;right:8px;width:60px;height:40px;" src="./assets/horizontal/down2.png" @click="onBtnClick('down')" />
-          </div>
-          <!-- 数字键盘的取消按钮 -->
-          <text if="{{kbType=='NUM'}}" class="calbtn-rect-circle" style="width:80px;margin-left:8px;" @click="onBtnClick('switchKbCancel')">取消</text>
+          <!-- 数字键盘取消键 -->
+          <text if="{{kbType=='NUM'}}" class="rect-kb-switch-btn" @click="onBtnClick('switchKbCancel')">取消</text>
+          <!-- 九键切换按钮 -->
+          <text if="{{kbType!='NUM'}}" class="rect-kb-switch-btn" style="margin-left:6px;" @click="onBtnClick('kbSelect')">切换</text>
+          <img src="./assets/horizontal/del.png" style="width:48px;height:48px;margin-left:6px;" @click="onBtnClick('D')" />
         </div>
-        <!-- 底部功能行：空格 + 删除 -->
-        <div show="{{!kbSelectFlag}}" style="width:100%;flex-direction:row;justify-content:center;padding:0 6px;top:6px;">
-          <img src="./assets/horizontal/space.png" style="margin-right:6px;padding:6px;width:60px;height:60px;" @click="onBtnClick('space')" />
-          <img src="./assets/horizontal/del.png" style="margin-left:6px;padding:6px;width:60px;height:60px;" @click="onBtnClick('D')" />
-        </div>
-        <!-- 这里使用show会导致每次输入都会加载全部候选列表，很卡 -->
-        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: 252px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down'}}">
+        <!-- 候选列表展开面板 -->
+        <div style="position:absolute;left:0px;top:0px;width:100%;height:100%;background-color:black;justify-content:center;flex-direction:column;align-items:center;z-index:98;" if="{{downFlag==='down'}}">
           <div static class="list67">
             <list static style="width:100%;height:100%;">
               <list-item type="waitingRows67" class="item67" for="{{itemArray in resultList2}}">
