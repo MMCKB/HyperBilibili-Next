@@ -505,7 +505,9 @@ export default {
       default: "",
     },
     screentype: {
-      default: "circle",
+      // 默认留空：未显式传入时按设备 screenShape 自动判定（圆屏→circle，其余→rect）。
+      // 胶囊屏（pill-shaped）无法自动识别，仍需页面显式传入。
+      default: "",
     },
   },
   data: {
@@ -587,6 +589,26 @@ export default {
         tempCvalList.push(i);
       }
       this.cvalList = tempCvalList;
+    }
+    // 屏幕类型自动检测：未显式传入 screentype 时按设备 screenShape 判定，
+    // 避免方屏设备因传参错误渲染出胶囊屏/圆屏布局
+    if (!this.screentype) {
+      const detectScreen = () => {
+        device.getInfo({
+          success: (data) => {
+            const shape = data && data.screenShape;
+            this.screentype = shape === "circle" ? "circle" : shape === "rect" ? "rect" : "circle";
+            // 检测为异步回调，此处需同步执行宽度适配（否则下方同步分支已跑过）
+            if (this.screentype === "rect") {
+              this.adjustScreenWidth();
+            }
+          },
+          fail: () => {
+            this.screentype = "circle";
+          },
+        });
+      };
+      detectScreen();
     }
     if (this.screentype === "rect" || this.screentype === "pill-shaped") {
       this.adjustScreenWidth();
