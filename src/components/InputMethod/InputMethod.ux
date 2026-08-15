@@ -211,27 +211,26 @@
       </div>
       <!-- 方屏67 -->
       <div if="{{screentype==='rect'}}" style="width: 100%;height: 255px;flex-direction: column">
-        <!-- 键盘选择模式：点击切换按钮弹出，四选一（中文全键盘/英文全键盘/九键/数字键盘） -->
-        <div if="{{kbSelectFlag}}" style="position:absolute;left:0px;top:0px;width:100%;height:300px;background-color:black;flex-direction:column;justify-content:center;align-items:center;">
-          <div class="kbselect-item-m" @click="onBtnClick('kb-cn-full')">
-            <text class="kbselect-text-s">中文（全键盘）</text>
+        <!-- 键盘选择面板：点击切换按钮后弹出，横向滑动选择四种键盘 -->
+        <div if="{{kbSelectFlag}}" style="position:absolute;left:0px;top:0px;width:100%;height:100%;background-color:black;flex-direction:column;justify-content:flex-start;align-items:center;padding-top:20px;">
+          <div class="kb-select-rect-title">
+            <text class="kb-select-rect-text">选择键盘类型</text>
           </div>
-          <div class="kbselect-item-m" @click="onBtnClick('kb-en-full')">
-            <text class="kbselect-text-s">英文（全键盘）</text>
+          <div class="kb-select-rect-scroll-wrap">
+            <scroll scroll-x="{{true}}" style="width:100%;height:90px;">
+              <div class="kb-select-rect-row">
+                <text class="kb-select-rect-circle {{kbType==='QWERTY' && lang==='cn' ? 'kb-select-rect-active' : ''}}" @click="onBtnClick('kb-cn-full')">中</text>
+                <text class="kb-select-rect-circle {{kbType==='QWERTY' && lang==='en' ? 'kb-select-rect-active' : ''}}" @click="onBtnClick('kb-en-full')">英</text>
+                <text class="kb-select-rect-circle {{kbType==='T9' ? 'kb-select-rect-active' : ''}}" @click="onBtnClick('kb-t9')">九</text>
+                <text class="kb-select-rect-circle {{kbType==='NUM' ? 'kb-select-rect-active' : ''}}" @click="onBtnClick('kb-num')">数</text>
+              </div>
+            </scroll>
           </div>
-          <div class="kbselect-item-m" @click="onBtnClick('kb-t9')">
-            <text class="kbselect-text-s">九键</text>
-          </div>
-          <div class="kbselect-item-m" @click="onBtnClick('kb-num')">
-            <text class="kbselect-text-s">数字键盘</text>
-          </div>
-          <div class="kbselect-cancel-m" @click="onBtnClick('kbClose')">
-            <text class="kbselect-cancel-text">返回</text>
-          </div>
+          <text class="kb-select-rect-cancel" @click="onBtnClick('kbClose')">返回</text>
         </div>
         <!-- 九键键盘：圆形按钮样式 -->
-        <div elif="{{kbType=='T9' && !numFlag}}" style="position:absolute;top:-11px;width:100%;height:276px;justify-content: center;">
-          <div style="top:77px;height:189px;width:100%;align-items: stretch;justify-content: center;flex-direction: column;">
+        <div elif="{{kbType=='T9' && !numFlag}}" style="position:absolute;top:56px;width:100%;height:190px;justify-content:center;">
+          <div style="width:100%;height:180px;align-items:stretch;justify-content:center;flex-direction:column;">
             <div class="rect-t9-row">
               <text class="calbtn-rect-circle" @click="onSelect('select')" style="margin-right:6px;">选择</text>
               <text class="calbtn-rect-circle" for="{{item in keys['t9'][0]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
@@ -245,8 +244,8 @@
           </div>
         </div>
         <!-- 数字键盘：独立数字输入布局，圆形按钮样式 -->
-        <div elif="{{kbType=='NUM'}}" style="position:absolute;top:-11px;width:100%;height:276px;justify-content: center;">
-          <div style="top:20px;height:230px;width:100%;align-items: stretch;justify-content: center;flex-direction: column;">
+        <div elif="{{kbType=='NUM'}}" style="position:absolute;top:56px;width:100%;height:190px;justify-content:center;">
+          <div style="width:100%;height:180px;align-items:stretch;justify-content:center;flex-direction:column;">
             <div class="rect-t9-row">
               <text class="calbtn-rect-circle" @click="onSelect('7')">7</text>
               <text class="calbtn-rect-circle" @click="onSelect('8')">8</text>
@@ -269,7 +268,8 @@
             </div>
           </div>
         </div>
-        <div else style="position:absolute;top:-11px;width:100%;height:276px;justify-content: center">
+        <!-- 全键盘（默认） -->
+        <div else style="position:absolute;top:56px;width:100%;height:190px;justify-content:center;">
           <progress percent="{{percent67}}" style="position:absolute;bottom: 12px;width:80px;color:#ffffff;stroke-width:6px;layer-color:#262626;"></progress>
           <scroll id="keyboard67" scroll-x="{{true}}" onscroll="handelScroll">
             <div if="{{!numFlag}}" style="left: 6px; flex-direction: column;">
@@ -308,44 +308,37 @@
             </div>
           </scroll>
         </div>
-        <!-- 键盘类型切换按钮区（四个圆形按钮）：所有键盘通用 -->
-        <div show="{{!kbSelectFlag}}" style="width: 100%; flex-direction: row; justify-content: space-around; top:6px; padding:0 20px;">
-          <text class="rect-kb-switch-btn {{kbType==='QWERTY' && lang==='cn' ? 'rect-kb-switch-active' : ''}}" @click="onBtnClick('switchKbCn')">中</text>
-          <text class="rect-kb-switch-btn {{kbType==='QWERTY' && lang==='en' ? 'rect-kb-switch-active' : ''}}" @click="onBtnClick('switchKbEn')">英</text>
-          <text class="rect-kb-switch-btn {{kbType==='T9' ? 'rect-kb-switch-active' : ''}}" @click="onBtnClick('switchKbT9')">九</text>
-          <text class="rect-kb-switch-btn {{kbType==='NUM' ? 'rect-kb-switch-active' : ''}}" @click="onBtnClick('switchKbNum')">数</text>
-        </div>
-        <!-- 全键盘/九键底部功能行：候选区 + 空格 + 删除 -->
-        <div show="{{!kbSelectFlag && kbType!='NUM'}}" style="width: 100%; flex-direction: row; justify-content: center; top:6px; padding:0 6px;">
-          <div if="{{(lang === 'cn' || lang === 'jp') && !numFlag && kbType!='T9'}}" style="flex: 1;height: 60px;background-color:#262626;border-color: #333333; border-width: 3px; border-radius: 100px;flex-direction: row;align-items:center">
-            <!-- 候选横滚行 -->
-            <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;width: 85%;height: 42px;">
-              <div static style="position: absolute;left: 0px;height: 42px;padding-left:20px;padding-right:20px">
+        <!-- 顶部切换按钮栏：所有键盘通用 -->
+        <div show="{{!kbSelectFlag}}" style="width:100%;height:56px;flex-direction:row;justify-content:flex-start;align-items:center;padding:0 12px;">
+          <text class="rect-kb-switch-btn" @click="onBtnClick('kbSelect')">切换</text>
+          <!-- 全键盘/九键的候选区 -->
+          <div if="{{(lang==='cn' || lang==='jp') && !numFlag && kbType!='T9' && kbType!='NUM'}}" style="flex:1;height:42px;margin-left:8px;background-color:#262626;border-color:#333333;border-width:3px;border-radius:100px;flex-direction:row;align-items:center;">
+            <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;width:85%;height:42px;">
+              <div static style="position:absolute;left:0px;height:42px;padding-left:20px;padding-right:20px;">
                 <text for="{{resultRow0}}" show="{{resultRow0.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultRow0[$idx])">{{resultRow0[$idx]}}</text>
               </div>
             </scroll>
-            <img if="{{resultRow0.length > 0}}" style="position:absolute;right: 8px; width: 60px;height: 40px;" src="./assets/horizontal/down2.png" @click="onBtnClick('down')" />
+            <img if="{{resultRow0.length > 0}}" style="position:absolute;right:8px;width:60px;height:40px;" src="./assets/horizontal/down2.png" @click="onBtnClick('down')" />
           </div>
-          <div if="{{lang === 'en' && !numFlag && kbType!='T9'}}" style="flex: 1;height: 60px;align-items:center;justify-content:center" @click="onBtnClick('switchNum')">
+          <div if="{{lang==='en' && !numFlag && kbType!='T9' && kbType!='NUM'}}" style="flex:1;height:42px;margin-left:8px;align-items:center;justify-content:center;" @click="onBtnClick('switchNum')">
             <img src="./assets/horizontal/123.png" style="width:60px;height:60px;" />
           </div>
-          <!-- 九键的英文模式：候选/上屏行 -->
-          <div if="{{kbType=='T9' && !numFlag}}" style="flex: 1;height: 60px;background-color:#262626;border-color: #333333; border-width: 3px; border-radius: 100px;flex-direction: row;align-items:center">
-            <scroll id="cvalWaitingT9" scroll-x="{{true}}" style="position:absolute;width: 85%;height: 42px;">
-              <div static style="position: absolute;left: 0px;height: 42px;padding-left:20px;padding-right:20px">
+          <!-- 九键的候选区 -->
+          <div if="{{kbType=='T9' && !numFlag}}" style="flex:1;height:42px;margin-left:8px;background-color:#262626;border-color:#333333;border-width:3px;border-radius:100px;flex-direction:row;align-items:center;">
+            <scroll id="cvalWaitingT9" scroll-x="{{true}}" style="position:absolute;width:85%;height:42px;">
+              <div static style="position:absolute;left:0px;height:42px;padding-left:20px;padding-right:20px;">
                 <text for="{{resultRow0}}" show="{{resultRow0.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultRow0[$idx])">{{resultRow0[$idx]}}</text>
               </div>
             </scroll>
-            <img if="{{resultRow0.length > 0}}" style="position:absolute;right: 8px; width: 60px;height: 40px;" src="./assets/horizontal/down2.png" @click="onBtnClick('down')" />
+            <img if="{{resultRow0.length > 0}}" style="position:absolute;right:8px;width:60px;height:40px;" src="./assets/horizontal/down2.png" @click="onBtnClick('down')" />
           </div>
-          <img src="./assets/horizontal/space.png" style="margin-left:6px;padding:6px;width:60px;height:60px;" @click="onBtnClick('space')" />
-          <img src="./assets/horizontal/del.png" style="margin-left: 6px;padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('D')" />
+          <!-- 数字键盘的取消按钮 -->
+          <text if="{{kbType=='NUM'}}" class="calbtn-rect-circle" style="width:80px;margin-left:8px;" @click="onBtnClick('switchKbCancel')">取消</text>
         </div>
-        <!-- 数字键盘底部行 -->
-        <div show="{{!kbSelectFlag && kbType=='NUM'}}" style="width: 100%; flex-direction: row; justify-content: center; top:6px; padding:0 6px;">
-          <text class="calbtn-rect-circle" style="margin-right:6px;width:94px;" @click="onBtnClick('switchKbCancel')">取消</text>
+        <!-- 底部功能行：空格 + 删除 -->
+        <div show="{{!kbSelectFlag}}" style="width:100%;flex-direction:row;justify-content:center;padding:0 6px;top:6px;">
           <img src="./assets/horizontal/space.png" style="margin-right:6px;padding:6px;width:60px;height:60px;" @click="onBtnClick('space')" />
-          <img src="./assets/horizontal/del.png" style="margin-left: 6px;padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('D')" />
+          <img src="./assets/horizontal/del.png" style="margin-left:6px;padding:6px;width:60px;height:60px;" @click="onBtnClick('D')" />
         </div>
         <!-- 这里使用show会导致每次输入都会加载全部候选列表，很卡 -->
         <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: 252px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down'}}">
@@ -1311,6 +1304,59 @@ export default {
 .rect-kb-switch-active {
   background-color:#0d84ff;
   border-color:#0d84ff;
+}
+/* 方屏rect键盘选择面板（横向滑动圆形按钮） */
+.kb-select-rect-title {
+  width:100%;
+  text-align:center;
+  margin-bottom:12px;
+}
+.kb-select-rect-text {
+  color:#fff;
+  font-size:22px;
+  font-weight:bold;
+}
+.kb-select-rect-scroll-wrap {
+  width:100%;
+  height:90px;
+  padding:0 20px;
+}
+.kb-select-rect-row {
+  flex-direction:row;
+  align-items:center;
+  justify-content:center;
+  height:90px;
+}
+.kb-select-rect-circle {
+  color:#fff;
+  font-size:26px;
+  font-weight:bold;
+  background-color:#262626;
+  border-radius:50%;
+  width:64px;
+  height:64px;
+  text-align:center;
+  line-height:64px;
+  border:3px solid rgba(255,255,255,0.06);
+  margin:0 12px;
+  flex-shrink:0;
+}
+.kb-select-rect-active {
+  background-color:#0d84ff;
+  border-color:#0d84ff;
+}
+.kb-select-rect-cancel {
+  color:#fff;
+  font-size:20px;
+  font-weight:bold;
+  background-color:#262626;
+  border-radius:100px;
+  width:120px;
+  height:42px;
+  text-align:center;
+  line-height:42px;
+  border:3px solid rgba(255,255,255,0.06);
+  margin-top:16px;
 }
 
 @media (min-width: 230) and (max-width: 235) and (shape: circle) {
