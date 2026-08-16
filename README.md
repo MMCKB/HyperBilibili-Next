@@ -18,7 +18,7 @@
 
 ## 📖 介绍
 
-- 基于原版 HyperBilibili 二改而来
+- 基于原版 HyperBilibili AI二改而来
 - 增加许多原版没有/缺失的功能（如：发送 Emoji、发送动态、查看消息中心详情、关注列表等功能）
 - 该项目提供了 GitHub Actions 工作流来构建项目
 
