@@ -66,6 +66,7 @@ function buildPhraseIndex(column) {
 
 function buildT9PhraseIndex(phraseIndex) {
     const index = {};
+    const pinyinIndex = {};
     for (let pinyin in phraseIndex) {
         const digits = pinyinToT9(pinyin);
         if (!digits) {
@@ -73,7 +74,9 @@ function buildT9PhraseIndex(phraseIndex) {
         }
         if (!index[digits]) {
             index[digits] = [];
+            pinyinIndex[digits] = [];
         }
+        pinyinIndex[digits].push(pinyin);
         const words = phraseIndex[pinyin];
         for (let i = 0; i < words.length; i++) {
             if (index[digits].indexOf(words[i]) < 0) {
@@ -81,19 +84,40 @@ function buildT9PhraseIndex(phraseIndex) {
             }
         }
     }
-    return index;
+    return {
+        words: index,
+        pinyin: pinyinIndex
+    };
 }
 
-function mergeCandidates(primary, secondary, limit) {
+function createEntries(words, remainderPinyin, remainderDigits) {
+    const entries = [];
+    for (let i = 0; i < words.length; i++) {
+        entries.push({
+            text: words[i],
+            remainderPinyin: remainderPinyin || '',
+            remainderDigits: remainderDigits || ''
+        });
+    }
+    return entries;
+}
+
+function mergeEntries() {
     const result = [];
-    const max = limit || 40;
-    const sources = [primary || [], secondary || []];
-    for (let i = 0; i < sources.length; i++) {
-        const source = sources[i];
-        for (let j = 0; j < source.length; j++) {
-            const candidate = source[j];
-            if (result.indexOf(candidate) < 0) {
-                result.push(candidate);
+    const max = 48;
+    for (let i = 0; i < arguments.length; i++) {
+        const entries = arguments[i] || [];
+        for (let j = 0; j < entries.length; j++) {
+            const entry = entries[j];
+            let duplicate = false;
+            for (let k = 0; k < result.length; k++) {
+                if (result[k].text === entry.text) {
+                    duplicate = true;
+                    break;
+                }
+            }
+            if (!duplicate) {
+                result.push(entry);
                 if (result.length >= max) {
                     return result;
                 }
@@ -101,6 +125,76 @@ function mergeCandidates(primary, secondary, limit) {
         }
     }
     return result;
+}
+
+function entriesToTexts(entries) {
+    const texts = [];
+    for (let i = 0; i < entries.length; i++) {
+        texts.push(entries[i].text);
+    }
+    return texts;
+}
+
+// 根据当前的完整拼音贪婪拆分音节，例如 nihao → [ni, hao]。
+function splitSyllables(pinyin, py2hz) {
+    const memo = {};
+    function splitFrom(start) {
+        if (start >= pinyin.length) {
+            return [];
+        }
+        if (memo[start]) {
+            return memo[start];
+        }
+        const maxLength = Math.min(6, pinyin.length - start);
+        for (let length = maxLength; length >= 1; length--) {
+            const syllable = pinyin.substr(start, length);
+            if (!py2hz[syllable]) {
+                continue;
+            }
+            const rest = splitFrom(start + length);
+            if (rest || start + length === pinyin.length) {
+                const result = [syllable];
+                if (rest) {
+                    for (let i = 0; i < rest.length; i++) {
+                        result.push(rest[i]);
+                    }
+                }
+                memo[start] = result;
+                return result;
+            }
+        }
+        memo[start] = null;
+        return null;
+    }
+    return splitFrom(0) || [];
+}
+
+// 词组候选之后追加每个音节的单字候选；选中前一音节时保留后续输入。
+function buildSyllableEntries(pinyin, activeDict) {
+    const syllables = splitSyllables(pinyin, activeDict.py2hz);
+    if (syllables.length < 2) {
+        return [];
+    }
+    const entries = [];
+    for (let i = 0; i < syllables.length; i++) {
+        const syllable = syllables[i];
+        const remainingPinyin = syllables.slice(i + 1).join('');
+        const remainingDigits = pinyinToT9(remainingPinyin);
+        const hanzi = activeDict.py2hz[syllable] || '';
+        for (let j = 0; j < hanzi.length && j < 16; j++) {
+            entries.push({
+                text: hanzi[j],
+                remainderPinyin: remainingPinyin,
+                remainderDigits: remainingDigits
+            });
+        }
+    }
+    return entries;
+}
+
+function buildSingleEntries(pinyin, activeDict) {
+    const hanzi = activeDict.py2hz[pinyin] || '';
+    return createEntries(hanzi.split(''));
 }
 
 SimpleInputMethod.initDict = function() {
@@ -120,47 +214,64 @@ SimpleInputMethod.getSingleHanzi = function(pinyin, traditional) {
     return activeDict.py2hz2[pinyin] || activeDict.py2hz[pinyin] || '';
 }
 
-// 全拼查询：先精确匹配高频多音节词组，再保留原有单音节回退行为。
-SimpleInputMethod.getHanzi = function(pinyin, traditional = false) {
+// 全拼候选：完整词组排在前；展开时继续给出 ni、hao 等音节的单字候选。
+SimpleInputMethod.getHanziCandidates = function(pinyin, traditional = false) {
     const normalizedPinyin = normalizePinyin(pinyin);
     const activeDict = traditional ? this.traditionalDict : this.dict;
-    const phraseCandidates = activeDict.phrase[normalizedPinyin];
-    if (phraseCandidates && phraseCandidates.length) {
-        return [phraseCandidates.slice(), normalizedPinyin];
+    const phraseEntriesForPinyin = createEntries(activeDict.phrase[normalizedPinyin] || []);
+    const syllableEntries = buildSyllableEntries(normalizedPinyin, activeDict);
+    const exactSingleEntries = buildSingleEntries(normalizedPinyin, activeDict);
+    const candidates = mergeEntries(phraseEntriesForPinyin, syllableEntries, exactSingleEntries);
+    if (candidates.length) {
+        return [candidates, normalizedPinyin];
     }
 
-    let result = this.getSingleHanzi(normalizedPinyin, traditional);
-    if (result) return [result.split(''), normalizedPinyin];
-
+    // 保留原有未完成拼音的回退行为。
     let start = Math.min(normalizedPinyin.length, 6);
     for (let i = start; i >= 1; i--) {
         let str = normalizedPinyin.substr(0, i);
         let rs = this.getSingleHanzi(str, traditional);
-        if (rs) return [rs.split(''), str];
+        if (rs) return [createEntries(rs.split('')), str];
     }
-
-    return [[], '']; // 理论上一般不会出现这种情况
+    return [[], ''];
 };
 
-// 方屏中文 T9：同一数字串优先给出完整词组，其次保留单音节汉字候选。
-SimpleInputMethod.getT9Hanzi = function(digits, traditional = false) {
+// 对外保留旧接口，供现有代码或外部调用继续取得纯文本候选数组。
+SimpleInputMethod.getHanzi = function(pinyin, traditional = false) {
+    const result = this.getHanziCandidates(pinyin, traditional);
+    return [entriesToTexts(result[0]), result[1]];
+};
+
+// 方屏中文 T9：完整词组排在前，再追加逐音节的单字候选与原有单音节回退。
+SimpleInputMethod.getT9Candidates = function(digits, traditional = false) {
     if (!digits) {
         return [[], []];
     }
     const activeDict = traditional ? this.traditionalDict : this.dict;
-    const phraseCandidates = activeDict.t9Phrase[digits] || [];
-    const words = [];
+    const phraseWords = activeDict.t9Phrase.words[digits] || [];
+    const phrasePinyin = activeDict.t9Phrase.pinyin[digits] || [];
+    let syllableEntries = [];
+    for (let i = 0; i < phrasePinyin.length; i++) {
+        syllableEntries = syllableEntries.concat(buildSyllableEntries(phrasePinyin[i], activeDict));
+    }
+
+    const singleEntries = [];
     const matchedPinyin = [];
     for (let pinyin in activeDict.py2hz) {
         if (pinyinToT9(pinyin) === digits) {
             matchedPinyin.push(pinyin);
             const hanzi = activeDict.py2hz[pinyin];
             for (let i = 0; i < hanzi.length; i++) {
-                words.push(hanzi[i]);
+                singleEntries.push({ text: hanzi[i], remainderPinyin: '', remainderDigits: '' });
             }
         }
     }
-    return [mergeCandidates(phraseCandidates, words), matchedPinyin];
+    return [mergeEntries(createEntries(phraseWords), syllableEntries, singleEntries), matchedPinyin];
+};
+
+SimpleInputMethod.getT9Hanzi = function(digits, traditional = false) {
+    const result = this.getT9Candidates(digits, traditional);
+    return [entriesToTexts(result[0]), result[1]];
 };
 
 SimpleInputMethod.initDict();

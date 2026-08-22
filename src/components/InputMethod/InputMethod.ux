@@ -19,7 +19,7 @@
           </div>
           <div style="position: absolute;top:38px;left:80px;width:277px" show="{{lang === 'cn'&& !numFlag}}">
             <div class="item column center" for="{{cvalList}}">
-              <input show='{{resultList.length > $idx}}' class="calbtn0" type="button" value="{{resultList[$idx]}}" @click="onRsSelect(resultList[$idx])" />
+              <input show='{{resultList.length > $idx}}' class="calbtn0" type="button" value="{{resultList[$idx]}}" @click="onRsSelect(resultList[$idx], $idx)" />
             </div>
           </div>
           <div style="position: absolute;top:38px;left:80px;width:320px;height:52px;align-content: center;align-items: center;justify-content: center" show="{{downFlag==='' && !numFlag && lang==='en'}}" @click="onBtnClick('switchNum')" >
@@ -87,7 +87,7 @@
           </div>
           <div style="position: absolute;top:39px;left:105px;width:233px" show="{{lang === 'cn'&& !numFlag}}">
             <div class="item column center" for="{{cvalList}}">
-              <input show='{{resultList.length > $idx}}' class="calbtn0" type="button" value="{{resultList[$idx]}}" @click="onRsSelect(resultList[$idx])" />
+              <input show='{{resultList.length > $idx}}' class="calbtn0" type="button" value="{{resultList[$idx]}}" @click="onRsSelect(resultList[$idx], $idx)" />
             </div>
           </div>
           <div style="position: absolute;top:35px;left:95px;width:290px;height:60px;align-content: center;align-items: center;justify-content: center" show="{{downFlag==='' && !numFlag && lang==='en'}}" @click="onBtnClick('switchNum')" >
@@ -190,7 +190,7 @@
             <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;width: 85%;height: 42px;">
               <div static style="position: absolute;left: 0px;height: 42px;padding-left:20px;padding-right:20px">
                 <text class="calbtn02" style="padding-right:10px" @click="pushCval">{{rectKeyboardtype==='T9' ? t9Digits : cval}}</text>
-                <text for="{{cvalList}}" show="{{resultList.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultList[$idx])">{{resultList[$idx]}}</text>
+                <text for="{{cvalList}}" show="{{resultList.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultList[$idx], $idx)">{{resultList[$idx]}}</text>
               </div>
             </scroll>
             <img if="{{resultList.length > 0}}" style="position:absolute;right: 8px; width: 60px;height: 40px;" src="./assets/horizontal/down2.png" @click="onBtnClick('down')" />
@@ -286,7 +286,7 @@
           <scroll id="cvalWaiting" scroll-x="{{true}}" style="position: absolute;left: 15px;top: 56px;width: 144px;height: 42px;">
             <div style="position: absolute;left: 0px;top: 0px;height: 42px;padding-right:20px">
               <text class="calbtn02" style="padding-right:10px" @click="pushCval">{{cval}}</text>
-              <text for="{{cvalList}}" show="{{resultList.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultList[$idx])">{{resultList[$idx]}}</text>
+              <text for="{{cvalList}}" show="{{resultList.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultList[$idx], $idx)">{{resultList[$idx]}}</text>
             </div>
           </scroll>
           <img show="{{resultList.length > 0}}" style="position: absolute;left: 120px;top: 57px;width: 60px;height: 40px;" src="./assets/arc/down2.png" @click="onBtnClick('down')" />
@@ -321,17 +321,17 @@ import vibrator from "@system.vibrator";
 import device from '@system.device'
 import { SimpleInputMethod } from "./assets/dicUtil.js";
 function doSearchDic(word, traditional, cb) {
-  let hanzi = SimpleInputMethod.getHanzi(word, traditional);
-  if (hanzi && hanzi[0]) {
-    cb(hanzi[0]);
+  let candidates = SimpleInputMethod.getHanziCandidates(word, traditional);
+  if (candidates && candidates[0]) {
+    cb(candidates[0]);
   } else {
     cb([]);
   }
 }
 function doSearchT9Dic(digits, traditional, cb) {
-  let hanzi = SimpleInputMethod.getT9Hanzi(digits, traditional);
-  if (hanzi && hanzi[0]) {
-    cb(hanzi[0]);
+  let candidates = SimpleInputMethod.getT9Candidates(digits, traditional);
+  if (candidates && candidates[0]) {
+    cb(candidates[0]);
   } else {
     cb([]);
   }
@@ -379,6 +379,8 @@ export default {
     // 仅方屏中文 T9 使用；保存按键数字序列，例如 ABC→DEF→GHI 为“234”。
     t9Digits: "",
     resultList: [],
+    // 与 resultList 一一对应；音节单字候选保存后续拼音/数字串，支持逐音节确认。
+    resultMeta: [],
     resultList2: [],
     waitingList: [],
     waitingIndex: -1,
@@ -517,10 +519,25 @@ export default {
       traditional: this.rectTraditionalInput,
     });
   },
-  onRsSelect(txt) {
+  onRsSelect(txt, candidateIndex) {
     this.onVibrate();
-    this.cval = "";
-    this.clearT9Input();
+    let meta = null;
+    if (candidateIndex !== undefined && this.resultMeta[candidateIndex]) {
+      meta = this.resultMeta[candidateIndex];
+    } else {
+      for (let i = 0; i < this.resultMeta.length; i++) {
+        if (this.resultMeta[i].text === txt) {
+          meta = this.resultMeta[i];
+          break;
+        }
+      }
+    }
+    this.cval = meta && meta.remainderPinyin ? meta.remainderPinyin : "";
+    if (this.isRectChineseT9()) {
+      this.t9Digits = meta && meta.remainderDigits ? meta.remainderDigits : "";
+    } else {
+      this.clearT9Input();
+    }
     this.addAllTxt(txt);
     this.clearWaiting();
     this.resetReslutList();
@@ -665,6 +682,7 @@ export default {
     if (this.isRectChineseT9()) {
       if (!this.t9Digits) {
         this.resultList = [];
+        this.resultMeta = [];
         this.setResultListAll();
         return;
       }
@@ -677,10 +695,19 @@ export default {
     }
     if (!(this.cval + watingStr) || this.lang != "cn") {
       this.resultList = [];
+      this.resultMeta = [];
       this.setResultListAll();
       return;
     }
     this.getResultByWord(this.cval + watingStr);
+  },
+  setResultCandidates(candidates) {
+    this.resultMeta = candidates || [];
+    this.resultList = [];
+    for (let i = 0; i < this.resultMeta.length; i++) {
+      this.resultList.push(this.resultMeta[i].text);
+    }
+    this.setResultListAll();
   },
   setResultListAll() {
     this.resultList2 = [];
@@ -699,17 +726,15 @@ export default {
   getResultByWord(val) {
     const that = this;
     const traditional = this.screentype === "rect" && this.rectTraditionalInput;
-    doSearchDic(val, traditional, function (data) {
-      that.resultList = data;
-      that.setResultListAll();
+    doSearchDic(val, traditional, function (candidates) {
+      that.setResultCandidates(candidates);
     });
   },
   getResultByT9(digits) {
     const that = this;
     const traditional = this.rectTraditionalInput;
-    doSearchT9Dic(digits, traditional, function (data) {
-      that.resultList = data;
-      that.setResultListAll();
+    doSearchT9Dic(digits, traditional, function (candidates) {
+      that.setResultCandidates(candidates);
     });
   },
   onSelect(num) {
