@@ -59,6 +59,9 @@
         },
         {
             "name": "system.sensor"
+        },
+        {
+            "name": "system.battery"
         }
     ],
     "permissions": [

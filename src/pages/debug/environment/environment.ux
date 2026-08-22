@@ -10,7 +10,7 @@
         <div class="section-card">
           <text class="section-title">{{ $t("environment.overview") }}</text>
           <text class="section-description">{{ $t("environment.description") }}</text>
-          <text class="status-text">{{ environmentStatus }}</text>
+          <text class="status-text" if="{{ environmentStatus }}">{{ environmentStatus }}</text>
           <default-button primary="true" margin-top="20px" text="environment.refresh" @click="RefreshEnvironment"></default-button>
         </div>
 
@@ -38,6 +38,12 @@
           <div class="info-row"><text class="info-label">{{ $t("environment.apiLevel") }}</text><text class="info-value">{{ environment.apiLevel }}</text></div>
           <div class="info-row"><text class="info-label">{{ $t("environment.languageRegion") }}</text><text class="info-value">{{ environment.languageRegion }}</text></div>
           <div class="info-row"><text class="info-label">{{ $t("environment.mediaVolume") }}</text><text class="info-value">{{ environment.mediaVolume }}</text></div>
+        </div>
+
+        <div class="section-card">
+          <text class="group-title">{{ $t("environment.battery") }}</text>
+          <div class="info-row"><text class="info-label">{{ $t("environment.batteryLevel") }}</text><text class="info-value">{{ environment.batteryLevel }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.chargingStatus") }}</text><text class="info-value">{{ environment.chargingStatus }}</text></div>
         </div>
 
         <div class="section-card">
@@ -69,7 +75,7 @@
           <div class="info-row"><text class="info-label">{{ $t("environment.altitude") }}</text><text class="info-value">{{ environment.altitude }}</text></div>
           <div class="info-row"><text class="info-label">{{ $t("environment.speed") }}</text><text class="info-value">{{ environment.speed }}</text></div>
           <div class="info-row"><text class="info-label">{{ $t("environment.locationAccuracy") }}</text><text class="info-value">{{ environment.locationAccuracy }}</text></div>
-          <default-button margin-top="20px" text="environment.detectLocation" @click="DetectLocation"></default-button>
+          <default-button primary="true" margin-top="20px" text="environment.detectLocation" @click="DetectLocation"></default-button>
         </div>
 
         <div class="section-card">
@@ -78,8 +84,8 @@
           <div class="info-row"><text class="info-label">{{ $t("environment.accelerometer") }}</text><text class="info-value">{{ environment.accelerometer }}</text></div>
           <div class="info-row"><text class="info-label">{{ $t("environment.compass") }}</text><text class="info-value">{{ environment.compass }}</text></div>
           <div class="info-row"><text class="info-label">{{ $t("environment.compassAccuracy") }}</text><text class="info-value">{{ environment.compassAccuracy }}</text></div>
-          <default-button margin-top="20px" text="environment.startSensors" @click="StartSensorCheck"></default-button>
-          <default-button margin-top="15px" text="environment.stopSensors" @click="StopSensorCheck"></default-button>
+          <default-button primary="true" margin-top="20px" text="environment.startSensors" @click="StartSensorCheck" if="{{ !sensorActive }}"></default-button>
+          <default-button margin-top="20px" text="environment.stopSensors" @click="StopSensorCheck" if="{{ sensorActive }}"></default-button>
         </div>
 
         <text class="bottom-spacing"></text>
@@ -95,6 +101,8 @@ import brightness from "@system.brightness"
 import volume from "@system.volume"
 import geolocation from "@system.geolocation"
 import sensor from "@system.sensor"
+import battery from "@system.battery"
+import prompt from "@system.prompt"
 
 export default {
   private: {
@@ -102,6 +110,7 @@ export default {
     locationStatus: "",
     sensorStatus: "",
     sensorActive: false,
+    sensorFailureNotified: false,
     refreshGeneration: 0,
     environment: {
       clientVersion: "",
@@ -121,6 +130,8 @@ export default {
       brightnessMode: "",
       networkType: "",
       mediaVolume: "",
+      batteryLevel: "",
+      chargingStatus: "",
       totalStorage: "",
       usedStorage: "",
       availableStorage: "",
@@ -190,10 +201,16 @@ export default {
     if (!isFinite(numberValue)) return this.$t("environment.notAvailable")
     return `${(numberValue * 100).toFixed(0)}%`
   },
-  ApplyEnvironment(deviceInfo, networkType, storageInfo, displayInfo, mediaVolume) {
+  FormatCharging(value) {
+    if (value === true) return this.$t("environment.charging")
+    if (value === false) return this.$t("environment.notCharging")
+    return this.$t("environment.notAvailable")
+  },
+  ApplyEnvironment(deviceInfo, networkType, storageInfo, displayInfo, mediaVolume, batteryInfo) {
     const info = deviceInfo || {}
     const storage = storageInfo || {}
     const display = displayInfo || {}
+    const batteryStatus = batteryInfo || {}
     const client = global.biliclient || {}
     const apiLevel = info.APILevel === undefined ? info.apiLevel : info.APILevel
     const totalStorage = Number(storage.totalStorage)
@@ -223,6 +240,8 @@ export default {
     this.environment.brightness = display.brightness === undefined ? this.$t("environment.notAvailable") : `${display.brightness} / 255`
     this.environment.brightnessMode = this.FormatBrightnessMode(display.brightnessMode)
     this.environment.mediaVolume = this.FormatPercent(mediaVolume)
+    this.environment.batteryLevel = this.FormatPercent(batteryStatus.level)
+    this.environment.chargingStatus = this.FormatCharging(batteryStatus.charging)
   },
   RefreshEnvironment() {
     const generation = this.refreshGeneration + 1
@@ -231,51 +250,72 @@ export default {
     let networkType = global.DEVICE_NETWORK_TYPE || ""
     const storageInfo = { totalStorage: null, availableStorage: null }
     const displayInfo = { brightness: undefined, brightnessMode: undefined }
+    const batteryInfo = { level: undefined, charging: undefined }
     let mediaVolume = undefined
-    let pending = 7
+    let pending = 8
     let failed = false
 
-    this.environmentStatus = this.$t("environment.refreshing")
-    this.ApplyEnvironment(deviceInfo, networkType, storageInfo, displayInfo, mediaVolume)
+    this.environmentStatus = ""
+    this.ApplyEnvironment(deviceInfo, networkType, storageInfo, displayInfo, mediaVolume, batteryInfo)
 
     const complete = (requestFailed) => {
       if (generation !== this.refreshGeneration) return
       failed = failed || requestFailed
       pending -= 1
-      if (pending === 0) {
-        this.ApplyEnvironment(deviceInfo, networkType, storageInfo, displayInfo, mediaVolume)
-        this.environmentStatus = failed ? this.$t("environment.partialLoad") : this.$t("environment.refreshed")
+      this.ApplyEnvironment(deviceInfo, networkType, storageInfo, displayInfo, mediaVolume, batteryInfo)
+      if (pending === 0 && failed) {
+        this.environmentStatus = this.$t("environment.partialLoad")
       }
     }
 
-    device.getInfo({
-      success: (data) => { deviceInfo = data || {}; global.DEVICE_INFO = deviceInfo; complete(false) },
-      fail: (data, code) => { global.logger.warn("[environment] device info unavailable, code =", code); complete(true) }
-    })
-    network.getType({
-      success: (data) => { networkType = data && data.type ? data.type : ""; global.DEVICE_NETWORK_TYPE = networkType; complete(false) },
-      fail: (data, code) => { global.logger.warn("[environment] network unavailable, code =", code); complete(true) }
-    })
-    device.getTotalStorage({
-      success: (data) => { storageInfo.totalStorage = data && data.totalStorage; complete(false) },
-      fail: (data, code) => { global.logger.warn("[environment] total storage unavailable, code =", code); complete(true) }
-    })
-    device.getAvailableStorage({
-      success: (data) => { storageInfo.availableStorage = data && data.availableStorage; complete(false) },
-      fail: (data, code) => { global.logger.warn("[environment] available storage unavailable, code =", code); complete(true) }
-    })
-    brightness.getValue({
-      success: (data) => { displayInfo.brightness = data && data.value; complete(false) },
-      fail: (data, code) => { global.logger.warn("[environment] brightness unavailable, code =", code); complete(true) }
-    })
-    brightness.getMode({
-      success: (data) => { displayInfo.brightnessMode = data && data.mode; complete(false) },
-      fail: (data, code) => { global.logger.warn("[environment] brightness mode unavailable, code =", code); complete(true) }
-    })
-    volume.getMediaValue({
-      success: (data) => { mediaVolume = data && data.value; complete(false) },
-      fail: (data, code) => { global.logger.warn("[environment] media volume unavailable, code =", code); complete(true) }
-    })
+    const request = (start, onSuccess, label) => {
+      let settled = false
+      const settle = (requestFailed, data, code) => {
+        if (settled || generation !== this.refreshGeneration) return
+        settled = true
+        clearTimeout(timeoutId)
+        if (requestFailed) {
+          global.logger.warn(`[environment] ${label} unavailable, code =`, code)
+        } else {
+          onSuccess(data || {})
+        }
+        complete(requestFailed)
+      }
+      const timeoutId = setTimeout(() => settle(true, null, "timeout"), 3500)
+      try {
+        start((data) => settle(false, data), (data, code) => settle(true, data, code))
+      } catch (error) {
+        settle(true, null, error && error.message ? error.message : "exception")
+      }
+    }
+
+    request((success, fail) => device.getInfo({ success, fail }), (data) => {
+      deviceInfo = data
+      global.DEVICE_INFO = deviceInfo
+    }, "device info")
+    request((success, fail) => network.getType({ success, fail }), (data) => {
+      networkType = data && data.type ? data.type : ""
+      global.DEVICE_NETWORK_TYPE = networkType
+    }, "network")
+    request((success, fail) => device.getTotalStorage({ success, fail }), (data) => {
+      storageInfo.totalStorage = data.totalStorage
+    }, "total storage")
+    request((success, fail) => device.getAvailableStorage({ success, fail }), (data) => {
+      storageInfo.availableStorage = data.availableStorage
+    }, "available storage")
+    request((success, fail) => brightness.getValue({ success, fail }), (data) => {
+      displayInfo.brightness = data.value
+    }, "brightness")
+    request((success, fail) => brightness.getMode({ success, fail }), (data) => {
+      displayInfo.brightnessMode = data.mode
+    }, "brightness mode")
+    request((success, fail) => volume.getMediaValue({ success, fail }), (data) => {
+      mediaVolume = data.value
+    }, "media volume")
+    request((success, fail) => battery.getStatus({ success, fail }), (data) => {
+      batteryInfo.level = data.level
+      batteryInfo.charging = data.charging
+    }, "battery")
   },
   DetectLocation() {
     this.locationStatus = this.$t("environment.detectingLocation")
@@ -307,39 +347,62 @@ export default {
     const numberValue = Number(value)
     return isFinite(numberValue) ? `${numberValue.toFixed(1)} m/s` : this.$t("environment.notAvailable")
   },
+  HandleSensorFailure(sensorName, code) {
+    if (!this.sensorActive) return
+    this.sensorStatus = `${this.$t("environment.sensorPartial")} (${this.FormatValue(code)})`
+    global.logger.warn(`[environment] ${sensorName} unavailable, code =`, code)
+    if (!this.sensorFailureNotified) {
+      this.sensorFailureNotified = true
+      prompt.showToast({
+        message: this.$t("environment.sensorUnavailableToast"),
+        duration: 3500
+      })
+    }
+  },
   StartSensorCheck() {
     this.StopSensorCheck(false)
     this.sensorActive = true
+    this.sensorFailureNotified = false
     this.sensorStatus = this.$t("environment.sensing")
 
-    sensor.subscribeAccelerometer({
-      interval: "normal",
-      callback: (data) => {
-        if (!this.sensorActive) return
-        const result = data || {}
-        this.environment.accelerometer = `x ${this.FormatSensorValue(result.x)} · y ${this.FormatSensorValue(result.y)} · z ${this.FormatSensorValue(result.z)}`
-      },
-      fail: (data, code) => {
-        this.environment.accelerometer = this.$t("environment.notAvailable")
-        this.sensorStatus = `${this.$t("environment.sensorPartial")} (${this.FormatValue(code)})`
-        global.logger.warn("[environment] accelerometer unavailable, code =", code)
-      }
-    })
-    sensor.subscribeCompass({
-      callback: (data) => {
-        if (!this.sensorActive) return
-        const result = data || {}
-        const direction = Number(result.direction)
-        this.environment.compass = isFinite(direction) ? `${Math.round(direction * 180 / Math.PI)}°` : this.$t("environment.notAvailable")
-        this.environment.compassAccuracy = this.FormatValue(result.accuracy)
-      },
-      fail: (data, code) => {
-        this.environment.compass = this.$t("environment.notAvailable")
-        this.environment.compassAccuracy = this.$t("environment.notAvailable")
-        this.sensorStatus = `${this.$t("environment.sensorPartial")} (${this.FormatValue(code)})`
-        global.logger.warn("[environment] compass unavailable, code =", code)
-      }
-    })
+    try {
+      sensor.subscribeAccelerometer({
+        interval: "normal",
+        callback: (data) => {
+          if (!this.sensorActive) return
+          const result = data || {}
+          this.environment.accelerometer = `x ${this.FormatSensorValue(result.x)} · y ${this.FormatSensorValue(result.y)} · z ${this.FormatSensorValue(result.z)}`
+        },
+        fail: (data, code) => {
+          this.environment.accelerometer = this.$t("environment.notAvailable")
+          this.HandleSensorFailure("accelerometer", code)
+        }
+      })
+    } catch (error) {
+      this.environment.accelerometer = this.$t("environment.notAvailable")
+      this.HandleSensorFailure("accelerometer", error && error.message ? error.message : "exception")
+    }
+
+    try {
+      sensor.subscribeCompass({
+        callback: (data) => {
+          if (!this.sensorActive) return
+          const result = data || {}
+          const direction = Number(result.direction)
+          this.environment.compass = isFinite(direction) ? `${Math.round(direction * 180 / Math.PI)}°` : this.$t("environment.notAvailable")
+          this.environment.compassAccuracy = this.FormatValue(result.accuracy)
+        },
+        fail: (data, code) => {
+          this.environment.compass = this.$t("environment.notAvailable")
+          this.environment.compassAccuracy = this.$t("environment.notAvailable")
+          this.HandleSensorFailure("compass", code)
+        }
+      })
+    } catch (error) {
+      this.environment.compass = this.$t("environment.notAvailable")
+      this.environment.compassAccuracy = this.$t("environment.notAvailable")
+      this.HandleSensorFailure("compass", error && error.message ? error.message : "exception")
+    }
   },
   FormatSensorValue(value) {
     const numberValue = Number(value)
