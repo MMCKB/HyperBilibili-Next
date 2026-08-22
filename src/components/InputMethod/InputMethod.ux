@@ -142,12 +142,8 @@
         <div if="{{rectKeyboardtype=='T9' && !numFlag}}" style="position:absolute;top:-11px;width:100%;height:276px;justify-content: center;">
           <div style="top:77px;height:189px;width:100%;align-items: stretch;justify-content: space-between;flex-direction: column;padding:6px 3px">
             <div class="keyboard-rows-rect-t9">
-              <text class="calbtnt9 calbtnt9-rect" @click="onSelect('select')">
-                选择
-                <span if="{{waitingList.length != 0}}" class="waiting-keys" style="color:rgb(13,132,255);" @click="onSelectWaiting(waitingIndex)">
-                  {{waitingList[waitingIndex].toUpperCase()}}
-                </span>
-              </text>
+              <!-- 手机式九键左上角空格键；中文候选仍通过顶部候选栏直接点按确认。 -->
+              <text class="calbtnt9 calbtnt9-rect" @click="onBtnClick('space')">空格</text>
               <text class="calbtnt9 calbtnt9-rect" for="{{item in keys['t9'][0]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
             </div>
             <div class="keyboard-rows-rect-t9">
@@ -188,6 +184,8 @@
         </div>
         <div style="width: 100%; flex-direction: row; justify-content: center; top:6px; padding:0 6px;">
           <text class="rect-switch-trigger" @click="openRectPanel('switch')" if="{{downFlag==='' && !numFlag}}">切换</text>
+          <!-- 简繁快捷切换：仅中文全键和中文九键显示，文字同时标识当前候选字形。 -->
+          <text class="rect-traditional-trigger" if="{{lang==='cn' && !numFlag}}" style="background-color:{{rectTraditionalInput ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="toggleRectTraditionalInput">{{rectTraditionalInput ? '繁' : '简'}}</text>
           <div if="{{lang === 'cn' && !numFlag}}" style="margin-left: 6px;flex: 1;height: 60px;background-color:#262626;border-color: #333333; border-width: 3px; border-radius: 100px;flex-direction: row;align-items:center">
             <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;width: 85%;height: 42px;">
               <div static style="position: absolute;left: 0px;height: 42px;padding-left:20px;padding-right:20px">
@@ -356,9 +354,6 @@ export default {
     traditional: {
       default: false,
     },
-    inputlang: {
-      default: "cn",
-    },
   },
   data: {
     cval: "",
@@ -428,22 +423,11 @@ export default {
     this.rectVibrateMode = this.vibratemode;
     this.rectCandidateCount = parseInt(this.maxlength) || 5;
     this.rectTraditionalInput = this.traditional === true || this.traditional === "true";
-    this.lang = this.rectKeyboardtype === "T9" ? "cn" : (this.inputlang === "en" ? "en" : "cn");
     this.$watch("hide", "watchHidePropsChange");
     this.$watch("maxlength", "watchMaxLengthPropsChange");
     this.$watch("keyboardtype", "watchKeyboardtypePropsChange");
     this.$watch("vibratemode", "watchVibratemodePropsChange");
     this.$watch("traditional", "watchTraditionalPropsChange");
-    this.$watch("inputlang", "watchInputlangPropsChange");
-  },
-  getRectSettings() {
-    return {
-      keyboardtype: this.rectKeyboardtype,
-      lang: this.lang,
-      vibratemode: this.rectVibrateMode,
-      maxlength: this.rectCandidateCount,
-      traditional: this.rectTraditionalInput,
-    };
   },
   addAllTxt(txt) {
     this.$emit("complete", { content: txt });
@@ -475,7 +459,7 @@ export default {
       this.lang = "cn";
       this.rectKeyboardtype = "T9";
     }
-    this.resetReslutList(true);
+    this.resetReslutList();
     this.emitRectSettingsChange();
   },
   setRectVibrateMode(mode) {
@@ -489,18 +473,27 @@ export default {
     for (let i = 0; i < count; i++) {
       this.cvalList.push(i);
     }
-    this.resetReslutList(true);
+    this.resetReslutList();
     this.onVibrate();
     this.emitRectSettingsChange();
   },
   setRectTraditionalInput(enabled) {
     this.rectTraditionalInput = enabled === true;
-    this.resetReslutList(true);
+    this.resetReslutList();
     this.onVibrate();
     this.emitRectSettingsChange();
   },
+  toggleRectTraditionalInput() {
+    this.setRectTraditionalInput(!this.rectTraditionalInput);
+  },
   emitRectSettingsChange() {
-    this.$emit("settingsChange", this.getRectSettings());
+    this.$emit("settingsChange", {
+      keyboardtype: this.rectKeyboardtype,
+      lang: this.lang,
+      vibratemode: this.rectVibrateMode,
+      maxlength: this.rectCandidateCount,
+      traditional: this.rectTraditionalInput,
+    });
   },
   onRsSelect(txt) {
     this.onVibrate();
@@ -618,17 +611,13 @@ export default {
     this.waitingIndex = -1;
     this.lastWaitingStr = "";
   },
-  resetReslutList(skipCandidateScroll = false) {
-    // 设置面板内刷新候选时不操作候选滚动节点，避免手表端同步布局切换造成卡死。
-    if (!skipCandidateScroll && this.screentype != "circle") {
-      const candidateScroll = this.$element("cvalWaiting");
-      if (candidateScroll && candidateScroll.scrollTo) {
-        candidateScroll.scrollTo({
-          top: 0,
-          left: 0,
-          behavior: "smooth",
-        });
-      }
+  resetReslutList() {
+    if (this.screentype != "circle") {
+      this.$element("cvalWaiting").scrollTo({
+        top: 0,
+        left: 0,
+        behavior: "smooth",
+      });
     }
     let watingStr = "";
     if (this.lastWaitingStr && this.lastWaitingStr[this.waitingIndex]) {
@@ -643,16 +632,15 @@ export default {
   },
   setResultListAll() {
     this.resultList2 = [];
-    const candidateCount = this.screentype === "rect" ? this.rectCandidateCount : parseInt(this.maxlength);
     let array = [];
     for (let i = 0; i < this.resultList.length; i++) {
       array.push(this.resultList[i]);
-      if (array.length === candidateCount) {
+      if (array.length === parseInt(this.maxlength)) {
         this.resultList2.push(array);
         array = [];
       }
     }
-    if (array.length > 0 && array.length < candidateCount) {
+    if (array.length > 0 && array.length < parseInt(this.maxlength)) {
       this.resultList2.push(array);
     }
   },
@@ -717,10 +705,6 @@ export default {
   watchKeyboardtypePropsChange(newV, oldV) {
     if (this.screentype === "rect") {
       this.rectKeyboardtype = newV === "T9" ? "T9" : "QWERTY";
-      if (this.rectKeyboardtype === "T9") {
-        this.lang = "cn";
-      }
-      this.resetReslutList(true);
     }
   },
   watchVibratemodePropsChange(newV, oldV) {
@@ -731,13 +715,7 @@ export default {
   watchTraditionalPropsChange(newV, oldV) {
     if (this.screentype === "rect") {
       this.rectTraditionalInput = newV === true || newV === "true";
-      this.resetReslutList(true);
-    }
-  },
-  watchInputlangPropsChange(newV, oldV) {
-    if (this.screentype === "rect" && this.rectKeyboardtype !== "T9") {
-      this.lang = newV === "en" ? "en" : "cn";
-      this.resetReslutList(true);
+      this.resetReslutList();
     }
   },
   onVibrate() {
@@ -859,7 +837,19 @@ export default {
   text-align:center;
   border:3px solid rgba(255,255,255,0.12);
 }
-.rect-overlay {
+  .rect-traditional-trigger {
+    color:rgb(255,255,255);
+    font-size:22px;
+    font-weight:bold;
+    width:54px;
+    height:60px;
+    margin-left:6px;
+    border-radius:30px;
+    text-align:center;
+    border:3px solid rgba(255,255,255,0.12);
+  }
+  .rect-overlay {
+
   position:absolute;
   left:0px;
   top:0px;
