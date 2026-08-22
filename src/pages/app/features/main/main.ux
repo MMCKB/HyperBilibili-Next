@@ -13,7 +13,7 @@
         src="{{anims.loading_src.value}}">
       </image>
       <div class="recommend_div" if="{{show_recommend_div}}">
-        <videoshow for="{{recommend_vids}}" video="{{$item}}" tid="vids" entrance-index="{{$idx}}"></videoshow>
+        <videoshow for="{{recommend_vids}}" video="{{$item}}" tid="vids"></videoshow>
         <text style="margin-top: 25px" static></text>
       </div>
     </scroll>

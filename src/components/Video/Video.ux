@@ -1,7 +1,7 @@
 <import name="online-image" src="@components/BetterOnlineImage/BetterOnlineImage.ux"></import>
 
 <template>
-  <div class="vid {{entrance_class}}" style="{{entrance_style}}">
+  <div class="vid">
     <div class="loadedbox" @click="OpenVideo(video.bvid)" if="{{loadComp}}">
       <div style="{{vidinfo_style}}" class="vidinfo">
         <div class="vidpicture">
@@ -29,11 +29,9 @@
 import router from "@system.router"
 
 export default {
-  props: ["video", "bvid", "entranceIndex"],
+  props: ["video", "bvid"],
   data: {
     useColumnTitle: false,
-    entrance_class: "",
-    entrance_style: {},
     vidpicture_style: {
       width: "160px",
       height: "100px"
@@ -102,13 +100,6 @@ export default {
     this.doStyleAdjustTask()
   },
   onInit() {
-    const rawIndex = Number(this.entranceIndex)
-    const entranceIndex = Number.isFinite(rawIndex) ? Math.max(0, Math.min(rawIndex, 7)) : 0
-
-    this.entrance_style = {
-      "animation-delay": `${entranceIndex * 45}ms`
-    }
-    this.entrance_class = "vid-enter"
     this.asyncInit()
   }
 }
@@ -121,30 +112,10 @@ export default {
   margin-top: 10px;
   padding: 15px 15px;
   border-radius: 25px;
-  opacity: 0;
-  transform: translateY(14px);
   background-color: #262626af;
   justify-content: center;
   align-items: center;
   flex-direction: column;
-}
-
-.vid-enter {
-  animation-name: vid-card-enter;
-  animation-duration: 220ms;
-  animation-timing-function: ease-out;
-  animation-fill-mode: forwards;
-}
-
-@keyframes vid-card-enter {
-  0% {
-    opacity: 0;
-    transform: translateY(14px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0px);
-  }
 }
 
 .loadedbox {
