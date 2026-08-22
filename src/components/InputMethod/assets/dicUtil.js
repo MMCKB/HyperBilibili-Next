@@ -1,6 +1,6 @@
 import { dict } from './dic.js'
 import { dictTraditional } from './dicTraditional.js'
-import { phraseEntries } from './dicPhrase.js'
+import { getPhraseShard } from './dicPhraseShards.js'
 
 let SimpleInputMethod = {
     dict: {},
@@ -47,47 +47,97 @@ function normalizePinyin(pinyin) {
     return (pinyin || '').toLowerCase().replace(/'/g, '');
 }
 
-// 高频多音节词组索引。列 1 为简体、列 2 为繁体；数组顺序保持候选优先级。
-function buildPhraseIndex(column) {
-    const index = {};
-    for (let i = 0; i < phraseEntries.length; i++) {
-        const entry = phraseEntries[i];
-        const pinyin = entry[0];
-        const word = entry[column];
-        if (!index[pinyin]) {
-            index[pinyin] = [];
-        }
-        if (index[pinyin].indexOf(word) < 0) {
-            index[pinyin].push(word);
-        }
-    }
-    return index;
+// 多拼词组按首字母保存在惰性函数中。只缓存最近查询的少数分片，
+// 避免键盘唤起时同时创建全部简繁和九键索引。
+const T9_INITIALS = {
+    '2': ['a', 'b', 'c'],
+    '3': ['d', 'e', 'f'],
+    '4': ['g', 'h', 'i'],
+    '5': ['j', 'k', 'l'],
+    '6': ['m', 'n', 'o'],
+    '7': ['p', 'q', 'r', 's'],
+    '8': ['t', 'u', 'v'],
+    '9': ['w', 'x', 'y', 'z']
+};
+const PHRASE_CACHE_LIMIT = 4;
+
+function createPhraseCache() {
+    return { shards: {}, order: [] };
 }
 
-function buildT9PhraseIndex(phraseIndex) {
-    const index = {};
-    const pinyinIndex = {};
-    for (let pinyin in phraseIndex) {
-        const digits = pinyinToT9(pinyin);
-        if (!digits) {
-            continue;
-        }
-        if (!index[digits]) {
-            index[digits] = [];
-            pinyinIndex[digits] = [];
-        }
-        pinyinIndex[digits].push(pinyin);
-        const words = phraseIndex[pinyin];
-        for (let i = 0; i < words.length; i++) {
-            if (index[digits].indexOf(words[i]) < 0) {
-                index[digits].push(words[i]);
+function touchPhraseShard(cache, initial) {
+    const position = cache.order.indexOf(initial);
+    if (position >= 0) {
+        cache.order.splice(position, 1);
+    }
+    cache.order.push(initial);
+    while (cache.order.length > PHRASE_CACHE_LIMIT) {
+        const expired = cache.order.shift();
+        delete cache.shards[expired];
+    }
+}
+
+function getCachedPhraseShard(activeDict, initial) {
+    if (!initial) {
+        return [];
+    }
+    const cache = activeDict.phraseCache;
+    if (cache.shards[initial]) {
+        touchPhraseShard(cache, initial);
+        return cache.shards[initial];
+    }
+    const rawShard = getPhraseShard(initial);
+    const shard = [];
+    for (let i = 0; i < rawShard.length; i++) {
+        const raw = rawShard[i];
+        shard.push({
+            pinyin: raw[0],
+            simplified: raw[1],
+            traditional: raw[2],
+            digits: pinyinToT9(raw[0])
+        });
+    }
+    cache.shards[initial] = shard;
+    touchPhraseShard(cache, initial);
+    return shard;
+}
+
+function getPhraseWords(pinyin, activeDict, traditional) {
+    const shard = getCachedPhraseShard(activeDict, pinyin[0]);
+    const words = [];
+    for (let i = 0; i < shard.length; i++) {
+        const entry = shard[i];
+        if (entry.pinyin === pinyin) {
+            const word = traditional ? entry.traditional : entry.simplified;
+            if (words.indexOf(word) < 0) {
+                words.push(word);
             }
         }
     }
-    return {
-        words: index,
-        pinyin: pinyinIndex
-    };
+    return words;
+}
+
+function getT9PhraseMatches(digits, activeDict, traditional) {
+    const initials = T9_INITIALS[digits[0]] || [];
+    const words = [];
+    const pinyin = [];
+    for (let i = 0; i < initials.length; i++) {
+        const shard = getCachedPhraseShard(activeDict, initials[i]);
+        for (let j = 0; j < shard.length; j++) {
+            const entry = shard[j];
+            if (entry.digits !== digits) {
+                continue;
+            }
+            const word = traditional ? entry.traditional : entry.simplified;
+            if (words.indexOf(word) < 0) {
+                words.push(word);
+            }
+            if (pinyin.indexOf(entry.pinyin) < 0) {
+                pinyin.push(entry.pinyin);
+            }
+        }
+    }
+    return { words: words, pinyin: pinyin };
 }
 
 function createEntries(words, remainderPinyin, remainderDigits) {
@@ -292,14 +342,12 @@ SimpleInputMethod.initDict = function() {
     this.dict.py2hz = dict;
     this.dict.py2hz2 = buildInitialIndex(dict);
     this.dict.t9Syllables = buildT9SyllableIndex(dict);
-    this.dict.phrase = buildPhraseIndex(1);
-    this.dict.t9Phrase = buildT9PhraseIndex(this.dict.phrase);
+    this.dict.phraseCache = createPhraseCache();
 
     this.traditionalDict.py2hz = dictTraditional;
     this.traditionalDict.py2hz2 = buildInitialIndex(dictTraditional);
     this.traditionalDict.t9Syllables = buildT9SyllableIndex(dictTraditional);
-    this.traditionalDict.phrase = buildPhraseIndex(2);
-    this.traditionalDict.t9Phrase = buildT9PhraseIndex(this.traditionalDict.phrase);
+    this.traditionalDict.phraseCache = createPhraseCache();
 };
 
 SimpleInputMethod.getSingleHanzi = function(pinyin, traditional) {
@@ -311,7 +359,7 @@ SimpleInputMethod.getSingleHanzi = function(pinyin, traditional) {
 SimpleInputMethod.getHanziCandidates = function(pinyin, traditional = false) {
     const normalizedPinyin = normalizePinyin(pinyin);
     const activeDict = traditional ? this.traditionalDict : this.dict;
-    const phraseEntriesForPinyin = createEntries(activeDict.phrase[normalizedPinyin] || []);
+    const phraseEntriesForPinyin = createEntries(getPhraseWords(normalizedPinyin, activeDict, traditional));
     const syllableEntries = buildSyllableEntries(normalizedPinyin, activeDict);
     const exactSingleEntries = buildSingleEntries(normalizedPinyin, activeDict);
     const candidates = mergeEntries(phraseEntriesForPinyin, syllableEntries, exactSingleEntries);
@@ -341,8 +389,9 @@ SimpleInputMethod.getT9Candidates = function(digits, traditional = false) {
         return [[], []];
     }
     const activeDict = traditional ? this.traditionalDict : this.dict;
-    const phraseWords = activeDict.t9Phrase.words[digits] || [];
-    const phrasePinyin = activeDict.t9Phrase.pinyin[digits] || [];
+    const phraseMatches = getT9PhraseMatches(digits, activeDict, traditional);
+    const phraseWords = phraseMatches.words;
+    const phrasePinyin = phraseMatches.pinyin;
     let phraseSyllableEntries = [];
     for (let i = 0; i < phrasePinyin.length; i++) {
         phraseSyllableEntries = phraseSyllableEntries.concat(buildSyllableEntries(phrasePinyin[i], activeDict));
