@@ -1,5 +1,6 @@
 import { dict } from './dic.js'
 import { dictTraditional } from './dicTraditional.js'
+import { phraseEntries } from './dicPhrase.js'
 
 let SimpleInputMethod = {
     dict: {},
@@ -42,11 +43,76 @@ function pinyinToT9(pinyin) {
     return result;
 }
 
+function normalizePinyin(pinyin) {
+    return (pinyin || '').toLowerCase().replace(/'/g, '');
+}
+
+// 高频多音节词组索引。列 1 为简体、列 2 为繁体；数组顺序保持候选优先级。
+function buildPhraseIndex(column) {
+    const index = {};
+    for (let i = 0; i < phraseEntries.length; i++) {
+        const entry = phraseEntries[i];
+        const pinyin = entry[0];
+        const word = entry[column];
+        if (!index[pinyin]) {
+            index[pinyin] = [];
+        }
+        if (index[pinyin].indexOf(word) < 0) {
+            index[pinyin].push(word);
+        }
+    }
+    return index;
+}
+
+function buildT9PhraseIndex(phraseIndex) {
+    const index = {};
+    for (let pinyin in phraseIndex) {
+        const digits = pinyinToT9(pinyin);
+        if (!digits) {
+            continue;
+        }
+        if (!index[digits]) {
+            index[digits] = [];
+        }
+        const words = phraseIndex[pinyin];
+        for (let i = 0; i < words.length; i++) {
+            if (index[digits].indexOf(words[i]) < 0) {
+                index[digits].push(words[i]);
+            }
+        }
+    }
+    return index;
+}
+
+function mergeCandidates(primary, secondary, limit) {
+    const result = [];
+    const max = limit || 40;
+    const sources = [primary || [], secondary || []];
+    for (let i = 0; i < sources.length; i++) {
+        const source = sources[i];
+        for (let j = 0; j < source.length; j++) {
+            const candidate = source[j];
+            if (result.indexOf(candidate) < 0) {
+                result.push(candidate);
+                if (result.length >= max) {
+                    return result;
+                }
+            }
+        }
+    }
+    return result;
+}
+
 SimpleInputMethod.initDict = function() {
     this.dict.py2hz = dict;
     this.dict.py2hz2 = buildInitialIndex(dict);
+    this.dict.phrase = buildPhraseIndex(1);
+    this.dict.t9Phrase = buildT9PhraseIndex(this.dict.phrase);
+
     this.traditionalDict.py2hz = dictTraditional;
     this.traditionalDict.py2hz2 = buildInitialIndex(dictTraditional);
+    this.traditionalDict.phrase = buildPhraseIndex(2);
+    this.traditionalDict.t9Phrase = buildT9PhraseIndex(this.traditionalDict.phrase);
 };
 
 SimpleInputMethod.getSingleHanzi = function(pinyin, traditional) {
@@ -54,13 +120,21 @@ SimpleInputMethod.getSingleHanzi = function(pinyin, traditional) {
     return activeDict.py2hz2[pinyin] || activeDict.py2hz[pinyin] || '';
 }
 
+// 全拼查询：先精确匹配高频多音节词组，再保留原有单音节回退行为。
 SimpleInputMethod.getHanzi = function(pinyin, traditional = false) {
-    let result = this.getSingleHanzi(pinyin, traditional);
-    if (result) return [result.split(''), pinyin];
+    const normalizedPinyin = normalizePinyin(pinyin);
+    const activeDict = traditional ? this.traditionalDict : this.dict;
+    const phraseCandidates = activeDict.phrase[normalizedPinyin];
+    if (phraseCandidates && phraseCandidates.length) {
+        return [phraseCandidates.slice(), normalizedPinyin];
+    }
 
-    let start = Math.min(pinyin.length, 6);
+    let result = this.getSingleHanzi(normalizedPinyin, traditional);
+    if (result) return [result.split(''), normalizedPinyin];
+
+    let start = Math.min(normalizedPinyin.length, 6);
     for (let i = start; i >= 1; i--) {
-        let str = pinyin.substr(0, i);
+        let str = normalizedPinyin.substr(0, i);
         let rs = this.getSingleHanzi(str, traditional);
         if (rs) return [rs.split(''), str];
     }
@@ -68,26 +142,25 @@ SimpleInputMethod.getHanzi = function(pinyin, traditional = false) {
     return [[], '']; // 理论上一般不会出现这种情况
 };
 
-// 方屏中文 T9 使用完整的数字序列匹配拼音，而不是同一按键多击选字母。
-// 例如 2-3-4 会匹配 bei，并返回“被、北、倍”等候选。扫描词典键名即可，
-// 不额外复制大型汉字词典，避免手表端常驻内存增加。
+// 方屏中文 T9：同一数字串优先给出完整词组，其次保留单音节汉字候选。
 SimpleInputMethod.getT9Hanzi = function(digits, traditional = false) {
     if (!digits) {
         return [[], []];
     }
-    const activeDict = traditional ? this.traditionalDict.py2hz : this.dict.py2hz;
+    const activeDict = traditional ? this.traditionalDict : this.dict;
+    const phraseCandidates = activeDict.t9Phrase[digits] || [];
     const words = [];
     const matchedPinyin = [];
-    for (let pinyin in activeDict) {
+    for (let pinyin in activeDict.py2hz) {
         if (pinyinToT9(pinyin) === digits) {
             matchedPinyin.push(pinyin);
-            const hanzi = activeDict[pinyin];
+            const hanzi = activeDict.py2hz[pinyin];
             for (let i = 0; i < hanzi.length; i++) {
                 words.push(hanzi[i]);
             }
         }
     }
-    return [words, matchedPinyin];
+    return [mergeCandidates(phraseCandidates, words), matchedPinyin];
 };
 
 SimpleInputMethod.initDict();
