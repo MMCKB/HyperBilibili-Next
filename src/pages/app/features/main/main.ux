@@ -18,7 +18,7 @@
       </div>
     </scroll>
     <div class="refresh-button" @click="Refresh()">
-      <image class="refresh-icon {{anims.refresh_class}}" src="/common/main_floatingrefresh.png"></image>
+      <image class="refresh-icon {{anims.refresh_class}}" src="/common/main_floatingrefresh.png" static></image>
     </div>
     <text style="position: absolute; color: rgba(0, 0, 0, 0); width: 0px; top: 50px">
       {{ anims.refresh_bottom.value }}
