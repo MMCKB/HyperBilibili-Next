@@ -70,6 +70,26 @@
         </div>
 
         <div class="section-card">
+          <text class="group-title">{{ $t("debug.storage") }}</text>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.totalStorage") }}</text>
+            <text class="info-value">{{ environment.totalStorage }}</text>
+          </div>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.usedStorage") }}</text>
+            <text class="info-value">{{ environment.usedStorage }}</text>
+          </div>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.availableStorage") }}</text>
+            <text class="info-value">{{ environment.availableStorage }}</text>
+          </div>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.storageUsage") }}</text>
+            <text class="info-value">{{ environment.storageUsage }}</text>
+          </div>
+        </div>
+
+        <div class="section-card">
           <text class="group-title">{{ $t("debug.screen") }}</text>
           <div class="info-row">
             <text class="info-label">{{ $t("debug.size") }}</text>
@@ -144,7 +164,11 @@ export default {
       screenSize: "",
       screenDensity: "",
       screenShape: "",
-      networkType: ""
+      networkType: "",
+      totalStorage: "",
+      usedStorage: "",
+      availableStorage: "",
+      storageUsage: ""
     },
     article_tmp: {
       title: "平壤今日来报：一切良好，手机屏幕完全展开！",
@@ -175,8 +199,39 @@ export default {
     }
     return String(value)
   },
-  ApplyEnvironment(deviceInfo, networkType) {
+  FormatBytes(value) {
+    if (value === undefined || value === null || value === "") {
+      return this.$t("debug.notAvailable")
+    }
+    const bytes = Number(value)
+    if (!isFinite(bytes) || bytes < 0) {
+      return this.$t("debug.notAvailable")
+    }
+
+    const units = ["B", "KB", "MB", "GB", "TB"]
+    let unitIndex = 0
+    let displayValue = bytes
+    while (displayValue >= 1024 && unitIndex < units.length - 1) {
+      displayValue /= 1024
+      unitIndex += 1
+    }
+    return `${displayValue.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
+  },
+  FormatStorageUsage(totalStorage, availableStorage) {
+    if (totalStorage === undefined || totalStorage === null || availableStorage === undefined || availableStorage === null) {
+      return this.$t("debug.notAvailable")
+    }
+    const total = Number(totalStorage)
+    const available = Number(availableStorage)
+    if (!isFinite(total) || !isFinite(available) || total <= 0 || available < 0) {
+      return this.$t("debug.notAvailable")
+    }
+    const safeAvailable = Math.min(available, total)
+    return `${((total - safeAvailable) / total * 100).toFixed(1)}%`
+  },
+  ApplyEnvironment(deviceInfo, networkType, storageInfo) {
     const info = deviceInfo || {}
+    const storage = storageInfo || {}
     const client = global.biliclient || {}
     const apiLevel = info.APILevel === undefined ? info.apiLevel : info.APILevel
     const screenWidth = this.FormatValue(info.screenWidth)
@@ -196,6 +251,16 @@ export default {
     this.environment.screenDensity = this.FormatValue(info.screenDensity)
     this.environment.screenShape = this.FormatValue(info.screenShape)
     this.environment.networkType = this.FormatValue(networkType)
+
+    const totalStorage = storage.totalStorage === undefined || storage.totalStorage === null ? NaN : Number(storage.totalStorage)
+    const availableStorage = storage.availableStorage === undefined || storage.availableStorage === null ? NaN : Number(storage.availableStorage)
+    const hasStorageData = isFinite(totalStorage) && isFinite(availableStorage) && totalStorage >= 0 && availableStorage >= 0
+    const safeAvailableStorage = hasStorageData ? Math.min(availableStorage, totalStorage) : null
+    const usedStorage = hasStorageData ? Math.max(totalStorage - safeAvailableStorage, 0) : null
+    this.environment.totalStorage = this.FormatBytes(totalStorage)
+    this.environment.usedStorage = this.FormatBytes(usedStorage)
+    this.environment.availableStorage = this.FormatBytes(safeAvailableStorage)
+    this.environment.storageUsage = this.FormatStorageUsage(totalStorage, safeAvailableStorage)
   },
   FormatVersion(name, versionName, versionCode) {
     const parts = []
@@ -223,16 +288,20 @@ export default {
   RefreshEnvironment() {
     let deviceInfo = global.DEVICE_INFO || {}
     let networkType = global.DEVICE_NETWORK_TYPE || ""
-    let pending = 2
+    let storageInfo = {
+      totalStorage: null,
+      availableStorage: null
+    }
+    let pending = 4
     let failed = false
 
     this.environmentStatus = this.$t("debug.refreshing")
-    this.ApplyEnvironment(deviceInfo, networkType)
+    this.ApplyEnvironment(deviceInfo, networkType, storageInfo)
 
     const complete = () => {
       pending -= 1
       if (pending === 0) {
-        this.ApplyEnvironment(deviceInfo, networkType)
+        this.ApplyEnvironment(deviceInfo, networkType, storageInfo)
         this.environmentStatus = failed ? this.$t("debug.partialLoad") : this.$t("debug.refreshed")
       }
     }
@@ -259,6 +328,30 @@ export default {
       fail: (data, code) => {
         failed = true
         global.logger.warn("[debug] 获取网络类型失败，code =", code)
+        complete()
+      }
+    })
+
+    device.getTotalStorage({
+      success: (data) => {
+        storageInfo.totalStorage = data && data.totalStorage
+        complete()
+      },
+      fail: (data, code) => {
+        failed = true
+        global.logger.warn("[debug] 获取设备总存储空间失败，code =", code)
+        complete()
+      }
+    })
+
+    device.getAvailableStorage({
+      success: (data) => {
+        storageInfo.availableStorage = data && data.availableStorage
+        complete()
+      },
+      fail: (data, code) => {
+        failed = true
+        global.logger.warn("[debug] 获取设备可用存储空间失败，code =", code)
         complete()
       }
     })
