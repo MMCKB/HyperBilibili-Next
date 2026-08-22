@@ -189,7 +189,7 @@
           <div if="{{lang === 'cn' && !numFlag}}" style="margin-left: 6px;flex: 1;height: 60px;background-color:#262626;border-color: #333333; border-width: 3px; border-radius: 100px;flex-direction: row;align-items:center">
             <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;width: 85%;height: 42px;">
               <div static style="position: absolute;left: 0px;height: 42px;padding-left:20px;padding-right:20px">
-                <text class="calbtn02" style="padding-right:10px" @click="pushCval">{{cval}}</text>
+                <text class="calbtn02" style="padding-right:10px" @click="pushCval">{{rectKeyboardtype==='T9' ? t9Digits : cval}}</text>
                 <text for="{{cvalList}}" show="{{resultList.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultList[$idx])">{{resultList[$idx]}}</text>
               </div>
             </scroll>
@@ -328,6 +328,25 @@ function doSearchDic(word, traditional, cb) {
     cb([]);
   }
 }
+function doSearchT9Dic(digits, traditional, cb) {
+  let hanzi = SimpleInputMethod.getT9Hanzi(digits, traditional);
+  if (hanzi && hanzi[0]) {
+    cb(hanzi[0]);
+  } else {
+    cb([]);
+  }
+}
+// 方屏中文 T9 中每个字母组只对应一个数字。按 ABC、DEF、GHI 即得到 234。
+const T9_GROUP_TO_DIGIT = {
+  abc: "2",
+  def: "3",
+  ghi: "4",
+  jkl: "5",
+  mno: "6",
+  pqrs: "7",
+  tuv: "8",
+  wxyz: "9",
+};
 function deleteLast(t) {
   if (t) {
     return t.substr(0, t.length - 1);
@@ -357,6 +376,8 @@ export default {
   },
   data: {
     cval: "",
+    // 仅方屏中文 T9 使用；保存按键数字序列，例如 ABC→DEF→GHI 为“234”。
+    t9Digits: "",
     resultList: [],
     resultList2: [],
     waitingList: [],
@@ -448,6 +469,7 @@ export default {
     this.rectPanel = "";
     this.numFlag = false;
     this.cval = "";
+    this.clearT9Input();
     this.clearWaiting();
     if (mode === "cn") {
       this.lang = "cn";
@@ -498,6 +520,7 @@ export default {
   onRsSelect(txt) {
     this.onVibrate();
     this.cval = "";
+    this.clearT9Input();
     this.addAllTxt(txt);
     this.clearWaiting();
     this.resetReslutList();
@@ -508,6 +531,7 @@ export default {
     switch (sign) {
       case "AC":
         this.cval = "";
+        this.clearT9Input();
         this.clearWaiting();
         this.resetReslutList();
         break;
@@ -518,11 +542,15 @@ export default {
           this.lang = "cn";
         }
         this.cval = "";
+        this.clearT9Input();
         this.clearWaiting();
         this.resetReslutList();
         break;
       case "D":
-        if (this.waitingIndex >= 0) {
+        if (this.isRectChineseT9() && this.t9Digits) {
+          this.t9Digits = deleteLast(this.t9Digits);
+          this.resetReslutList();
+        } else if (this.waitingIndex >= 0) {
           this.clearWaiting();
           this.resetReslutList();
         } else if (this.cval.length > 0) {
@@ -533,6 +561,10 @@ export default {
         }
         break;
       case "space":
+        if (this.isRectChineseT9()) {
+          this.clearT9Input();
+          this.resetReslutList();
+        }
         this.addAllTxt(" ");
         break;
       case "down":
@@ -556,6 +588,7 @@ export default {
       case "switchNum":
         this.numFlag = true;
         this.cval = "";
+        this.clearT9Input();
         this.clearWaiting();
         this.resetReslutList();
         break;
@@ -569,7 +602,11 @@ export default {
         this.upperFlag = false;
         break;
       default:
-        if (sign.length === 1) {
+        if (this.isRectChineseT9() && T9_GROUP_TO_DIGIT[sign]) {
+          this.t9Digits += T9_GROUP_TO_DIGIT[sign];
+          this.clearWaiting();
+          this.resetReslutList();
+        } else if (sign.length === 1) {
           this.addAllTxt(sign);
         } else {
           if (this.waitingIndex >= 0) {
@@ -611,6 +648,12 @@ export default {
     this.waitingIndex = -1;
     this.lastWaitingStr = "";
   },
+  isRectChineseT9() {
+    return this.screentype === "rect" && this.lang === "cn" && !this.numFlag && this.rectKeyboardtype === "T9";
+  },
+  clearT9Input() {
+    this.t9Digits = "";
+  },
   resetReslutList() {
     if (this.screentype != "circle") {
       this.$element("cvalWaiting").scrollTo({
@@ -618,6 +661,15 @@ export default {
         left: 0,
         behavior: "smooth",
       });
+    }
+    if (this.isRectChineseT9()) {
+      if (!this.t9Digits) {
+        this.resultList = [];
+        this.setResultListAll();
+        return;
+      }
+      this.getResultByT9(this.t9Digits);
+      return;
     }
     let watingStr = "";
     if (this.lastWaitingStr && this.lastWaitingStr[this.waitingIndex]) {
@@ -648,6 +700,14 @@ export default {
     const that = this;
     const traditional = this.screentype === "rect" && this.rectTraditionalInput;
     doSearchDic(val, traditional, function (data) {
+      that.resultList = data;
+      that.setResultListAll();
+    });
+  },
+  getResultByT9(digits) {
+    const that = this;
+    const traditional = this.rectTraditionalInput;
+    doSearchT9Dic(digits, traditional, function (data) {
       that.resultList = data;
       that.setResultListAll();
     });
@@ -732,6 +792,10 @@ export default {
   },
   pushCval() {
     this.onVibrate();
+    // 数字组合只是 T9 查询条件，必须由候选项确认，不能直接写入正文。
+    if (this.isRectChineseT9()) {
+      return;
+    }
     let temp = this.cval;
     this.cval = "";
     this.clearWaiting();
