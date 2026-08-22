@@ -203,8 +203,26 @@
           <img if="{{!numFlag}}" src="./assets/horizontal/del.png" style="margin-left: 6px;padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('D')" />
           <img else src="./assets/horizontal/del2.png" style="margin-left: 6px;padding: 6px;" @click="onBtnClick('D')" />
         </div>
-        <!-- 这里使用show会导致每次输入都会加载全部候选列表，很卡 -->
-        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: 252px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down'}}">
+        <!-- 九键歧义展开：左侧先选择拼音，右侧只显示该拼音对应的汉字。 -->
+        <div class="rect-t9-expand" if="{{downFlag==='down' && rectKeyboardtype==='T9' && lang==='cn' && !numFlag}}">
+          <div class="rect-t9-pinyin-pane">
+            <text class="rect-t9-pane-title">拼音</text>
+            <scroll scroll-y="{{true}}" class="rect-t9-pinyin-scroll">
+              <text for="{{t9PinyinList}}" class="rect-t9-pinyin-item" style="background-color:{{t9SelectedPinyin===t9PinyinList[$idx] ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectT9Pinyin(t9PinyinList[$idx])">{{t9PinyinList[$idx]}}</text>
+            </scroll>
+          </div>
+          <div class="rect-t9-hanzi-pane">
+            <div class="rect-t9-hanzi-header">
+              <text class="rect-t9-pane-title">{{t9SelectedPinyin || '候选'}}</text>
+              <text class="rect-t9-collapse" @click="onBtnClick('down')">收起</text>
+            </div>
+            <scroll scroll-y="{{true}}" class="rect-t9-hanzi-scroll">
+              <text for="{{t9SelectedPinyinCandidates}}" class="rect-t9-hanzi-item" @click="onT9PinyinHanziSelect(t9SelectedPinyinCandidates[$idx].text)">{{t9SelectedPinyinCandidates[$idx].text}}</text>
+            </scroll>
+          </div>
+        </div>
+        <!-- 非方屏中文九键维持原有候选展开行为。 -->
+        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: 252px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down' && (rectKeyboardtype!=='T9' || lang!=='cn' || numFlag)}}">
           <div static class="list67">
             <list static style="width:100%;height:100%;">
               <list-item type="waitingRows67" class="item67" for="{{itemArray in resultList2}}">
@@ -381,6 +399,10 @@ export default {
     resultList: [],
     // 与 resultList 一一对应；音节单字候选保存后续拼音/数字串，支持逐音节确认。
     resultMeta: [],
+    // 方屏九键展开面板：左侧拼音分组、右侧被选拼音对应的汉字。
+    t9PinyinList: [],
+    t9SelectedPinyin: "",
+    t9SelectedPinyinCandidates: [],
     resultList2: [],
     waitingList: [],
     waitingIndex: -1,
@@ -540,6 +562,7 @@ export default {
     }
     this.addAllTxt(txt);
     this.clearWaiting();
+    this.clearT9PinyinSelection();
     this.resetReslutList();
     this.downFlag = "";
   },
@@ -670,6 +693,12 @@ export default {
   },
   clearT9Input() {
     this.t9Digits = "";
+    this.clearT9PinyinSelection();
+  },
+  clearT9PinyinSelection() {
+    this.t9PinyinList = [];
+    this.t9SelectedPinyin = "";
+    this.t9SelectedPinyinCandidates = [];
   },
   resetReslutList() {
     if (this.screentype != "circle") {
@@ -733,9 +762,36 @@ export default {
   getResultByT9(digits) {
     const that = this;
     const traditional = this.rectTraditionalInput;
+    this.t9PinyinList = SimpleInputMethod.getT9PinyinList(digits, traditional);
+    if (this.t9PinyinList.indexOf(this.t9SelectedPinyin) < 0) {
+      this.t9SelectedPinyin = this.t9PinyinList.length > 0 ? this.t9PinyinList[0] : "";
+    }
+    this.refreshT9PinyinCandidates();
     doSearchT9Dic(digits, traditional, function (candidates) {
       that.setResultCandidates(candidates);
     });
+  },
+  selectT9Pinyin(pinyin) {
+    this.onVibrate();
+    this.t9SelectedPinyin = pinyin;
+    this.refreshT9PinyinCandidates();
+  },
+  refreshT9PinyinCandidates() {
+    if (!this.t9SelectedPinyin) {
+      this.t9SelectedPinyinCandidates = [];
+      return;
+    }
+    const traditional = this.rectTraditionalInput;
+    this.t9SelectedPinyinCandidates = SimpleInputMethod.getPinyinCandidates(this.t9SelectedPinyin, traditional);
+  },
+  onT9PinyinHanziSelect(txt) {
+    this.onVibrate();
+    this.cval = "";
+    this.clearT9Input();
+    this.addAllTxt(txt);
+    this.clearWaiting();
+    this.resetReslutList();
+    this.downFlag = "";
   },
   onSelect(num) {
     this.$emit("keyDown", { content: num });
@@ -973,6 +1029,84 @@ export default {
   border-radius:42px;
   text-align:center;
   border:3px solid rgba(255,255,255,0.14);
+}
+.rect-t9-expand {
+  position:absolute;
+  left:0px;
+  top:0px;
+  width:100%;
+  height:252px;
+  background-color:black;
+  flex-direction:row;
+  padding:8px 10px;
+}
+.rect-t9-pinyin-pane {
+  width:108px;
+  height:236px;
+  padding-right:8px;
+  border-right:2px solid #333333;
+  flex-direction:column;
+}
+.rect-t9-pane-title {
+  color:#fff;
+  height:32px;
+  font-size:21px;
+  font-weight:bold;
+  text-align:center;
+}
+.rect-t9-pinyin-scroll {
+  width:100%;
+  height:198px;
+}
+.rect-t9-pinyin-item {
+  color:#fff;
+  width:94px;
+  height:42px;
+  margin-bottom:5px;
+  border-radius:21px;
+  font-size:21px;
+  font-weight:bold;
+  text-align:center;
+  border:2px solid rgba(255,255,255,0.12);
+}
+.rect-t9-hanzi-pane {
+  flex:1;
+  height:236px;
+  padding-left:10px;
+  flex-direction:column;
+}
+.rect-t9-hanzi-header {
+  width:100%;
+  height:32px;
+  flex-direction:row;
+  justify-content:space-between;
+  align-items:center;
+}
+.rect-t9-collapse {
+  color:rgb(13,132,255);
+  width:54px;
+  height:32px;
+  font-size:20px;
+  text-align:center;
+}
+.rect-t9-hanzi-scroll {
+  width:100%;
+  height:198px;
+  flex-direction:row;
+  flex-wrap:wrap;
+}
+.rect-t9-hanzi-item {
+  color:#fff;
+  width:54px;
+  height:48px;
+  margin-right:6px;
+  margin-bottom:6px;
+  background-color:#262626;
+  border-radius:24px;
+  font-size:28px;
+  font-weight:bold;
+  text-align:center;
+  border:3px solid rgba(255,255,255,0.08);
 }
 .rect-settings-overlay {
   justify-content:flex-start;

@@ -214,6 +214,13 @@ SimpleInputMethod.getSingleHanzi = function(pinyin, traditional) {
     return activeDict.py2hz2[pinyin] || activeDict.py2hz[pinyin] || '';
 }
 
+// 指定单个拼音时只返回该拼音的汉字，用于九键展开面板的拼音分组选择。
+SimpleInputMethod.getPinyinCandidates = function(pinyin, traditional = false) {
+    const normalizedPinyin = normalizePinyin(pinyin);
+    const activeDict = traditional ? this.traditionalDict : this.dict;
+    return createEntries((activeDict.py2hz[normalizedPinyin] || '').split(''));
+};
+
 // 全拼候选：完整词组排在前；展开时继续给出 ni、hao 等音节的单字候选。
 SimpleInputMethod.getHanziCandidates = function(pinyin, traditional = false) {
     const normalizedPinyin = normalizePinyin(pinyin);
@@ -267,6 +274,18 @@ SimpleInputMethod.getT9Candidates = function(digits, traditional = false) {
         }
     }
     return [mergeEntries(createEntries(phraseWords), syllableEntries, singleEntries), matchedPinyin];
+};
+
+// 九键展开面板左侧使用的可选拼音列表。去重后保留词典原始优先顺序。
+SimpleInputMethod.getT9PinyinList = function(digits, traditional = false) {
+    const result = this.getT9Candidates(digits, traditional);
+    const pinyinList = [];
+    for (let i = 0; i < result[1].length; i++) {
+        if (pinyinList.indexOf(result[1][i]) < 0) {
+            pinyinList.push(result[1][i]);
+        }
+    }
+    return pinyinList;
 };
 
 SimpleInputMethod.getT9Hanzi = function(digits, traditional = false) {
