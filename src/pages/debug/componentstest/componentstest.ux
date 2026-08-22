@@ -6,32 +6,146 @@
 
 <template>
   <div class="page">
-    <title-bar title="组件测试"></title-bar>
-    <text>BetterOnlineImage</text>
-    <online-image margin-top="20px" src="https://i.pinimg.com/236x/fd/20/13/fd20135e219e1336b7fdc478dca13d90.jpg"></online-image>
-    <text style="margin-top: 35px">DefaultButton</text>
-    <default-button primary="true" margin-top="20px" text="Primary"></default-button>
-    <default-button margin-top="15px" text="Normal"></default-button>
-    <default-button disabled="true" margin-top="15px" text="Disabled"></default-button>
-    <text style="margin-top: 35px">Article</text>
-    <text style="margin-top: 5px"></text>
-    <articleshow show-category="true" article="{{article_tmp}}"></articleshow>
-    <text style="margin-top: 35px">Reply</text>
-    <text style="margin-top: 5px"></text>
-    <reply reply="{{reply_tmp}}"></reply>
-    <text style="margin-top: 35px">页面功能测试</text>
-    <default-button margin-top="20px" text="splash（重开）" @click="GoSplash"></default-button>
-    <default-button margin-top="20px" text="prepage>" @click="GoPrepage"></default-button>
-    <default-button margin-top="20px" text="arealist>" @click="GoArealist"></default-button>
-    <default-button margin-top="15px" text="eularead>" @click="GoEulaRead"></default-button>
-    <text style="margin-top: 25px"></text>
+    <scroll class="scroll debug-scroll" scroll-y="true" bounces="true">
+      <title-bar title="debug.title"></title-bar>
+
+      <div class="debug-content">
+        <div class="section-card">
+          <text class="section-title">{{ $t("debug.runtimeOverview") }}</text>
+          <text class="section-description">{{ $t("debug.runtimeDescription") }}</text>
+          <text class="status-text">{{ environmentStatus }}</text>
+          <default-button primary="true" margin-top="20px" text="debug.refresh" @click="RefreshEnvironment"></default-button>
+        </div>
+
+        <div class="section-card">
+          <text class="group-title">{{ $t("debug.application") }}</text>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.clientVersion") }}</text>
+            <text class="info-value">{{ environment.clientVersion }}</text>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <text class="group-title">{{ $t("debug.device") }}</text>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.brand") }}</text>
+            <text class="info-value">{{ environment.brand }}</text>
+          </div>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.manufacturer") }}</text>
+            <text class="info-value">{{ environment.manufacturer }}</text>
+          </div>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.model") }}</text>
+            <text class="info-value">{{ environment.model }}</text>
+          </div>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.product") }}</text>
+            <text class="info-value">{{ environment.product }}</text>
+          </div>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.deviceType") }}</text>
+            <text class="info-value">{{ environment.deviceType }}</text>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <text class="group-title">{{ $t("debug.system") }}</text>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.os") }}</text>
+            <text class="info-value">{{ environment.os }}</text>
+          </div>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.platform") }}</text>
+            <text class="info-value">{{ environment.platform }}</text>
+          </div>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.apiLevel") }}</text>
+            <text class="info-value">{{ environment.apiLevel }}</text>
+          </div>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.languageRegion") }}</text>
+            <text class="info-value">{{ environment.languageRegion }}</text>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <text class="group-title">{{ $t("debug.screen") }}</text>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.size") }}</text>
+            <text class="info-value">{{ environment.screenSize }}</text>
+          </div>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.density") }}</text>
+            <text class="info-value">{{ environment.screenDensity }}</text>
+          </div>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.shape") }}</text>
+            <text class="info-value">{{ environment.screenShape }}</text>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <text class="group-title">{{ $t("debug.network") }}</text>
+          <div class="info-row">
+            <text class="info-label">{{ $t("debug.networkType") }}</text>
+            <text class="info-value">{{ environment.networkType }}</text>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <text class="section-title">{{ $t("debug.componentTests") }}</text>
+          <text class="component-name">{{ $t("debug.imageComponent") }}</text>
+          <online-image margin-top="20px" src="https://i.pinimg.com/236x/fd/20/13/fd20135e219e1336b7fdc478dca13d90.jpg"></online-image>
+
+          <text class="component-name">{{ $t("debug.buttonComponent") }}</text>
+          <default-button primary="true" margin-top="20px" text="debug.primaryButton"></default-button>
+          <default-button margin-top="15px" text="debug.normalButton"></default-button>
+          <default-button disabled="true" margin-top="15px" text="debug.disabledButton"></default-button>
+
+          <text class="component-name">{{ $t("debug.articleComponent") }}</text>
+          <articleshow show-category="true" article="{{article_tmp}}"></articleshow>
+
+          <text class="component-name">{{ $t("debug.replyComponent") }}</text>
+          <reply reply="{{reply_tmp}}"></reply>
+        </div>
+
+        <div class="section-card">
+          <text class="section-title">{{ $t("debug.pageFunctionTest") }}</text>
+          <default-button margin-top="20px" text="debug.restartSplash" @click="GoSplash"></default-button>
+          <default-button margin-top="15px" text="debug.openPrepage" @click="GoPrepage"></default-button>
+          <default-button margin-top="15px" text="debug.openArealist" @click="GoArealist"></default-button>
+          <default-button margin-top="15px" text="debug.openEula" @click="GoEulaRead"></default-button>
+        </div>
+        <text class="bottom-spacing"></text>
+      </div>
+    </scroll>
   </div>
 </template>
- 
+
 <script>
 import router from "@system.router"
+import { device, network } from "../../../tsimports"
+
 export default {
   private: {
+    environmentStatus: "",
+    environment: {
+      clientVersion: "",
+      brand: "",
+      manufacturer: "",
+      model: "",
+      product: "",
+      deviceType: "",
+      os: "",
+      platform: "",
+      apiLevel: "",
+      languageRegion: "",
+      screenSize: "",
+      screenDensity: "",
+      screenShape: "",
+      networkType: ""
+    },
     article_tmp: {
       title: "平壤今日来报：一切良好，手机屏幕完全展开！",
       category_name: "每日还恩情"
@@ -55,29 +169,127 @@ export default {
       rcount: 514
     }
   },
-  GoSplash(){
+  FormatValue(value) {
+    if (value === undefined || value === null || value === "") {
+      return this.$t("debug.notAvailable")
+    }
+    return String(value)
+  },
+  ApplyEnvironment(deviceInfo, networkType) {
+    const info = deviceInfo || {}
+    const client = global.biliclient || {}
+    const apiLevel = info.APILevel === undefined ? info.apiLevel : info.APILevel
+    const screenWidth = this.FormatValue(info.screenWidth)
+    const screenHeight = this.FormatValue(info.screenHeight)
+
+    this.environment.clientVersion = this.FormatValue(client.version)
+    this.environment.brand = this.FormatValue(info.brand)
+    this.environment.manufacturer = this.FormatValue(info.manufacturer)
+    this.environment.model = this.FormatValue(info.model)
+    this.environment.product = this.FormatValue(info.product)
+    this.environment.deviceType = this.FormatValue(info.deviceType)
+    this.environment.os = this.FormatVersion(info.osType, info.osVersionName, info.osVersionCode)
+    this.environment.platform = this.FormatVersion(info.platformVersionName, "", info.platformVersionCode)
+    this.environment.apiLevel = this.FormatValue(apiLevel)
+    this.environment.languageRegion = this.FormatLanguageRegion(info.language, info.region)
+    this.environment.screenSize = `${screenWidth} × ${screenHeight}`
+    this.environment.screenDensity = this.FormatValue(info.screenDensity)
+    this.environment.screenShape = this.FormatValue(info.screenShape)
+    this.environment.networkType = this.FormatValue(networkType)
+  },
+  FormatVersion(name, versionName, versionCode) {
+    const parts = []
+    if (name !== undefined && name !== null && name !== "") {
+      parts.push(String(name))
+    }
+    if (versionName !== undefined && versionName !== null && versionName !== "") {
+      parts.push(String(versionName))
+    }
+    if (versionCode !== undefined && versionCode !== null && versionCode !== "") {
+      parts.push(`(${versionCode})`)
+    }
+    return parts.length ? parts.join(" ") : this.$t("debug.notAvailable")
+  },
+  FormatLanguageRegion(language, region) {
+    const parts = []
+    if (language !== undefined && language !== null && language !== "") {
+      parts.push(String(language))
+    }
+    if (region !== undefined && region !== null && region !== "") {
+      parts.push(String(region))
+    }
+    return parts.length ? parts.join(" / ") : this.$t("debug.notAvailable")
+  },
+  RefreshEnvironment() {
+    let deviceInfo = global.DEVICE_INFO || {}
+    let networkType = global.DEVICE_NETWORK_TYPE || ""
+    let pending = 2
+    let failed = false
+
+    this.environmentStatus = this.$t("debug.refreshing")
+    this.ApplyEnvironment(deviceInfo, networkType)
+
+    const complete = () => {
+      pending -= 1
+      if (pending === 0) {
+        this.ApplyEnvironment(deviceInfo, networkType)
+        this.environmentStatus = failed ? this.$t("debug.partialLoad") : this.$t("debug.refreshed")
+      }
+    }
+
+    device.getInfo({
+      success: (data) => {
+        deviceInfo = data || {}
+        global.DEVICE_INFO = deviceInfo
+        complete()
+      },
+      fail: (data, code) => {
+        failed = true
+        global.logger.warn("[debug] 获取设备信息失败，code =", code)
+        complete()
+      }
+    })
+
+    network.getType({
+      success: (data) => {
+        networkType = data && data.type ? data.type : ""
+        global.DEVICE_NETWORK_TYPE = networkType
+        complete()
+      },
+      fail: (data, code) => {
+        failed = true
+        global.logger.warn("[debug] 获取网络类型失败，code =", code)
+        complete()
+      }
+    })
+  },
+  GoSplash() {
     router.push({
       uri: "pages/app/entry/splash"
     })
   },
-  GoPrepage(){
+  GoPrepage() {
     router.push({
       uri: "pages/app/entry/prepage"
     })
   },
-  GoEulaRead(){
+  GoEulaRead() {
     router.push({
       uri: "pages/app/entry/eularead"
     })
   },
-  GoArealist(){
+  GoArealist() {
     router.push({
       uri: "pages/app/arealist"
     })
+  },
+  onInit() {
+    this.RefreshEnvironment()
   }
 }
 </script>
 
 <style lang="less">
 @import '@less/global.less';
+@import './componentstest.less';
 </style>
