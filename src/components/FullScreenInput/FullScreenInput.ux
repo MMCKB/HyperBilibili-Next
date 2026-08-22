@@ -3,7 +3,7 @@
 
 <template>
     <div class="inputpanel">
-        <input-method if="{{global_show && !emojimode}}" style="position: absolute" hide={{keyboardHide}} @complete="InputEvent" @delete="InputDelete" screentype="{{screentype}}" vibratemode="short"></input-method>
+        <input-method if="{{global_show && !emojimode}}" style="position: absolute" hide={{keyboardHide}} @complete="InputEvent" @delete="InputDelete" @settings-change="OnInputMethodSettings" screentype="{{screentype}}" keyboardtype="{{inputMethodSettings.keyboardtype}}" inputlang="{{inputMethodSettings.lang}}" vibratemode="{{inputMethodSettings.vibratemode}}" maxlength="{{inputMethodSettings.maxlength}}" traditional="{{inputMethodSettings.traditional}}"></input-method>
         <div class="inputactions">
             <div style="margin-left: 35px" @click="ExitInput">
                 <image class="inputaction_img" src="/common/textinput_back.png"></image>
@@ -39,7 +39,14 @@ export default {
         global_show: false,
         input_text: "",
         screentype: "",
-        emojimode: false
+        emojimode: false,
+        inputMethodSettings: {
+            keyboardtype: "QWERTY",
+            lang: "cn",
+            vibratemode: "short",
+            maxlength: 5,
+            traditional: false
+        }
     },
     InputEvent(evt){
         this.input_text += evt.detail.content
@@ -67,8 +74,25 @@ export default {
         this.emojimode = false
         this.input_text += evt.detail.content
     },
+    OnInputMethodSettings(evt){
+        const nextSettings = {
+            ...this.inputMethodSettings,
+            ...evt.detail
+        }
+        this.inputMethodSettings = nextSettings
+        if (global.settings && global.settings.saveSettings) {
+            global.settings.saveSettings({ inputMethodSettings: nextSettings })
+        }
+    },
     async InitScreenType(){
         this.screentype = global.DEVICE_INFO.screenShape
+        const savedSettings = global.settings && global.settings.SETTINGS ? global.settings.SETTINGS.inputMethodSettings : null
+        if (savedSettings) {
+            this.inputMethodSettings = {
+                ...this.inputMethodSettings,
+                ...savedSettings
+            }
+        }
         // 用传入的初始文本初始化输入框
         this.input_text = this.initialText || ""
         this.global_show = true

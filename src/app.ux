@@ -38,7 +38,7 @@ export default {
     global.animengine = animengine
 
     console.log("appinit > loadSettings")
-    settings.loadSettings()
+    await settings.loadSettings()
     global.settings = settings
 
     console.log("appinit > initSavedContentManager")

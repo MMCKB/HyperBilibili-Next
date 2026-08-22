@@ -17,6 +17,15 @@ interface SettingsInterface {
   enableUserTracker: boolean;
   
   pinnedDMUsers: Array<string>;
+
+  // 方屏输入法偏好；保存到既有 settings 键，避免组件直接访问账号存储。
+  inputMethodSettings: {
+    keyboardtype: string;
+    lang: string;
+    vibratemode: string;
+    maxlength: number;
+    traditional: boolean;
+  };
 }
 
 // 初始设置
@@ -32,25 +41,44 @@ export let SETTINGS: SettingsInterface = {
   agreedAllAgreements: false, // 是否已同意所有协议（用户协议 隐私协议 etc.）
   enableUserTracker: true,
 
-  pinnedDMUsers: []
+  pinnedDMUsers: [],
+  inputMethodSettings: {
+    keyboardtype: "QWERTY",
+    lang: "cn",
+    vibratemode: "short",
+    maxlength: 5,
+    traditional: false
+  }
 };
 
-export function loadSettings(): void {
-  storage.get({
-    key: 'settings',
-    success: function (data) {
-      if (data) {
-        const storedSettings = JSON.parse(data);
-        SETTINGS = {
-          ...SETTINGS,
-          ...storedSettings
-        };
+export function loadSettings(): Promise<void> {
+  return new Promise((resolve) => {
+    storage.get({
+      key: 'settings',
+      success: function (data) {
+        if (data) {
+          try {
+            const storedSettings = JSON.parse(data);
+            SETTINGS = {
+              ...SETTINGS,
+              ...storedSettings,
+              inputMethodSettings: {
+                ...SETTINGS.inputMethodSettings,
+                ...(storedSettings.inputMethodSettings || {})
+              }
+            };
+          } catch (error) {
+            global.logger.log('Failed to parse stored settings');
+          }
+        }
+        global.logger.log('Settings loaded:', SETTINGS);
+        resolve();
+      },
+      fail: function (data, code) {
+        global.logger.log(`Failed to load settings, code = ${code}`);
+        resolve();
       }
-      global.logger.log('Settings loaded:', SETTINGS);
-    },
-    fail: function (data, code) {
-      global.logger.log(`Failed to load settings, code = ${code}`);
-    }
+    });
   });
 }
 

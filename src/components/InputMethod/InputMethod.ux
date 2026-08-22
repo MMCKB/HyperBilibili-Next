@@ -321,10 +321,7 @@
 <script>
 import vibrator from "@system.vibrator";
 import device from '@system.device'
-import storage from '@system.storage'
 import { SimpleInputMethod } from "./assets/dicUtil.js";
-
-const RECT_SETTINGS_STORAGE_KEY = "vela_input_method_rect_settings_v1";
 function doSearchDic(word, traditional, cb) {
   let hanzi = SimpleInputMethod.getHanzi(word, traditional);
   if (hanzi && hanzi[0]) {
@@ -358,6 +355,9 @@ export default {
     },
     traditional: {
       default: false,
+    },
+    inputlang: {
+      default: "cn",
     },
   },
   data: {
@@ -428,12 +428,13 @@ export default {
     this.rectVibrateMode = this.vibratemode;
     this.rectCandidateCount = parseInt(this.maxlength) || 5;
     this.rectTraditionalInput = this.traditional === true || this.traditional === "true";
+    this.lang = this.rectKeyboardtype === "T9" ? "cn" : (this.inputlang === "en" ? "en" : "cn");
     this.$watch("hide", "watchHidePropsChange");
     this.$watch("maxlength", "watchMaxLengthPropsChange");
     this.$watch("keyboardtype", "watchKeyboardtypePropsChange");
     this.$watch("vibratemode", "watchVibratemodePropsChange");
     this.$watch("traditional", "watchTraditionalPropsChange");
-    this.loadRectSettings();
+    this.$watch("inputlang", "watchInputlangPropsChange");
   },
   getRectSettings() {
     return {
@@ -443,55 +444,6 @@ export default {
       maxlength: this.rectCandidateCount,
       traditional: this.rectTraditionalInput,
     };
-  },
-  applyRectSettings(settings) {
-    if (!settings || this.screentype !== "rect") {
-      return;
-    }
-    const keyboardtype = settings.keyboardtype === "T9" ? "T9" : "QWERTY";
-    const lang = settings.lang === "en" ? "en" : "cn";
-    const vibratemode = settings.vibratemode === "short" || settings.vibratemode === "long" ? settings.vibratemode : "";
-    const maxlength = settings.maxlength === 3 ? 3 : 5;
-    this.rectKeyboardtype = keyboardtype;
-    this.lang = keyboardtype === "T9" ? "cn" : lang;
-    this.rectVibrateMode = vibratemode;
-    this.rectCandidateCount = maxlength;
-    this.rectTraditionalInput = settings.traditional === true;
-    this.cvalList = [];
-    for (let i = 0; i < maxlength; i++) {
-      this.cvalList.push(i);
-    }
-    this.resetReslutList();
-  },
-  loadRectSettings() {
-    if (this.screentype !== "rect") {
-      return;
-    }
-    storage.get({
-      key: RECT_SETTINGS_STORAGE_KEY,
-      success: (data) => {
-        if (!data) {
-          return;
-        }
-        try {
-          this.applyRectSettings(JSON.parse(data));
-        } catch (error) {
-          // 忽略旧版本或损坏的存储数据，保留当前默认设置。
-        }
-      },
-      fail: () => {},
-    });
-  },
-  saveRectSettings() {
-    if (this.screentype !== "rect") {
-      return;
-    }
-    storage.set({
-      key: RECT_SETTINGS_STORAGE_KEY,
-      value: JSON.stringify(this.getRectSettings()),
-      success: () => {},
-      fail: () => {},
-    });
   },
   addAllTxt(txt) {
     this.$emit("complete", { content: txt });
@@ -548,9 +500,7 @@ export default {
     this.emitRectSettingsChange();
   },
   emitRectSettingsChange() {
-    const settings = this.getRectSettings();
-    this.saveRectSettings();
-    this.$emit("settingsChange", settings);
+    this.$emit("settingsChange", this.getRectSettings());
   },
   onRsSelect(txt) {
     this.onVibrate();
@@ -763,6 +713,10 @@ export default {
   watchKeyboardtypePropsChange(newV, oldV) {
     if (this.screentype === "rect") {
       this.rectKeyboardtype = newV === "T9" ? "T9" : "QWERTY";
+      if (this.rectKeyboardtype === "T9") {
+        this.lang = "cn";
+      }
+      this.resetReslutList();
     }
   },
   watchVibratemodePropsChange(newV, oldV) {
@@ -773,6 +727,12 @@ export default {
   watchTraditionalPropsChange(newV, oldV) {
     if (this.screentype === "rect") {
       this.rectTraditionalInput = newV === true || newV === "true";
+      this.resetReslutList();
+    }
+  },
+  watchInputlangPropsChange(newV, oldV) {
+    if (this.screentype === "rect" && this.rectKeyboardtype !== "T9") {
+      this.lang = newV === "en" ? "en" : "cn";
       this.resetReslutList();
     }
   },
