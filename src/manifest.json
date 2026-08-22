@@ -47,6 +47,23 @@
         },
         {
             "name": "system.network"
+        },
+        {
+            "name": "system.brightness"
+        },
+        {
+            "name": "system.volume"
+        },
+        {
+            "name": "system.geolocation"
+        },
+        {
+            "name": "system.sensor"
+        }
+    ],
+    "permissions": [
+        {
+            "name": "hapjs.permission.LOCATION"
         }
     ],
     "config": {
@@ -154,6 +171,9 @@
             },
             "pages/debug/componentstest": {
                 "component": "componentstest"
+            },
+            "pages/debug/environment": {
+                "component": "environment"
             },
             "pages/error/networkerror": {
                 "component": "networkerror"

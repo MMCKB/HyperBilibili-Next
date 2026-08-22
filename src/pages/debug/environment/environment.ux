@@ -1,0 +1,368 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="default-button" src="@components/DefaultButton/DefaultButton.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll environment-scroll" scroll-y="true" bounces="true">
+      <title-bar title="environment.title"></title-bar>
+
+      <div class="environment-content">
+        <div class="section-card">
+          <text class="section-title">{{ $t("environment.overview") }}</text>
+          <text class="section-description">{{ $t("environment.description") }}</text>
+          <text class="status-text">{{ environmentStatus }}</text>
+          <default-button primary="true" margin-top="20px" text="environment.refresh" @click="RefreshEnvironment"></default-button>
+        </div>
+
+        <div class="section-card">
+          <text class="group-title">{{ $t("environment.application") }}</text>
+          <div class="info-row">
+            <text class="info-label">{{ $t("environment.clientVersion") }}</text>
+            <text class="info-value">{{ environment.clientVersion }}</text>
+          </div>
+        </div>
+
+        <div class="section-card">
+          <text class="group-title">{{ $t("environment.device") }}</text>
+          <div class="info-row"><text class="info-label">{{ $t("environment.brand") }}</text><text class="info-value">{{ environment.brand }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.manufacturer") }}</text><text class="info-value">{{ environment.manufacturer }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.model") }}</text><text class="info-value">{{ environment.model }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.product") }}</text><text class="info-value">{{ environment.product }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.deviceType") }}</text><text class="info-value">{{ environment.deviceType }}</text></div>
+        </div>
+
+        <div class="section-card">
+          <text class="group-title">{{ $t("environment.system") }}</text>
+          <div class="info-row"><text class="info-label">{{ $t("environment.os") }}</text><text class="info-value">{{ environment.os }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.platform") }}</text><text class="info-value">{{ environment.platform }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.apiLevel") }}</text><text class="info-value">{{ environment.apiLevel }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.languageRegion") }}</text><text class="info-value">{{ environment.languageRegion }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.mediaVolume") }}</text><text class="info-value">{{ environment.mediaVolume }}</text></div>
+        </div>
+
+        <div class="section-card">
+          <text class="group-title">{{ $t("environment.storage") }}</text>
+          <div class="info-row"><text class="info-label">{{ $t("environment.totalStorage") }}</text><text class="info-value">{{ environment.totalStorage }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.usedStorage") }}</text><text class="info-value">{{ environment.usedStorage }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.availableStorage") }}</text><text class="info-value">{{ environment.availableStorage }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.storageUsage") }}</text><text class="info-value">{{ environment.storageUsage }}</text></div>
+        </div>
+
+        <div class="section-card">
+          <text class="group-title">{{ $t("environment.screen") }}</text>
+          <div class="info-row"><text class="info-label">{{ $t("environment.size") }}</text><text class="info-value">{{ environment.screenSize }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.density") }}</text><text class="info-value">{{ environment.screenDensity }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.shape") }}</text><text class="info-value">{{ environment.screenShape }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.brightness") }}</text><text class="info-value">{{ environment.brightness }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.brightnessMode") }}</text><text class="info-value">{{ environment.brightnessMode }}</text></div>
+        </div>
+
+        <div class="section-card">
+          <text class="group-title">{{ $t("environment.network") }}</text>
+          <div class="info-row"><text class="info-label">{{ $t("environment.networkType") }}</text><text class="info-value">{{ environment.networkType }}</text></div>
+        </div>
+
+        <div class="section-card">
+          <text class="group-title">{{ $t("environment.location") }}</text>
+          <text class="status-text">{{ locationStatus }}</text>
+          <div class="info-row"><text class="info-label">{{ $t("environment.coordinates") }}</text><text class="info-value">{{ environment.coordinates }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.altitude") }}</text><text class="info-value">{{ environment.altitude }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.speed") }}</text><text class="info-value">{{ environment.speed }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.locationAccuracy") }}</text><text class="info-value">{{ environment.locationAccuracy }}</text></div>
+          <default-button margin-top="20px" text="environment.detectLocation" @click="DetectLocation"></default-button>
+        </div>
+
+        <div class="section-card">
+          <text class="group-title">{{ $t("environment.sensor") }}</text>
+          <text class="status-text">{{ sensorStatus }}</text>
+          <div class="info-row"><text class="info-label">{{ $t("environment.accelerometer") }}</text><text class="info-value">{{ environment.accelerometer }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.compass") }}</text><text class="info-value">{{ environment.compass }}</text></div>
+          <div class="info-row"><text class="info-label">{{ $t("environment.compassAccuracy") }}</text><text class="info-value">{{ environment.compassAccuracy }}</text></div>
+          <default-button margin-top="20px" text="environment.startSensors" @click="StartSensorCheck"></default-button>
+          <default-button margin-top="15px" text="environment.stopSensors" @click="StopSensorCheck"></default-button>
+        </div>
+
+        <text class="bottom-spacing"></text>
+      </div>
+    </scroll>
+  </div>
+</template>
+
+<script>
+import device from "@system.device"
+import network from "@system.network"
+import brightness from "@system.brightness"
+import volume from "@system.volume"
+import geolocation from "@system.geolocation"
+import sensor from "@system.sensor"
+
+export default {
+  private: {
+    environmentStatus: "",
+    locationStatus: "",
+    sensorStatus: "",
+    sensorActive: false,
+    refreshGeneration: 0,
+    environment: {
+      clientVersion: "",
+      brand: "",
+      manufacturer: "",
+      model: "",
+      product: "",
+      deviceType: "",
+      os: "",
+      platform: "",
+      apiLevel: "",
+      languageRegion: "",
+      screenSize: "",
+      screenDensity: "",
+      screenShape: "",
+      brightness: "",
+      brightnessMode: "",
+      networkType: "",
+      mediaVolume: "",
+      totalStorage: "",
+      usedStorage: "",
+      availableStorage: "",
+      storageUsage: "",
+      coordinates: "",
+      altitude: "",
+      speed: "",
+      locationAccuracy: "",
+      accelerometer: "",
+      compass: "",
+      compassAccuracy: ""
+    }
+  },
+  FormatValue(value) {
+    if (value === undefined || value === null || value === "") {
+      return this.$t("environment.notAvailable")
+    }
+    return String(value)
+  },
+  FormatBytes(value) {
+    if (value === undefined || value === null || value === "") {
+      return this.$t("environment.notAvailable")
+    }
+    const bytes = Number(value)
+    if (!isFinite(bytes) || bytes < 0) {
+      return this.$t("environment.notAvailable")
+    }
+
+    const units = ["B", "KB", "MB", "GB", "TB"]
+    let unitIndex = 0
+    let displayValue = bytes
+    while (displayValue >= 1024 && unitIndex < units.length - 1) {
+      displayValue /= 1024
+      unitIndex += 1
+    }
+    return `${displayValue.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`
+  },
+  FormatStorageUsage(totalStorage, availableStorage) {
+    const total = Number(totalStorage)
+    const available = Number(availableStorage)
+    if (!isFinite(total) || !isFinite(available) || total <= 0 || available < 0) {
+      return this.$t("environment.notAvailable")
+    }
+    const safeAvailable = Math.min(available, total)
+    return `${((total - safeAvailable) / total * 100).toFixed(1)}%`
+  },
+  FormatVersion(name, versionName, versionCode) {
+    const parts = []
+    if (name !== undefined && name !== null && name !== "") parts.push(String(name))
+    if (versionName !== undefined && versionName !== null && versionName !== "") parts.push(String(versionName))
+    if (versionCode !== undefined && versionCode !== null && versionCode !== "") parts.push(`(${versionCode})`)
+    return parts.length ? parts.join(" ") : this.$t("environment.notAvailable")
+  },
+  FormatLanguageRegion(language, region) {
+    const parts = []
+    if (language !== undefined && language !== null && language !== "") parts.push(String(language))
+    if (region !== undefined && region !== null && region !== "") parts.push(String(region))
+    return parts.length ? parts.join(" / ") : this.$t("environment.notAvailable")
+  },
+  FormatBrightnessMode(mode) {
+    if (mode === 0) return this.$t("environment.manualBrightness")
+    if (mode === 1) return this.$t("environment.autoBrightness")
+    return this.$t("environment.notAvailable")
+  },
+  FormatPercent(value) {
+    const numberValue = Number(value)
+    if (!isFinite(numberValue)) return this.$t("environment.notAvailable")
+    return `${(numberValue * 100).toFixed(0)}%`
+  },
+  ApplyEnvironment(deviceInfo, networkType, storageInfo, displayInfo, mediaVolume) {
+    const info = deviceInfo || {}
+    const storage = storageInfo || {}
+    const display = displayInfo || {}
+    const client = global.biliclient || {}
+    const apiLevel = info.APILevel === undefined ? info.apiLevel : info.APILevel
+    const totalStorage = Number(storage.totalStorage)
+    const availableStorage = Number(storage.availableStorage)
+    const hasStorageData = isFinite(totalStorage) && isFinite(availableStorage) && totalStorage >= 0 && availableStorage >= 0
+    const safeAvailableStorage = hasStorageData ? Math.min(availableStorage, totalStorage) : null
+    const usedStorage = hasStorageData ? Math.max(totalStorage - safeAvailableStorage, 0) : null
+
+    this.environment.clientVersion = this.FormatValue(client.version)
+    this.environment.brand = this.FormatValue(info.brand)
+    this.environment.manufacturer = this.FormatValue(info.manufacturer)
+    this.environment.model = this.FormatValue(info.model)
+    this.environment.product = this.FormatValue(info.product)
+    this.environment.deviceType = this.FormatValue(info.deviceType)
+    this.environment.os = this.FormatVersion(info.osType, info.osVersionName, info.osVersionCode)
+    this.environment.platform = this.FormatVersion(info.platformVersionName, "", info.platformVersionCode)
+    this.environment.apiLevel = this.FormatValue(apiLevel)
+    this.environment.languageRegion = this.FormatLanguageRegion(info.language, info.region)
+    this.environment.screenSize = `${this.FormatValue(info.screenWidth)} × ${this.FormatValue(info.screenHeight)}`
+    this.environment.screenDensity = this.FormatValue(info.screenDensity)
+    this.environment.screenShape = this.FormatValue(info.screenShape)
+    this.environment.networkType = this.FormatValue(networkType)
+    this.environment.totalStorage = this.FormatBytes(totalStorage)
+    this.environment.usedStorage = this.FormatBytes(usedStorage)
+    this.environment.availableStorage = this.FormatBytes(safeAvailableStorage)
+    this.environment.storageUsage = this.FormatStorageUsage(totalStorage, safeAvailableStorage)
+    this.environment.brightness = display.brightness === undefined ? this.$t("environment.notAvailable") : `${display.brightness} / 255`
+    this.environment.brightnessMode = this.FormatBrightnessMode(display.brightnessMode)
+    this.environment.mediaVolume = this.FormatPercent(mediaVolume)
+  },
+  RefreshEnvironment() {
+    const generation = this.refreshGeneration + 1
+    this.refreshGeneration = generation
+    let deviceInfo = global.DEVICE_INFO || {}
+    let networkType = global.DEVICE_NETWORK_TYPE || ""
+    const storageInfo = { totalStorage: null, availableStorage: null }
+    const displayInfo = { brightness: undefined, brightnessMode: undefined }
+    let mediaVolume = undefined
+    let pending = 7
+    let failed = false
+
+    this.environmentStatus = this.$t("environment.refreshing")
+    this.ApplyEnvironment(deviceInfo, networkType, storageInfo, displayInfo, mediaVolume)
+
+    const complete = (requestFailed) => {
+      if (generation !== this.refreshGeneration) return
+      failed = failed || requestFailed
+      pending -= 1
+      if (pending === 0) {
+        this.ApplyEnvironment(deviceInfo, networkType, storageInfo, displayInfo, mediaVolume)
+        this.environmentStatus = failed ? this.$t("environment.partialLoad") : this.$t("environment.refreshed")
+      }
+    }
+
+    device.getInfo({
+      success: (data) => { deviceInfo = data || {}; global.DEVICE_INFO = deviceInfo; complete(false) },
+      fail: (data, code) => { global.logger.warn("[environment] device info unavailable, code =", code); complete(true) }
+    })
+    network.getType({
+      success: (data) => { networkType = data && data.type ? data.type : ""; global.DEVICE_NETWORK_TYPE = networkType; complete(false) },
+      fail: (data, code) => { global.logger.warn("[environment] network unavailable, code =", code); complete(true) }
+    })
+    device.getTotalStorage({
+      success: (data) => { storageInfo.totalStorage = data && data.totalStorage; complete(false) },
+      fail: (data, code) => { global.logger.warn("[environment] total storage unavailable, code =", code); complete(true) }
+    })
+    device.getAvailableStorage({
+      success: (data) => { storageInfo.availableStorage = data && data.availableStorage; complete(false) },
+      fail: (data, code) => { global.logger.warn("[environment] available storage unavailable, code =", code); complete(true) }
+    })
+    brightness.getValue({
+      success: (data) => { displayInfo.brightness = data && data.value; complete(false) },
+      fail: (data, code) => { global.logger.warn("[environment] brightness unavailable, code =", code); complete(true) }
+    })
+    brightness.getMode({
+      success: (data) => { displayInfo.brightnessMode = data && data.mode; complete(false) },
+      fail: (data, code) => { global.logger.warn("[environment] brightness mode unavailable, code =", code); complete(true) }
+    })
+    volume.getMediaValue({
+      success: (data) => { mediaVolume = data && data.value; complete(false) },
+      fail: (data, code) => { global.logger.warn("[environment] media volume unavailable, code =", code); complete(true) }
+    })
+  },
+  DetectLocation() {
+    this.locationStatus = this.$t("environment.detectingLocation")
+    geolocation.getLocation({
+      timeout: 10000,
+      success: (data) => {
+        const result = data || {}
+        this.environment.coordinates = `${this.FormatCoordinate(result.latitude)}, ${this.FormatCoordinate(result.longitude)}`
+        this.environment.altitude = this.FormatMeters(result.altitude)
+        this.environment.speed = this.FormatSpeed(result.speed)
+        this.environment.locationAccuracy = this.FormatMeters(result.accuracy)
+        this.locationStatus = this.$t("environment.locationDetected")
+      },
+      fail: (data, code) => {
+        this.locationStatus = `${this.$t("environment.locationUnavailable")} (${this.FormatValue(code)})`
+        global.logger.warn("[environment] location unavailable, code =", code)
+      }
+    })
+  },
+  FormatCoordinate(value) {
+    const numberValue = Number(value)
+    return isFinite(numberValue) ? numberValue.toFixed(6) : this.$t("environment.notAvailable")
+  },
+  FormatMeters(value) {
+    const numberValue = Number(value)
+    return isFinite(numberValue) ? `${numberValue.toFixed(1)} m` : this.$t("environment.notAvailable")
+  },
+  FormatSpeed(value) {
+    const numberValue = Number(value)
+    return isFinite(numberValue) ? `${numberValue.toFixed(1)} m/s` : this.$t("environment.notAvailable")
+  },
+  StartSensorCheck() {
+    this.StopSensorCheck(false)
+    this.sensorActive = true
+    this.sensorStatus = this.$t("environment.sensing")
+
+    sensor.subscribeAccelerometer({
+      interval: "normal",
+      callback: (data) => {
+        if (!this.sensorActive) return
+        const result = data || {}
+        this.environment.accelerometer = `x ${this.FormatSensorValue(result.x)} · y ${this.FormatSensorValue(result.y)} · z ${this.FormatSensorValue(result.z)}`
+      },
+      fail: (data, code) => {
+        this.environment.accelerometer = this.$t("environment.notAvailable")
+        this.sensorStatus = `${this.$t("environment.sensorPartial")} (${this.FormatValue(code)})`
+        global.logger.warn("[environment] accelerometer unavailable, code =", code)
+      }
+    })
+    sensor.subscribeCompass({
+      callback: (data) => {
+        if (!this.sensorActive) return
+        const result = data || {}
+        const direction = Number(result.direction)
+        this.environment.compass = isFinite(direction) ? `${Math.round(direction * 180 / Math.PI)}°` : this.$t("environment.notAvailable")
+        this.environment.compassAccuracy = this.FormatValue(result.accuracy)
+      },
+      fail: (data, code) => {
+        this.environment.compass = this.$t("environment.notAvailable")
+        this.environment.compassAccuracy = this.$t("environment.notAvailable")
+        this.sensorStatus = `${this.$t("environment.sensorPartial")} (${this.FormatValue(code)})`
+        global.logger.warn("[environment] compass unavailable, code =", code)
+      }
+    })
+  },
+  FormatSensorValue(value) {
+    const numberValue = Number(value)
+    return isFinite(numberValue) ? numberValue.toFixed(2) : "–"
+  },
+  StopSensorCheck(updateStatus = true) {
+    sensor.unsubscribeAccelerometer()
+    sensor.unsubscribeCompass()
+    this.sensorActive = false
+    if (updateStatus) this.sensorStatus = this.$t("environment.sensorStopped")
+  },
+  onInit() {
+    this.locationStatus = this.$t("environment.locationNotDetected")
+    this.sensorStatus = this.$t("environment.sensorNotStarted")
+    this.RefreshEnvironment()
+  },
+  onDestroy() {
+    this.StopSensorCheck(false)
+  }
+}
+</script>
+
+<style lang="less">
+@import '@less/global.less';
+@import './environment.less';
+</style>
