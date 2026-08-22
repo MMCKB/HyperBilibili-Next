@@ -244,6 +244,7 @@
         "locationAccuracy": "定位精度",
         "detectLocation": "检测当前位置",
         "detectingLocation": "正在检测位置…",
+        "locationDetectingToast": "开始检测当前位置…",
         "locationDetected": "位置检测完成",
         "locationUnavailable": "位置不可用",
         "locationNotDetected": "尚未检测位置",
@@ -256,6 +257,7 @@
         "sensing": "正在接收传感器数据…",
         "sensorPartial": "部分传感器不可用",
         "sensorUnavailableToast": "设备不支持部分传感器，已显示可用检测项。",
+        "sensorUnavailable": "设备不支持加速度计和罗盘检测",
         "sensorStopped": "已停止传感器检测",
         "sensorNotStarted": "尚未开始传感器检测"
     },

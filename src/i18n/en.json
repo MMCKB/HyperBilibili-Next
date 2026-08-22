@@ -240,6 +240,7 @@
         "locationAccuracy": "Location Accuracy",
         "detectLocation": "Detect Current Location",
         "detectingLocation": "Detecting location…",
+        "locationDetectingToast": "Starting current location check…",
         "locationDetected": "Location detected",
         "locationUnavailable": "Location unavailable",
         "locationNotDetected": "Location has not been detected",
@@ -252,6 +253,7 @@
         "sensing": "Receiving sensor data…",
         "sensorPartial": "Some sensors are unavailable",
         "sensorUnavailableToast": "Some sensors are not supported; available checks are still shown.",
+        "sensorUnavailable": "Accelerometer and compass checks are not supported on this device.",
         "sensorStopped": "Sensor check stopped",
         "sensorNotStarted": "Sensor check has not started"
     },

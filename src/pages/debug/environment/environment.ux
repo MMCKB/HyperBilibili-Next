@@ -3,7 +3,7 @@
 
 <template>
   <div class="page">
-    <scroll class="scroll environment-scroll" scroll-y="true" bounces="true">
+    <scroll class="scroll environment-scroll {{scrclass}}" scroll-y="true" bounces="true">
       <title-bar title="environment.title"></title-bar>
 
       <div class="environment-content">
@@ -111,6 +111,12 @@ export default {
     sensorStatus: "",
     sensorActive: false,
     sensorFailureNotified: false,
+    sensorRunId: 0,
+    accelerometerFinished: false,
+    compassFinished: false,
+    accelerometerAvailable: false,
+    compassAvailable: false,
+    scrclass: "",
     refreshGeneration: 0,
     environment: {
       clientVersion: "",
@@ -319,6 +325,10 @@ export default {
   },
   DetectLocation() {
     this.locationStatus = this.$t("environment.detectingLocation")
+    prompt.showToast({
+      message: this.$t("environment.locationDetectingToast"),
+      duration: 2000
+    })
     geolocation.getLocation({
       timeout: 10000,
       success: (data) => {
@@ -361,8 +371,14 @@ export default {
   },
   StartSensorCheck() {
     this.StopSensorCheck(false)
+    const sensorRunId = this.sensorRunId + 1
+    this.sensorRunId = sensorRunId
     this.sensorActive = true
     this.sensorFailureNotified = false
+    this.accelerometerFinished = false
+    this.compassFinished = false
+    this.accelerometerAvailable = false
+    this.compassAvailable = false
     this.sensorStatus = this.$t("environment.sensing")
 
     try {
@@ -371,14 +387,18 @@ export default {
         callback: (data) => {
           if (!this.sensorActive) return
           const result = data || {}
+          this.accelerometerFinished = true
+          this.accelerometerAvailable = true
           this.environment.accelerometer = `x ${this.FormatSensorValue(result.x)} · y ${this.FormatSensorValue(result.y)} · z ${this.FormatSensorValue(result.z)}`
         },
         fail: (data, code) => {
+          this.accelerometerFinished = true
           this.environment.accelerometer = this.$t("environment.notAvailable")
           this.HandleSensorFailure("accelerometer", code)
         }
       })
     } catch (error) {
+      this.accelerometerFinished = true
       this.environment.accelerometer = this.$t("environment.notAvailable")
       this.HandleSensorFailure("accelerometer", error && error.message ? error.message : "exception")
     }
@@ -388,27 +408,51 @@ export default {
         callback: (data) => {
           if (!this.sensorActive) return
           const result = data || {}
+          this.compassFinished = true
+          this.compassAvailable = true
           const direction = Number(result.direction)
           this.environment.compass = isFinite(direction) ? `${Math.round(direction * 180 / Math.PI)}°` : this.$t("environment.notAvailable")
           this.environment.compassAccuracy = this.FormatValue(result.accuracy)
         },
         fail: (data, code) => {
+          this.compassFinished = true
           this.environment.compass = this.$t("environment.notAvailable")
           this.environment.compassAccuracy = this.$t("environment.notAvailable")
           this.HandleSensorFailure("compass", code)
         }
       })
     } catch (error) {
+      this.compassFinished = true
       this.environment.compass = this.$t("environment.notAvailable")
       this.environment.compassAccuracy = this.$t("environment.notAvailable")
       this.HandleSensorFailure("compass", error && error.message ? error.message : "exception")
     }
+
+    setTimeout(() => {
+      if (!this.sensorActive || sensorRunId !== this.sensorRunId) return
+      const accelerometerSilent = !this.accelerometerFinished
+      const compassSilent = !this.compassFinished
+      if (accelerometerSilent) {
+        this.environment.accelerometer = this.$t("environment.notAvailable")
+        this.HandleSensorFailure("accelerometer", "timeout")
+      }
+      if (compassSilent) {
+        this.environment.compass = this.$t("environment.notAvailable")
+        this.environment.compassAccuracy = this.$t("environment.notAvailable")
+        this.HandleSensorFailure("compass", "timeout")
+      }
+      if (!this.accelerometerAvailable && !this.compassAvailable) {
+        this.StopSensorCheck(false)
+        this.sensorStatus = this.$t("environment.sensorUnavailable")
+      }
+    }, 2500)
   },
   FormatSensorValue(value) {
     const numberValue = Number(value)
     return isFinite(numberValue) ? numberValue.toFixed(2) : "–"
   },
   StopSensorCheck(updateStatus = true) {
+    this.sensorRunId += 1
     sensor.unsubscribeAccelerometer()
     sensor.unsubscribeCompass()
     this.sensorActive = false
