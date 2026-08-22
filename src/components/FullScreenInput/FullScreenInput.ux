@@ -55,7 +55,8 @@ export default {
             maxlength: 5,
             traditional: false
         },
-        inputSettingsSaveTimer: null
+        inputSettingsSaveTimer: null,
+        hasPendingInputSettings: false
     },
     InputEvent(evt){
         this.input_text += evt.detail.content
@@ -64,11 +65,13 @@ export default {
         this.input_text = this.input_text.slice(0, -1)
     },
     ExitInput(){
-        this.persistInputMethodSettings()
+        // 返回路径绝不触发设置写入，避免在页面销毁阶段阻塞运行时。
+        this.cancelInputMethodSettingsSave()
         this.$emit("exit")
     },
     InputFinish(){
-        this.persistInputMethodSettings()
+        // 发送路径同样不执行同步写入；已稳定落盘的设置会在下次打开时恢复。
+        this.cancelInputMethodSettingsSave()
         this.$emit("send", {
             content: this.input_text
         })
@@ -95,6 +98,7 @@ export default {
             ...this.pendingInputMethodSettings,
             ...evt.detail
         }
+        this.hasPendingInputSettings = true
         if (this.inputSettingsSaveTimer) {
             clearTimeout(this.inputSettingsSaveTimer)
         }
@@ -103,15 +107,22 @@ export default {
             this.persistInputMethodSettings()
         }, 400)
     },
-    persistInputMethodSettings(){
+    cancelInputMethodSettingsSave(){
         if (this.inputSettingsSaveTimer) {
             clearTimeout(this.inputSettingsSaveTimer)
             this.inputSettingsSaveTimer = null
+        }
+    },
+    persistInputMethodSettings(){
+        this.cancelInputMethodSettingsSave()
+        if (!this.hasPendingInputSettings) {
+            return
         }
         if (global.settings && global.settings.saveSettings) {
             global.settings.saveSettings({
                 inputMethodSettings: this.pendingInputMethodSettings
             })
+            this.hasPendingInputSettings = false
         }
     },
     async InitScreenType(){
