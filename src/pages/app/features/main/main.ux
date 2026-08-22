@@ -17,8 +17,8 @@
         <text style="margin-top: 25px" static></text>
       </div>
     </scroll>
-    <div style="position: absolute; bottom: 0px" @click="Refresh()">
-      <image src="/common/main_floatingrefresh.png" static></image>
+    <div class="refresh-button" @click="Refresh()">
+      <image class="refresh-icon {{anims.refresh_class}}" src="/common/main_floatingrefresh.png" static></image>
     </div>
     <text style="position: absolute; color: rgba(0, 0, 0, 0); width: 0px; top: 50px">
       {{ anims.refresh_bottom.value }}
@@ -43,6 +43,8 @@ export default {
     funnytip: "",
     anims: {
       show_loading: false,
+      isRefreshing: false,
+      refresh_class: "",
       refresh: null,
       showRefreshFX: false,
       refresh_bottom: { value: "-350" }
@@ -55,7 +57,9 @@ export default {
     }
   },
   async Refresh() {
-    if (!this.anims.showRefreshFX) {
+    if (!this.anims.isRefreshing) {
+      this.anims.isRefreshing = true;
+      this.anims.refresh_class = "refresh-icon-spinning";
       this.recommend_vids.splice(0, this.recommend_vids.length);
       this.anims.show_loading = true;
       this.show_recommend_div = false;
@@ -72,6 +76,8 @@ export default {
         this.anims.refresh.stop();
         this.anims.showRefreshFX = false;
         await this.GetVids();
+        this.anims.isRefreshing = false;
+        this.anims.refresh_class = "";
       }, 1200);
     } else {
       prompt.showToast({ message: "你先别急。" });
