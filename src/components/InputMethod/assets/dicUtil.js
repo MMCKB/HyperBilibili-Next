@@ -197,14 +197,107 @@ function buildSingleEntries(pinyin, activeDict) {
     return createEntries(hanzi.split(''));
 }
 
+function buildT9SyllableIndex(source) {
+    const index = {};
+    for (let pinyin in source) {
+        const t9 = pinyinToT9(pinyin);
+        if (!t9) {
+            continue;
+        }
+        if (!index[t9]) {
+            index[t9] = [];
+        }
+        index[t9].push(pinyin);
+    }
+    return index;
+}
+
+// 对任意九键数字串按可用拼音音节分段，例如 96524 → wo + lai。
+// 优先匹配更长的音节，使“我”被选中后仍能保留 524（lai）继续输入。
+function splitT9Syllables(digits, activeDict) {
+    const t9ToPinyin = activeDict.t9Syllables;
+    const memo = {};
+    function splitFrom(start) {
+        if (start >= digits.length) {
+            return [];
+        }
+        if (memo[start] !== undefined) {
+            return memo[start];
+        }
+        const maxLength = Math.min(6, digits.length - start);
+        for (let length = maxLength; length >= 1; length--) {
+            const part = digits.substr(start, length);
+            const candidates = t9ToPinyin[part];
+            if (!candidates || !candidates.length) {
+                continue;
+            }
+            const rest = splitFrom(start + length);
+            if (rest || start + length === digits.length) {
+                const result = [{ digits: part, pinyin: candidates }];
+                if (rest) {
+                    for (let i = 0; i < rest.length; i++) {
+                        result.push(rest[i]);
+                    }
+                }
+                memo[start] = result;
+                return result;
+            }
+        }
+        memo[start] = null;
+        return null;
+    }
+    return splitFrom(0) || [];
+}
+
+// 将同一数字组的多个拼音候选交错排列。这样 524 同时对应 kai、lai 时，
+// “开、来”会相邻出现，不会先堆满 kai 的候选才看到 lai。
+function buildT9GroupEntries(pinyinList, activeDict, remainderDigits) {
+    const entries = [];
+    for (let rank = 0; rank < 12; rank++) {
+        for (let i = 0; i < pinyinList.length; i++) {
+            const hanzi = activeDict.py2hz[pinyinList[i]] || '';
+            if (hanzi[rank]) {
+                entries.push({
+                    text: hanzi[rank],
+                    remainderPinyin: '',
+                    remainderDigits: remainderDigits || ''
+                });
+            }
+        }
+    }
+    return entries;
+}
+
+// 每个音节都产生候选。选择前一音节时携带后续数字串，继续显示下一音节的汉字。
+function buildT9SyllableEntries(digits, activeDict) {
+    const syllables = splitT9Syllables(digits, activeDict);
+    if (syllables.length < 2) {
+        return [];
+    }
+    const entries = [];
+    for (let i = 0; i < syllables.length; i++) {
+        let remainderDigits = '';
+        for (let j = i + 1; j < syllables.length; j++) {
+            remainderDigits += syllables[j].digits;
+        }
+        const groupEntries = buildT9GroupEntries(syllables[i].pinyin, activeDict, remainderDigits);
+        for (let j = 0; j < groupEntries.length; j++) {
+            entries.push(groupEntries[j]);
+        }
+    }
+    return entries;
+}
+
 SimpleInputMethod.initDict = function() {
     this.dict.py2hz = dict;
     this.dict.py2hz2 = buildInitialIndex(dict);
+    this.dict.t9Syllables = buildT9SyllableIndex(dict);
     this.dict.phrase = buildPhraseIndex(1);
     this.dict.t9Phrase = buildT9PhraseIndex(this.dict.phrase);
 
     this.traditionalDict.py2hz = dictTraditional;
     this.traditionalDict.py2hz2 = buildInitialIndex(dictTraditional);
+    this.traditionalDict.t9Syllables = buildT9SyllableIndex(dictTraditional);
     this.traditionalDict.phrase = buildPhraseIndex(2);
     this.traditionalDict.t9Phrase = buildT9PhraseIndex(this.traditionalDict.phrase);
 };
@@ -213,13 +306,6 @@ SimpleInputMethod.getSingleHanzi = function(pinyin, traditional) {
     const activeDict = traditional ? this.traditionalDict : this.dict;
     return activeDict.py2hz2[pinyin] || activeDict.py2hz[pinyin] || '';
 }
-
-// 指定单个拼音时只返回该拼音的汉字，用于九键展开面板的拼音分组选择。
-SimpleInputMethod.getPinyinCandidates = function(pinyin, traditional = false) {
-    const normalizedPinyin = normalizePinyin(pinyin);
-    const activeDict = traditional ? this.traditionalDict : this.dict;
-    return createEntries((activeDict.py2hz[normalizedPinyin] || '').split(''));
-};
 
 // 全拼候选：完整词组排在前；展开时继续给出 ni、hao 等音节的单字候选。
 SimpleInputMethod.getHanziCandidates = function(pinyin, traditional = false) {
@@ -257,35 +343,15 @@ SimpleInputMethod.getT9Candidates = function(digits, traditional = false) {
     const activeDict = traditional ? this.traditionalDict : this.dict;
     const phraseWords = activeDict.t9Phrase.words[digits] || [];
     const phrasePinyin = activeDict.t9Phrase.pinyin[digits] || [];
-    let syllableEntries = [];
+    let phraseSyllableEntries = [];
     for (let i = 0; i < phrasePinyin.length; i++) {
-        syllableEntries = syllableEntries.concat(buildSyllableEntries(phrasePinyin[i], activeDict));
+        phraseSyllableEntries = phraseSyllableEntries.concat(buildSyllableEntries(phrasePinyin[i], activeDict));
     }
+    const genericSyllableEntries = buildT9SyllableEntries(digits, activeDict);
 
-    const singleEntries = [];
-    const matchedPinyin = [];
-    for (let pinyin in activeDict.py2hz) {
-        if (pinyinToT9(pinyin) === digits) {
-            matchedPinyin.push(pinyin);
-            const hanzi = activeDict.py2hz[pinyin];
-            for (let i = 0; i < hanzi.length; i++) {
-                singleEntries.push({ text: hanzi[i], remainderPinyin: '', remainderDigits: '' });
-            }
-        }
-    }
-    return [mergeEntries(createEntries(phraseWords), syllableEntries, singleEntries), matchedPinyin];
-};
-
-// 九键展开面板左侧使用的可选拼音列表。去重后保留词典原始优先顺序。
-SimpleInputMethod.getT9PinyinList = function(digits, traditional = false) {
-    const result = this.getT9Candidates(digits, traditional);
-    const pinyinList = [];
-    for (let i = 0; i < result[1].length; i++) {
-        if (pinyinList.indexOf(result[1][i]) < 0) {
-            pinyinList.push(result[1][i]);
-        }
-    }
-    return pinyinList;
+    const matchedPinyin = activeDict.t9Syllables[digits] || [];
+    const singleEntries = buildT9GroupEntries(matchedPinyin, activeDict, '');
+    return [mergeEntries(createEntries(phraseWords), phraseSyllableEntries, genericSyllableEntries, singleEntries), matchedPinyin];
 };
 
 SimpleInputMethod.getT9Hanzi = function(digits, traditional = false) {
