@@ -475,7 +475,7 @@ export default {
       this.lang = "cn";
       this.rectKeyboardtype = "T9";
     }
-    this.resetReslutList();
+    this.resetReslutList(true);
     this.emitRectSettingsChange();
   },
   setRectVibrateMode(mode) {
@@ -489,13 +489,13 @@ export default {
     for (let i = 0; i < count; i++) {
       this.cvalList.push(i);
     }
-    this.resetReslutList();
+    this.resetReslutList(true);
     this.onVibrate();
     this.emitRectSettingsChange();
   },
   setRectTraditionalInput(enabled) {
     this.rectTraditionalInput = enabled === true;
-    this.resetReslutList();
+    this.resetReslutList(true);
     this.onVibrate();
     this.emitRectSettingsChange();
   },
@@ -618,13 +618,17 @@ export default {
     this.waitingIndex = -1;
     this.lastWaitingStr = "";
   },
-  resetReslutList() {
-    if (this.screentype != "circle") {
-      this.$element("cvalWaiting").scrollTo({
-        top: 0,
-        left: 0,
-        behavior: "smooth",
-      });
+  resetReslutList(skipCandidateScroll = false) {
+    // 设置面板内刷新候选时不操作候选滚动节点，避免手表端同步布局切换造成卡死。
+    if (!skipCandidateScroll && this.screentype != "circle") {
+      const candidateScroll = this.$element("cvalWaiting");
+      if (candidateScroll && candidateScroll.scrollTo) {
+        candidateScroll.scrollTo({
+          top: 0,
+          left: 0,
+          behavior: "smooth",
+        });
+      }
     }
     let watingStr = "";
     if (this.lastWaitingStr && this.lastWaitingStr[this.waitingIndex]) {
@@ -716,7 +720,7 @@ export default {
       if (this.rectKeyboardtype === "T9") {
         this.lang = "cn";
       }
-      this.resetReslutList();
+      this.resetReslutList(true);
     }
   },
   watchVibratemodePropsChange(newV, oldV) {
@@ -727,13 +731,13 @@ export default {
   watchTraditionalPropsChange(newV, oldV) {
     if (this.screentype === "rect") {
       this.rectTraditionalInput = newV === true || newV === "true";
-      this.resetReslutList();
+      this.resetReslutList(true);
     }
   },
   watchInputlangPropsChange(newV, oldV) {
     if (this.screentype === "rect" && this.rectKeyboardtype !== "T9") {
       this.lang = newV === "en" ? "en" : "cn";
-      this.resetReslutList();
+      this.resetReslutList(true);
     }
   },
   onVibrate() {
