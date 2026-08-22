@@ -225,7 +225,7 @@
               <text class="rect-mode-button" style="background-color:{{lang==='cn' && rectKeyboardtype!=='T9' ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('cn')">中</text>
               <text class="rect-mode-button" style="background-color:{{lang==='en' && rectKeyboardtype!=='T9' ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('en')">英</text>
               <text class="rect-mode-button" style="background-color:{{rectKeyboardtype==='T9' ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('t9')">九</text>
-              <text class="rect-mode-button" style="font-size:22px" @click="openRectPanel('settings')">设置</text>
+              <text class="rect-mode-button" style="font-size:24px" @click="openRectPanel('settings')">设置</text>
             </div>
           </scroll>
         </div>
@@ -245,6 +245,11 @@
             <text class="rect-settings-label">候选词</text>
             <text class="rect-settings-option" style="background-color:{{rectCandidateCount===3 ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="setRectCandidateCount(3)">3</text>
             <text class="rect-settings-option" style="background-color:{{rectCandidateCount===5 ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="setRectCandidateCount(5)">5</text>
+          </div>
+          <div class="rect-settings-row">
+            <text class="rect-settings-label">繁体输入</text>
+            <text class="rect-settings-option" style="background-color:{{!rectTraditionalInput ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="setRectTraditionalInput(false)">关</text>
+            <text class="rect-settings-option" style="background-color:{{rectTraditionalInput ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="setRectTraditionalInput(true)">开</text>
           </div>
         </div>
       </div>
@@ -317,8 +322,8 @@
 import vibrator from "@system.vibrator";
 import device from '@system.device'
 import { SimpleInputMethod } from "./assets/dicUtil.js";
-function doSearchDic(word, cb) {
-  let hanzi = SimpleInputMethod.getHanzi(word);
+function doSearchDic(word, traditional, cb) {
+  let hanzi = SimpleInputMethod.getHanzi(word, traditional);
   if (hanzi && hanzi[0]) {
     cb(hanzi[0]);
   } else {
@@ -348,6 +353,9 @@ export default {
     screentype: {
       default: "circle",
     },
+    traditional: {
+      default: false,
+    },
   },
   data: {
     cval: "",
@@ -368,6 +376,8 @@ export default {
     rectKeyboardtype: "QWERTY",
     rectVibrateMode: "",
     rectCandidateCount: 5,
+    // 方屏繁体输入默认关闭；宿主可通过 traditional 属性恢复已保存偏好。
+    rectTraditionalInput: false,
     // 针对screenShape为rect的设备，会自动获取screenWidth并绑定到根div
     // 这样便能同时适配n67和o65甚至是后续设备，但实际效果可能受designWidth影响
     screenWidth: 336,
@@ -414,10 +424,12 @@ export default {
     this.rectKeyboardtype = this.keyboardtype === "T9" ? "T9" : "QWERTY";
     this.rectVibrateMode = this.vibratemode;
     this.rectCandidateCount = parseInt(this.maxlength) || 5;
+    this.rectTraditionalInput = this.traditional === true || this.traditional === "true";
     this.$watch("hide", "watchHidePropsChange");
     this.$watch("maxlength", "watchMaxLengthPropsChange");
     this.$watch("keyboardtype", "watchKeyboardtypePropsChange");
     this.$watch("vibratemode", "watchVibratemodePropsChange");
+    this.$watch("traditional", "watchTraditionalPropsChange");
   },
   addAllTxt(txt) {
     this.$emit("complete", { content: txt });
@@ -467,12 +479,19 @@ export default {
     this.onVibrate();
     this.emitRectSettingsChange();
   },
+  setRectTraditionalInput(enabled) {
+    this.rectTraditionalInput = enabled === true;
+    this.resetReslutList();
+    this.onVibrate();
+    this.emitRectSettingsChange();
+  },
   emitRectSettingsChange() {
     this.$emit("settingsChange", {
       keyboardtype: this.rectKeyboardtype,
       lang: this.lang,
       vibratemode: this.rectVibrateMode,
       maxlength: this.rectCandidateCount,
+      traditional: this.rectTraditionalInput,
     });
   },
   onRsSelect(txt) {
@@ -626,7 +645,8 @@ export default {
   },
   getResultByWord(val) {
     const that = this;
-    doSearchDic(val, function (data) {
+    const traditional = this.screentype === "rect" && this.rectTraditionalInput;
+    doSearchDic(val, traditional, function (data) {
       that.resultList = data;
       that.setResultListAll();
     });
@@ -689,6 +709,12 @@ export default {
   watchVibratemodePropsChange(newV, oldV) {
     if (this.screentype === "rect") {
       this.rectVibrateMode = newV;
+    }
+  },
+  watchTraditionalPropsChange(newV, oldV) {
+    if (this.screentype === "rect") {
+      this.rectTraditionalInput = newV === true || newV === "true";
+      this.resetReslutList();
     }
   },
   onVibrate() {
@@ -825,33 +851,35 @@ export default {
   /* 仅该局部滚动容器处理横向滑动；外层不绑定滑动事件。 */
 }
 .rect-mode-menu {
-  min-width:360px;
+  /* 四个大圆形菜单项保留完整内容宽度，由内部 scroll 横向查看。 */
+  min-width:432px;
   height:100%;
-  padding-left:12px;
-  padding-right:12px;
+  padding-left:18px;
+  padding-right:18px;
   flex-direction:row;
   justify-content:flex-start;
   align-items:center;
 }
 .rect-mode-button {
   color:#fff;
-  font-size:30px;
+  font-size:34px;
   font-weight:bold;
-  width:70px;
-  height:70px;
-  margin:0 3px;
-  border-radius:35px;
+  /* 84px 接近方屏键盘按键的可点按面积，并在 252px 面板内保留上下呼吸空间。 */
+  width:84px;
+  height:84px;
+  margin:0 6px;
+  border-radius:42px;
   text-align:center;
-  border:3px solid rgba(255,255,255,0.16);
+  border:3px solid rgba(255,255,255,0.14);
 }
 .rect-settings-overlay {
   justify-content:flex-start;
   flex-direction:column;
-  padding:12px 12px 0 12px;
+  padding:10px 12px 0 12px;
 }
 .rect-settings-header {
   width:100%;
-  height:45px;
+  height:38px;
   flex-direction:row;
   align-items:center;
   justify-content:space-between;
@@ -870,7 +898,7 @@ export default {
 }
 .rect-settings-row {
   width:100%;
-  height:72px;
+  height:64px;
   flex-direction:row;
   align-items:center;
   border-top:2px solid #262626;
