@@ -53,3 +53,25 @@
 .vidtoolimg {
     width: 62px;
 }
+
+.vidtool-bounce {
+    animation-name: vidtool-bounce;
+    animation-duration: 180ms;
+    animation-timing-function: ease-out;
+    animation-fill-mode: both;
+}
+
+@keyframes vidtool-bounce {
+    0% {
+        transform: scale(1);
+    }
+    45% {
+        transform: scale(0.9);
+    }
+    75% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}

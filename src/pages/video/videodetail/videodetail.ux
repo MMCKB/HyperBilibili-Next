@@ -23,29 +23,29 @@
         </div>
       </div>
       <scroll scroll-x="true" class="vidtoolbar" style="margin-top: 25px" bounces="true">
-        <div class="vidtool" style="margin-left: 0px" @click="OpenPlayer()">
+        <div class="vidtool {{toolbar_anims.listen}}" style="margin-left: 0px" @click="OnToolbarClick('listen')">
           <image class="vidtoolimg" src="/common/vidtool_generatemanifest.png"></image>
           <text class="vidtooltext">听视频</text>
         </div>
-        <div class="vidtool" style="margin-left: 0px" @click="LikeClick()" @longpress="PowerIt()">
+        <div class="vidtool {{toolbar_anims.like}}" style="margin-left: 0px" @click="OnToolbarClick('like')" @longpress="PowerIt()">
           <image class="vidtoolimg" src="{{likesrc}}"></image>
           <text class="vidtooltext">{{ stat_like }}</text>
         </div>
-        <div class="vidtool" @click="CoinClick()">
+        <div class="vidtool {{toolbar_anims.coin}}" @click="OnToolbarClick('coin')">
           <image class="vidtoolimg" src="{{coinsrc}}"></image>
           <text class="vidtooltext">{{ stat_coin }}</text>
         </div>
-        <div class="vidtool" @click="AddToFav()">
+        <div class="vidtool {{toolbar_anims.favorite}}" @click="OnToolbarClick('favorite')">
           <image class="vidtoolimg" src="{{starsrc}}"></image>
           <text class="vidtooltext">
             {{ stat_favorite }}
           </text>
         </div>
-        <div class="vidtool" @click="AISummary()">
+        <div class="vidtool {{toolbar_anims.summary}}" @click="OnToolbarClick('summary')">
           <image class="vidtoolimg" src="/common/vidtool_aisummary.png"></image>
           <text class="vidtooltext">{{ $t("video.aisummary") }}</text>
         </div>
-        <div class="vidtool" @click="AddToWatchLater()">
+        <div class="vidtool {{toolbar_anims.watchlater}}" @click="OnToolbarClick('watchlater')">
           <image class="vidtoolimg" src="/common/vidtool_watchlater.png"></image>
           <text class="vidtooltext">{{ $t("video.showLater") }}</text>
         </div>
@@ -81,7 +81,15 @@ export default {
     replymode: false,
     coinpickermode: false,
     renderingCover: false,
-    scrclass: ""
+    scrclass: "",
+    toolbar_anims: {
+      listen: "",
+      like: "",
+      coin: "",
+      favorite: "",
+      summary: "",
+      watchlater: ""
+    }
   },
   computed: {
     stat_view() {
@@ -106,6 +114,38 @@ export default {
     prompt.showToast({
       message: "该功能仍在开发中"
     })
+  },
+  OnToolbarClick(tool) {
+    this.PlayToolbarBounce(tool)
+
+    switch (tool) {
+      case "listen":
+        this.OpenPlayer()
+        break
+      case "like":
+        this.LikeClick()
+        break
+      case "coin":
+        this.CoinClick()
+        break
+      case "favorite":
+        this.AddToFav()
+        break
+      case "summary":
+        this.AISummary()
+        break
+      case "watchlater":
+        this.AddToWatchLater()
+        break
+    }
+  },
+  PlayToolbarBounce(tool) {
+    if (!this.toolbar_anims[tool]) {
+      this.toolbar_anims[tool] = "vidtool-bounce"
+      setTimeout(() => {
+        this.toolbar_anims[tool] = ""
+      }, 220)
+    }
   },
   async AddToWatchLater() {
     try {
@@ -186,6 +226,9 @@ export default {
   async PowerIt() {
     // 一键三连：点赞 + 投1币 + 收藏，不弹投币选择面板
     prompt.showToast({message: "一键三连中！"})
+    this.PlayToolbarBounce("like")
+    this.PlayToolbarBounce("coin")
+    this.PlayToolbarBounce("favorite")
     this.LikeClick()
     this.DoCoinVideo(1)
     this.AddToFav()
