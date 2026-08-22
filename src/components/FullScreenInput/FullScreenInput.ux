@@ -46,7 +46,16 @@ export default {
             vibratemode: "short",
             maxlength: 5,
             traditional: false
-        }
+        },
+        // 当前显示的键盘不在设置变更时接收新属性，避免触发组件重建链。
+        pendingInputMethodSettings: {
+            keyboardtype: "QWERTY",
+            lang: "cn",
+            vibratemode: "short",
+            maxlength: 5,
+            traditional: false
+        },
+        inputSettingsSaveTimer: null
     },
     InputEvent(evt){
         this.input_text += evt.detail.content
@@ -55,9 +64,11 @@ export default {
         this.input_text = this.input_text.slice(0, -1)
     },
     ExitInput(){
+        this.persistInputMethodSettings()
         this.$emit("exit")
     },
     InputFinish(){
+        this.persistInputMethodSettings()
         this.$emit("send", {
             content: this.input_text
         })
@@ -67,6 +78,10 @@ export default {
         this.emojimode = true
     },
     CloseEmoji(){
+        // 表情面板打开期间键盘已卸载，此时回写偏好不会触发活动键盘的属性监听。
+        this.inputMethodSettings = {
+            ...this.pendingInputMethodSettings
+        }
         this.emojimode = false
     },
     // 选择表情后追加到输入文本
@@ -75,13 +90,28 @@ export default {
         this.input_text += evt.detail.content
     },
     OnInputMethodSettings(evt){
-        const nextSettings = {
-            ...this.inputMethodSettings,
+        // 只缓存，不回写 inputMethodSettings；当前键盘已在内部即时应用设置。
+        this.pendingInputMethodSettings = {
+            ...this.pendingInputMethodSettings,
             ...evt.detail
         }
-        this.inputMethodSettings = nextSettings
+        if (this.inputSettingsSaveTimer) {
+            clearTimeout(this.inputSettingsSaveTimer)
+        }
+        this.inputSettingsSaveTimer = setTimeout(() => {
+            this.inputSettingsSaveTimer = null
+            this.persistInputMethodSettings()
+        }, 400)
+    },
+    persistInputMethodSettings(){
+        if (this.inputSettingsSaveTimer) {
+            clearTimeout(this.inputSettingsSaveTimer)
+            this.inputSettingsSaveTimer = null
+        }
         if (global.settings && global.settings.saveSettings) {
-            global.settings.saveSettings({ inputMethodSettings: nextSettings })
+            global.settings.saveSettings({
+                inputMethodSettings: this.pendingInputMethodSettings
+            })
         }
     },
     async InitScreenType(){
@@ -92,6 +122,9 @@ export default {
                 ...this.inputMethodSettings,
                 ...savedSettings
             }
+        }
+        this.pendingInputMethodSettings = {
+            ...this.inputMethodSettings
         }
         // 用传入的初始文本初始化输入框
         this.input_text = this.initialText || ""
