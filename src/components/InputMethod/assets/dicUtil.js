@@ -70,11 +70,11 @@ SimpleInputMethod._buildForwardIndex = function() {
   step()
 }
 
-SimpleInputMethod.getSingleHanzi = function(pinyin, lang = 'cn') {
+SimpleInputMethod.getSingleHanzi = function(pinyin, lang) {
   if (lang !== 'cn') return ''
   return this.dict.py2hz2[pinyin]
-    || this.dict.py2hz[pinyin]
-    || ''
+  || this.dict.py2hz[pinyin]
+  || ''
 }
 
 // 取音节首字：单字表 py2hz 优先，词库单音节兜底。

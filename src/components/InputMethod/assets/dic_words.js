@@ -79,7 +79,7 @@ function getWords() {
   "pingchang": "平常", "youshihou": "有时候", "conglai": "从来",
 
   // ===== 疑问 =====
-  "shenme": "什么",  
+  "shenme": "什么",
    "shei": "谁",  "naer": "哪儿",
     "jige": "几个",
   "duoshao": "多少", "ganma": "干嘛",
@@ -111,7 +111,7 @@ function getWords() {
   // ===== 物品/设备 =====
   "diannao": "电脑",  "dongxi": "东西",
   "chezi": "车子", "yifu": "衣服", "fangzi": "房子",
-  "qianbao": "钱包", "yaoshi": "钥匙", 
+  "qianbao": "钱包", "yaoshi": "钥匙",
   "shoubiao": "手表", "erji": "耳机", "chongdianqi": "充电器",
   "dianshi": "电视", "bingxiang": "冰箱", "kongtiao": "空调",
   "xiyiji": "洗衣机", "weibolu": "微波炉",
@@ -214,7 +214,7 @@ function getWords() {
   "tigao": "提高", "jiangdi": "降低", "kuoda": "扩大",
   "suoxiao": "缩小", "zhangda": "长大", "chengshu": "成熟",
   "chenggong": "成功", "shibai": "失败", "jinbu": "进步",
-  "tuibu": "退步", "huifu": "恢复", 
+  "tuibu": "退步", "huifu": "恢复",
   "chuxian": "出现", "xiaoshi": "消失", "fasheng": "发生",
 
   // ===== 科技/网络 =====
@@ -224,7 +224,7 @@ function getWords() {
   "zhanghao": "账号", "mima": "密码", "denglu": "登录",
   "zhuxiao": "注销", "zhuce": "注册", "shezhi": "设置",
   "xiaoxi": "消息", "xinxi": "信息", "tongzhi": ["同志", "通知"],
-  "shipin": "视频", "tupian": "图片", 
+  "shipin": "视频", "tupian": "图片",
    "sousuo": "搜索", "liulan": "浏览",
 
   // ===== 餐饮/食物 =====
