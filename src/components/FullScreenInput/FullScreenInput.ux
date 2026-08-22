@@ -3,7 +3,7 @@
 
 <template>
     <div class="inputpanel">
-        <input-method if="{{global_show && !emojimode}}" style="position: absolute" hide={{keyboardHide}} @complete="InputEvent" @delete="InputDelete" @settings-change="OnInputMethodSettings" screentype="{{screentype}}" keyboardtype="{{inputMethodSettings.keyboardtype}}" inputlang="{{inputMethodSettings.lang}}" vibratemode="{{inputMethodSettings.vibratemode}}" maxlength="{{inputMethodSettings.maxlength}}" traditional="{{inputMethodSettings.traditional}}"></input-method>
+        <input-method if="{{global_show && !emojimode}}" style="position: absolute" hide={{keyboardHide}} @complete="InputEvent" @delete="InputDelete" screentype="{{screentype}}" vibratemode="short"></input-method>
         <div class="inputactions">
             <div style="margin-left: 35px" @click="ExitInput">
                 <image class="inputaction_img" src="/common/textinput_back.png"></image>
@@ -39,24 +39,7 @@ export default {
         global_show: false,
         input_text: "",
         screentype: "",
-        emojimode: false,
-        inputMethodSettings: {
-            keyboardtype: "QWERTY",
-            lang: "cn",
-            vibratemode: "short",
-            maxlength: 5,
-            traditional: false
-        },
-        // 当前显示的键盘不在设置变更时接收新属性，避免触发组件重建链。
-        pendingInputMethodSettings: {
-            keyboardtype: "QWERTY",
-            lang: "cn",
-            vibratemode: "short",
-            maxlength: 5,
-            traditional: false
-        },
-        inputSettingsSaveTimer: null,
-        hasPendingInputSettings: false
+        emojimode: false
     },
     InputEvent(evt){
         this.input_text += evt.detail.content
@@ -65,13 +48,9 @@ export default {
         this.input_text = this.input_text.slice(0, -1)
     },
     ExitInput(){
-        // 返回路径绝不触发设置写入，避免在页面销毁阶段阻塞运行时。
-        this.cancelInputMethodSettingsSave()
         this.$emit("exit")
     },
     InputFinish(){
-        // 发送路径同样不执行同步写入；已稳定落盘的设置会在下次打开时恢复。
-        this.cancelInputMethodSettingsSave()
         this.$emit("send", {
             content: this.input_text
         })
@@ -81,10 +60,6 @@ export default {
         this.emojimode = true
     },
     CloseEmoji(){
-        // 表情面板打开期间键盘已卸载，此时回写偏好不会触发活动键盘的属性监听。
-        this.inputMethodSettings = {
-            ...this.pendingInputMethodSettings
-        }
         this.emojimode = false
     },
     // 选择表情后追加到输入文本
@@ -92,51 +67,8 @@ export default {
         this.emojimode = false
         this.input_text += evt.detail.content
     },
-    OnInputMethodSettings(evt){
-        // 只缓存，不回写 inputMethodSettings；当前键盘已在内部即时应用设置。
-        this.pendingInputMethodSettings = {
-            ...this.pendingInputMethodSettings,
-            ...evt.detail
-        }
-        this.hasPendingInputSettings = true
-        if (this.inputSettingsSaveTimer) {
-            clearTimeout(this.inputSettingsSaveTimer)
-        }
-        this.inputSettingsSaveTimer = setTimeout(() => {
-            this.inputSettingsSaveTimer = null
-            this.persistInputMethodSettings()
-        }, 400)
-    },
-    cancelInputMethodSettingsSave(){
-        if (this.inputSettingsSaveTimer) {
-            clearTimeout(this.inputSettingsSaveTimer)
-            this.inputSettingsSaveTimer = null
-        }
-    },
-    persistInputMethodSettings(){
-        this.cancelInputMethodSettingsSave()
-        if (!this.hasPendingInputSettings) {
-            return
-        }
-        if (global.settings && global.settings.saveSettings) {
-            global.settings.saveSettings({
-                inputMethodSettings: this.pendingInputMethodSettings
-            })
-            this.hasPendingInputSettings = false
-        }
-    },
     async InitScreenType(){
         this.screentype = global.DEVICE_INFO.screenShape
-        const savedSettings = global.settings && global.settings.SETTINGS ? global.settings.SETTINGS.inputMethodSettings : null
-        if (savedSettings) {
-            this.inputMethodSettings = {
-                ...this.inputMethodSettings,
-                ...savedSettings
-            }
-        }
-        this.pendingInputMethodSettings = {
-            ...this.inputMethodSettings
-        }
         // 用传入的初始文本初始化输入框
         this.input_text = this.initialText || ""
         this.global_show = true
