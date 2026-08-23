@@ -29,6 +29,9 @@
         "notSupportedMessage": "This message cannot be displayed",
         "selectEmoji": "Select Emoji"
     },
+    "splash": {
+        "start": "Launch HyperBili!"
+    },
     "eularead": {
         "title": "Agreement",
         "sectitle": "Before using Hyperbili, you must read and agree to the User Agreement and Privacy Policy."

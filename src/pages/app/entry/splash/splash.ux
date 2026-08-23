@@ -1,3 +1,5 @@
+<import name="default-button" src="@components/DefaultButton/DefaultButton.ux"></import>
+
 <template>
   <div class="page">
     <text style="position: absolute; color: rgba(0, 0, 0, 0)">
@@ -6,6 +8,13 @@
     <image class="splashlogo" src="/common/logo.png"
       style="margin-top: {{ anims.splashimg.margin_top_str.value }}px; margin-left: {{ anims.splashimg.margin_left_str.value }}px">
     </image>
+    <default-button
+      if="{{showFirstLaunchButton}}"
+      primary="true"
+      text="splash.start"
+      style="position: absolute; bottom: 50px"
+      @click="StartFirstLaunch">
+    </default-button>
   </div>
 </template>
 
@@ -13,6 +22,7 @@
 import router from "@system.router"
 export default {
   private: {
+    showFirstLaunchButton: false,
     anims: {
       splash: null,
       splash_out: null,
@@ -46,24 +56,29 @@ export default {
     this.anims.splash.start()
     setTimeout(() => {
       this.anims.splash_out.start()
-      setTimeout(async() => {
-        if((await this.$app.$def.jumpcheck.NetworkCheck())){
-          if(!global.settings.SETTINGS.agreedAllAgreements){
-            router.replace({
-              uri: "pages/app/entry/eularead"
-            })
-          }
-          else{
-            this.$app.$def.jumpcheck.Jump()
-          }
-        }
-        else{
-          router.replace({
-            uri: "pages/error/networkerror"
-          })
-        }
-      }, 500)
+      setTimeout(() => this.FinishSplashFlow(), 500)
     }, 1000)
+  },
+  async FinishSplashFlow() {
+    if (!(await this.$app.$def.jumpcheck.NetworkCheck())) {
+      router.replace({
+        uri: "pages/error/networkerror"
+      })
+      return
+    }
+
+    if (!global.settings.SETTINGS.agreedAllAgreements) {
+      this.showFirstLaunchButton = true
+      return
+    }
+
+    this.$app.$def.jumpcheck.Jump()
+  },
+  StartFirstLaunch() {
+    this.showFirstLaunchButton = false
+    router.replace({
+      uri: "pages/app/entry/eularead"
+    })
   },
   onDestroy() {
     global.animengine.clearPageAnims("splashPage")
