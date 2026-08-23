@@ -108,11 +108,6 @@
     </stack>
     -->
   </swiper>
-    <div class="video-cache-button" if="{{videoMode}}" onclick="cacheCurrentVideoAudio">
-      <image class="video-cache-icon" src="/common/icon/download.png"></image>
-      <text class="video-cache-text" if="{{isCachingVideoAudio}}">缓存中</text>
-      <text class="video-cache-text" else>缓存</text>
-    </div>
   </stack>
 </template>
 <script>
@@ -150,8 +145,6 @@
       videoMode: false,
       videoBvid: null,
       videoStreamRetryCount: 0,
-      cacheDownloadRequestId: 0,
-      isCachingVideoAudio: false,
       showAdjustProgress: false,
       currentTime: 0,
       sliderValue: 0,
@@ -911,118 +904,6 @@
         fail: function(error) {
         }
       });
-    },
-    async cacheCurrentVideoAudio() {
-      const that = this;
-      if (!that.videoMode || !that.videoBvid) {
-        prompt.showToast({ message: '当前内容不支持缓存', duration: 1500 });
-        return;
-      }
-      if (that.isCachingVideoAudio) {
-        prompt.showToast({ message: '正在缓存，请稍候', duration: 1500 });
-        return;
-      }
-
-      const exists = await global.savedcontent.SavedContentManager.checkVideoAudioExists(that.videoBvid);
-      if (exists) {
-        prompt.showToast({ message: '该视频音频已缓存', duration: 1500 });
-        return;
-      }
-
-      that.isCachingVideoAudio = true;
-      that.cacheDownloadRequestId++;
-      const cacheRequestId = that.cacheDownloadRequestId;
-      prompt.showToast({ message: '正在下载音频缓存...', duration: 1500 });
-
-      try {
-        const audioUrl = await global.biliclient.getVideoBestAudioUrlByBVID(that.videoBvid);
-        if (cacheRequestId !== that.cacheDownloadRequestId) {
-          return;
-        }
-        if (!audioUrl) {
-          throw new Error('audio stream not found');
-        }
-        that.downloadVideoAudioForCache(audioUrl, cacheRequestId, true);
-      } catch (e) {
-        that.finishVideoAudioCache(cacheRequestId, '获取缓存音频失败');
-      }
-    },
-    downloadVideoAudioForCache(audioUrl, cacheRequestId, withHeaders) {
-      const that = this;
-      const filename = `${that.videoBvid || 'video'}_audio.m4s`;
-      const onDownloadFailure = () => {
-        if (cacheRequestId !== that.cacheDownloadRequestId) {
-          return;
-        }
-        if (withHeaders) {
-          that.downloadVideoAudioForCache(audioUrl, cacheRequestId, false);
-          return;
-        }
-        that.finishVideoAudioCache(cacheRequestId, '音频缓存下载失败');
-      };
-      const onDownloadSuccess = (res) => {
-        request.onDownloadComplete({
-          token: res.token,
-          success: function(result) {
-            if (cacheRequestId !== that.cacheDownloadRequestId) {
-              return;
-            }
-            that.validateM4sFile(result.uri).then((isValid) => {
-              if (!isValid) {
-                onDownloadFailure();
-                return;
-              }
-              that.saveCurrentVideoAudioToCache(result.uri, cacheRequestId);
-            }).catch(onDownloadFailure);
-          },
-          fail: onDownloadFailure
-        });
-      };
-
-      if (withHeaders) {
-        request.download({
-          url: audioUrl,
-          header: that.buildVideoAudioDownloadHeaders(),
-          filename,
-          success: onDownloadSuccess,
-          fail: onDownloadFailure
-        });
-      } else {
-        request.download({
-          url: audioUrl,
-          filename,
-          success: onDownloadSuccess,
-          fail: onDownloadFailure
-        });
-      }
-    },
-    async saveCurrentVideoAudioToCache(audioUri, cacheRequestId) {
-      const that = this;
-      try {
-        const title = that.currSong.name || '未知视频';
-        const coverUrl = that.cachedCoverUri || that.currSong.al.picUrl || '';
-        const author = (that.currSong.ar && that.currSong.ar[0] && that.currSong.ar[0].name) || '未知作者';
-        const savedId = await global.savedcontent.SavedContentManager.storeVideoAudio(
-          title,
-          audioUri,
-          coverUrl,
-          author,
-          that.videoBvid
-        );
-        if (cacheRequestId !== that.cacheDownloadRequestId) {
-          return;
-        }
-        that.finishVideoAudioCache(cacheRequestId, savedId ? '已保存到缓存列表' : '音频缓存保存失败');
-      } catch (e) {
-        that.finishVideoAudioCache(cacheRequestId, '音频缓存保存失败');
-      }
-    },
-    finishVideoAudioCache(cacheRequestId, message) {
-      if (cacheRequestId !== this.cacheDownloadRequestId) {
-        return;
-      }
-      this.isCachingVideoAudio = false;
-      prompt.showToast({ message, duration: 2000 });
     },
     downloadVideoAudioToLocal(audioUrl, requestId) {
       const that = this;
