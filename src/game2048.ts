@@ -9,7 +9,7 @@ export interface Game2048State {
 }
 
 const GAME_2048_STORAGE_KEY = "toolbox_2048_state";
-const BOARD_SIZE = 4;
+const BOARD_SIZE = 8;
 const CELL_COUNT = BOARD_SIZE * BOARD_SIZE;
 
 function isValidTile(value: any): boolean {
@@ -44,9 +44,12 @@ function createNewBoard(): number[] {
 
 function normalizeState(value: any): Game2048State {
   const board = normalizeBoard(value && value.board);
-  const score = Math.max(0, Number(value && value.score) || 0);
-  const bestScore = Math.max(score, Number(value && value.bestScore) || 0);
-  return { board: board.length ? board : createNewBoard(), score, bestScore };
+  const storedScore = Math.max(0, Number(value && value.score) || 0);
+  const storedBestScore = Math.max(storedScore, Number(value && value.bestScore) || 0);
+  if (!board.length) {
+    return { board: createNewBoard(), score: 0, bestScore: storedBestScore };
+  }
+  return { board, score: storedScore, bestScore: storedBestScore };
 }
 
 function readLine(board: number[], index: number, direction: Game2048Direction): number[] {
