@@ -18,6 +18,7 @@
         "my": "我的",
         "settings": "设置",
         "downloads": "缓存",
+        "notes": "便签",
         "scrollToSearch": "上滑进入搜索页"
     },
     "dmlist": {
@@ -103,6 +104,14 @@
     },
     "savedcontent": {
         "title": "已缓存"
+    },
+    "notes": {
+        "title": "便签",
+        "count": "条便签",
+        "newNote": "新建便签",
+        "deleteHint": "长按删除",
+        "emptyTitle": "还没有便签",
+        "emptyDescription": "点按“新建便签”记录想法。"
     },
     "search": {
         "title": "搜索",

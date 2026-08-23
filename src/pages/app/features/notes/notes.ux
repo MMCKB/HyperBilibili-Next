@@ -1,0 +1,154 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="default-button" src="@components/DefaultButton/DefaultButton.ux"></import>
+<import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="true">
+      <title-bar title="notes.title"></title-bar>
+
+      <div class="notes-summary">
+        <text class="notes-count">{{ notes.length }} {{ $t("notes.count") }}</text>
+        <text class="notes-delete-hint">{{ $t("notes.deleteHint") }}</text>
+      </div>
+
+      <default-button @click="openNewNote" primary="true" margin-top="12px" text="notes.newNote"></default-button>
+
+      <div if="{{ notes.length === 0 }}" class="empty-notes">
+        <text class="empty-notes-title">{{ $t("notes.emptyTitle") }}</text>
+        <text class="empty-notes-description">{{ $t("notes.emptyDescription") }}</text>
+      </div>
+
+      <div if="{{ notes.length > 0 }}" class="notes-list">
+        <div class="note-card" for="{{notes}}" onclick="openEditor($item.id)" onlongpress="deleteNote($item.id)">
+          <text class="note-content">{{ $item.content }}</text>
+          <text class="note-time">{{ formatTime($item.updatedAt) }}</text>
+        </div>
+      </div>
+      <text class="bottom-spacer"></text>
+    </scroll>
+
+    <full-screen-input if="{{editorVisible}}" style="position: absolute" initial-text="{{draftContent}}" @send="saveEditor" @exit="closeEditor"></full-screen-input>
+  </div>
+</template>
+
+<script>
+import storage from "@system.storage"
+import prompt from "@system.prompt"
+
+const NOTES_STORAGE_KEY = "hyperbilibili_notes";
+
+export default {
+  private: {
+    notes: [],
+    editorVisible: false,
+    editingId: "",
+    draftContent: "",
+    scrclass: ""
+  },
+  formatTime(timestamp) {
+    const date = new Date(timestamp);
+    const month = date.getMonth() + 1;
+    const day = date.getDate();
+    const hour = String(date.getHours()).padStart(2, "0");
+    const minute = String(date.getMinutes()).padStart(2, "0");
+    return `${month}/${day} ${hour}:${minute}`;
+  },
+  loadNotes() {
+    const that = this;
+    storage.get({
+      key: NOTES_STORAGE_KEY,
+      success(data) {
+        try {
+          const storedNotes = data ? JSON.parse(data) : [];
+          const validNotes = Array.isArray(storedNotes) ? storedNotes : [];
+          validNotes.sort((a, b) => Number(b.updatedAt) - Number(a.updatedAt));
+          that.notes.splice(0, that.notes.length, ...validNotes);
+        } catch (error) {
+          global.logger.error("[notes] Failed to parse notes: " + error.toString());
+          that.notes.splice(0, that.notes.length);
+        }
+      },
+      fail() {
+        that.notes.splice(0, that.notes.length);
+      }
+    });
+  },
+  persistNotes(successMessage) {
+    storage.set({
+      key: NOTES_STORAGE_KEY,
+      value: JSON.stringify(this.notes),
+      success() {
+        if (successMessage) {
+          prompt.showToast({ message: successMessage, duration: 1500 });
+        }
+      },
+      fail() {
+        prompt.showToast({ message: "便签保存失败", duration: 1800 });
+      }
+    });
+  },
+  openNewNote() {
+    this.editingId = "";
+    this.draftContent = "";
+    this.editorVisible = true;
+  },
+  openEditor(id) {
+    const note = this.notes.filter((item) => item.id === id)[0];
+    if (!note) {
+      return;
+    }
+    this.editingId = note.id;
+    this.draftContent = note.content;
+    this.editorVisible = true;
+  },
+  closeEditor() {
+    this.editorVisible = false;
+    this.editingId = "";
+    this.draftContent = "";
+  },
+  saveEditor(event) {
+    const content = String(event.detail.content || "").trim();
+    if (!content) {
+      prompt.showToast({ message: "便签内容不能为空", duration: 1500 });
+      return;
+    }
+
+    const now = Date.now();
+    if (this.editingId) {
+      const index = this.notes.findIndex((item) => item.id === this.editingId);
+      if (index !== -1) {
+        this.notes[index].content = content;
+        this.notes[index].updatedAt = now;
+      }
+    } else {
+      this.notes.unshift({
+        id: `note_${now}_${Math.floor(Math.random() * 100000)}`,
+        content,
+        createdAt: now,
+        updatedAt: now
+      });
+    }
+
+    this.notes.sort((a, b) => Number(b.updatedAt) - Number(a.updatedAt));
+    this.persistNotes(this.editingId ? "便签已更新" : "便签已保存");
+    this.closeEditor();
+  },
+  deleteNote(id) {
+    const index = this.notes.findIndex((item) => item.id === id);
+    if (index === -1) {
+      return;
+    }
+    this.notes.splice(index, 1);
+    this.persistNotes("便签已删除");
+  },
+  onInit() {
+    this.loadNotes();
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./notes.less";
+</style>

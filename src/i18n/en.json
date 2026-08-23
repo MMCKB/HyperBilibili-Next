@@ -17,6 +17,7 @@
         "my": "My Profile",
         "settings": "Settings",
         "downloads": "Downloads",
+        "notes": "Notes",
         "scrollToSearch": "Swipe up to search"
     },
     "dmlist": {
@@ -102,6 +103,14 @@
     },
     "savedcontent": {
         "title": "Saved Content"
+    },
+    "notes": {
+        "title": "Notes",
+        "count": "notes",
+        "newNote": "New Note",
+        "deleteHint": "Long press to delete",
+        "emptyTitle": "No notes yet",
+        "emptyDescription": "Tap New Note to save an idea."
     },
     "search": {
         "title": "Search",
