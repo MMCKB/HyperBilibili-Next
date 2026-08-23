@@ -184,9 +184,6 @@
             "pages/app/features/toolbox/weather/settings": {
                 "component": "weatherconfig"
             },
-            "pages/app/features/toolbox/weather/search": {
-                "component": "weathersearch"
-            },
             "pages/debug/componentstest": {
                 "component": "componentstest"
             },

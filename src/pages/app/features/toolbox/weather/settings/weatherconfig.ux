@@ -24,9 +24,9 @@
           <text class="weather-config-arrow">›</text>
         </div>
 
-        <div class="weather-config-card" onclick="OpenCitySearch">
-          <text class="weather-config-label">{{ $t("weather.weatherLocation") }}</text>
-          <text class="weather-config-value">{{ locationDisplay }}</text>
+        <div class="weather-config-card" onclick="EditLocationId">
+          <text class="weather-config-label">{{ $t("weather.locationId") }}</text>
+          <text class="weather-config-value">{{ locationIdDisplay }}</text>
           <text class="weather-config-arrow">›</text>
         </div>
 
@@ -47,14 +47,14 @@
 <script>
 import router from "@system.router"
 import prompt from "@system.prompt"
-import { loadWeatherSettings, saveWeatherSettings, hasWeatherApiCredentials, isWeatherReady, testWeatherSettings, WEATHER_SETTINGS } from "@src/weather.ts"
+import { loadWeatherSettings, saveWeatherSettings, hasWeatherApiCredentials, hasWeatherLocationId, isWeatherReady, testWeatherSettings, WEATHER_SETTINGS } from "@src/weather.ts"
 
 export default {
   private: {
     scrclass: "",
     apiHostDisplay: "--",
     apiKeyDisplay: "--",
-    locationDisplay: "--",
+    locationIdDisplay: "--",
     statusText: "",
     showInput: false,
     inputTarget: "",
@@ -72,7 +72,7 @@ export default {
     const settings = await loadWeatherSettings()
     this.apiHostDisplay = settings.apiHost || this.$t("weather.notConfigured")
     this.apiKeyDisplay = settings.apiKey ? this.MaskApiKey(settings.apiKey) : this.$t("weather.notConfigured")
-    this.locationDisplay = settings.locationName || this.$t("weather.selectCity")
+    this.locationIdDisplay = settings.locationId || this.$t("weather.notConfigured")
   },
   MaskApiKey(value) {
     const text = String(value || "")
@@ -87,6 +87,11 @@ export default {
   EditApiKey() {
     this.inputTarget = "key"
     this.inputSeed = WEATHER_SETTINGS.apiKey || ""
+    this.showInput = true
+  },
+  EditLocationId() {
+    this.inputTarget = "locationId"
+    this.inputSeed = WEATHER_SETTINGS.locationId || ""
     this.showInput = true
   },
   ExitInput() {
@@ -104,29 +109,44 @@ export default {
       await saveWeatherSettings({ apiHost: value })
     } else if (this.inputTarget == "key") {
       await saveWeatherSettings({ apiKey: value })
+    } else if (this.inputTarget == "locationId") {
+      await saveWeatherSettings({
+        locationId: value,
+        locationName: "",
+        latitude: "",
+        longitude: "",
+        timezone: "",
+        country: "",
+        adm1: "",
+        adm2: ""
+      })
     }
     this.ExitInput()
     await this.RefreshSettings()
   },
-  OpenCitySearch() {
-    if (!hasWeatherApiCredentials(WEATHER_SETTINGS)) {
-      this.statusText = this.$t("weather.fillApiFirst")
-      return
-    }
-    router.push({ uri: "pages/app/features/toolbox/weather/search" })
-  },
   async TestConnection() {
-    if (!isWeatherReady(WEATHER_SETTINGS)) {
+    if (!hasWeatherApiCredentials(WEATHER_SETTINGS) || !hasWeatherLocationId(WEATHER_SETTINGS)) {
       this.statusText = this.$t("weather.fillAllFirst")
       return false
     }
     this.statusText = this.$t("weather.testing")
     try {
       const result = await testWeatherSettings(WEATHER_SETTINGS)
-      if (!result || (result.code && result.code != "200")) {
+      if (!result || !result.current || (result.current.code && result.current.code != "200")) {
         throw new Error("api-error")
       }
+      const location = result.location
+      await saveWeatherSettings({
+        locationName: location.name || "",
+        latitude: location.lat || "",
+        longitude: location.lon || "",
+        timezone: location.tz || "",
+        country: location.country || "",
+        adm1: location.adm1 || "",
+        adm2: location.adm2 || ""
+      })
       this.statusText = this.$t("weather.connectionSuccess")
+      await this.RefreshSettings()
       return true
     } catch (error) {
       this.statusText = this.$t("weather.connectionFailed")
@@ -134,13 +154,20 @@ export default {
     }
   },
   async SaveAndContinue() {
-    const passed = await this.TestConnection()
-    if (!passed) return
-    if (this.firstSetup) {
-      router.replace({ uri: "pages/app/features/toolbox/weather" })
-    } else {
-      router.back()
+    await saveWeatherSettings({})
+    if (hasWeatherApiCredentials(WEATHER_SETTINGS) && hasWeatherLocationId(WEATHER_SETTINGS)) {
+      const passed = await this.TestConnection()
+      if (!passed) return
+      if (this.firstSetup) {
+        router.replace({ uri: "pages/app/features/toolbox/weather" })
+      } else {
+        router.back()
+      }
+      return
     }
+    this.statusText = this.$t("weather.configurationSaved")
+    prompt.showToast({ message: this.$t("weather.configurationSaved"), duration: 2000 })
+    setTimeout(() => router.back(), 350)
   }
 }
 </script>

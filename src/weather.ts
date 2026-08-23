@@ -92,8 +92,12 @@ export function hasWeatherApiCredentials(settings: WeatherSettings = WEATHER_SET
   return !!(normalizeHost(settings.apiHost) && String(settings.apiKey || "").trim());
 }
 
+export function hasWeatherLocationId(settings: WeatherSettings = WEATHER_SETTINGS): boolean {
+  return !!String(settings.locationId || "").trim();
+}
+
 export function hasWeatherLocation(settings: WeatherSettings = WEATHER_SETTINGS): boolean {
-  return !!(settings.locationName && settings.latitude && settings.longitude);
+  return !!(hasWeatherLocationId(settings) && settings.latitude && settings.longitude);
 }
 
 export function isWeatherReady(settings: WeatherSettings = WEATHER_SETTINGS): boolean {
@@ -119,28 +123,31 @@ function queryString(params: Record<string, string>): string {
   return values.length ? "?" + values.join("&") : "";
 }
 
-export async function searchWeatherCities(keyword: string, settings: WeatherSettings = WEATHER_SETTINGS): Promise<any[]> {
-  const text = String(keyword || "").trim();
-  if (!text) return [];
-  if (!hasWeatherApiCredentials(settings)) throw new Error("missing-api");
+export async function resolveWeatherLocationId(settings: WeatherSettings = WEATHER_SETTINGS): Promise<any> {
+  if (!hasWeatherApiCredentials(settings) || !hasWeatherLocationId(settings)) {
+    throw new Error("missing-location-id");
+  }
 
   const result = await requestJson(
     settings.apiHost,
     settings.apiKey,
-    "/geo/v2/city/lookup" + queryString({ location: text, number: "10", lang: "zh" })
+    "/geo/v2/city/lookup" + queryString({ location: String(settings.locationId).trim(), number: "1", lang: "zh" })
   );
-  return result && Array.isArray(result.location) ? result.location : [];
+  const location = result && Array.isArray(result.location) && result.location.length ? result.location[0] : null;
+  if (!location || !location.lat || !location.lon) {
+    throw new Error("invalid-location-id");
+  }
+  return location;
 }
 
 export async function testWeatherSettings(settings: WeatherSettings = WEATHER_SETTINGS): Promise<any> {
-  if (!hasWeatherApiCredentials(settings) || !hasWeatherLocation(settings)) {
-    throw new Error("missing-settings");
-  }
-  return requestJson(
+  const location = await resolveWeatherLocationId(settings);
+  const current = await requestJson(
     settings.apiHost,
     settings.apiKey,
-    "/weather/v1/current/" + encodeURIComponent(settings.latitude) + "/" + encodeURIComponent(settings.longitude) + queryString({ localTime: "true", lang: "zh" })
+    "/weather/v1/current/" + encodeURIComponent(location.lat) + "/" + encodeURIComponent(location.lon) + queryString({ localTime: "true", lang: "zh" })
   );
+  return { location, current };
 }
 
 async function safeRequest(task: () => Promise<any>): Promise<any> {
@@ -202,10 +209,4 @@ export function formatShortDate(time: string): string {
   if (!time) return "--";
   const match = String(time).match(/(\d{2})-(\d{2})(?:T|$)/);
   return match ? match[1] + "/" + match[2] : String(time).slice(5, 10);
-}
-
-export function cityDisplayName(location: any): string {
-  if (!location) return "";
-  const parts = [location.name, location.adm2, location.adm1].filter((value, index, values) => value && values.indexOf(value) === index);
-  return parts.join(" · ");
 }
