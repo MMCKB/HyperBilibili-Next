@@ -22,7 +22,7 @@
 <script>
 import router from "@system.router"
 export default {
-  props: ["title"],
+  props: ["title", "disableBackPress"],
   data: {
     barRowStyle: {},
     useRowLayout: false
@@ -33,6 +33,9 @@ export default {
   onInit() {
     global.ui.InitPage(this._parentVM)
     this._parentVM.$options.onBackPress = () => {
+      if (this.disableBackPress === true || this.disableBackPress === "true") {
+        return true
+      }
       global.ui.OnBackPressTriggered()
       return true
     }

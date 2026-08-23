@@ -105,7 +105,23 @@
         "title": "Saved Content"
     },
     "toolbox": {
-        "title": "Toolbox"
+        "title": "Toolbox",
+        "calculator": "Calculator",
+        "calculatorDescription": "Calculations and unit conversions"
+    },
+    "calculator": {
+        "title": "Calculator",
+        "basic": "Calculate",
+        "convert": "Convert",
+        "length": "Length",
+        "weight": "Weight",
+        "speed": "Speed",
+        "area": "Area",
+        "temperature": "Temperature",
+        "input": "Input",
+        "from": "From",
+        "to": "To",
+        "result": "Result"
     },
     "search": {
         "title": "Search",

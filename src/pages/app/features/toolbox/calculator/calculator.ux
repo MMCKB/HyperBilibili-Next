@@ -1,0 +1,357 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="calculator-scroll {{scrclass}}" scroll-y="true" bounces="false">
+      <title-bar title="calculator.title" disable-back-press="true"></title-bar>
+
+      <div class="panel-switch">
+        <div class="panel-switch-item {{activePanel == 'basic' ? 'panel-switch-selected' : ''}}" onclick="ShowBasic">
+          <text class="panel-switch-text">{{ $t("calculator.basic") }}</text>
+        </div>
+        <div class="panel-switch-item {{activePanel == 'convert' ? 'panel-switch-selected' : ''}}" onclick="ShowConverter">
+          <text class="panel-switch-text">{{ $t("calculator.convert") }}</text>
+        </div>
+      </div>
+
+      <div if="{{activePanel == 'basic'}}" class="calculator-panel">
+        <div class="calculator-display">
+          <text class="calculator-expression">{{ calculatorExpression }}</text>
+          <text class="calculator-value">{{ calculatorDisplay }}</text>
+        </div>
+
+        <div class="key-row">
+          <div class="calculator-key calculator-key-muted" onclick="ClearCalculator"><text class="calculator-key-text">C</text></div>
+          <div class="calculator-key calculator-key-muted" onclick="DeleteCalculator"><text class="calculator-key-text">⌫</text></div>
+          <div class="calculator-key calculator-key-operator" onclick="InputOperator('/')"><text class="calculator-key-text">÷</text></div>
+          <div class="calculator-key calculator-key-operator" onclick="InputOperator('*')"><text class="calculator-key-text">×</text></div>
+        </div>
+        <div class="key-row">
+          <div class="calculator-key" onclick="InputDigit('7')"><text class="calculator-key-text">7</text></div>
+          <div class="calculator-key" onclick="InputDigit('8')"><text class="calculator-key-text">8</text></div>
+          <div class="calculator-key" onclick="InputDigit('9')"><text class="calculator-key-text">9</text></div>
+          <div class="calculator-key calculator-key-operator" onclick="InputOperator('-')"><text class="calculator-key-text">−</text></div>
+        </div>
+        <div class="key-row">
+          <div class="calculator-key" onclick="InputDigit('4')"><text class="calculator-key-text">4</text></div>
+          <div class="calculator-key" onclick="InputDigit('5')"><text class="calculator-key-text">5</text></div>
+          <div class="calculator-key" onclick="InputDigit('6')"><text class="calculator-key-text">6</text></div>
+          <div class="calculator-key calculator-key-operator" onclick="InputOperator('+')"><text class="calculator-key-text">+</text></div>
+        </div>
+        <div class="key-row">
+          <div class="calculator-key" onclick="InputDigit('1')"><text class="calculator-key-text">1</text></div>
+          <div class="calculator-key" onclick="InputDigit('2')"><text class="calculator-key-text">2</text></div>
+          <div class="calculator-key" onclick="InputDigit('3')"><text class="calculator-key-text">3</text></div>
+          <div class="calculator-key calculator-key-equals" onclick="Evaluate"><text class="calculator-key-text">=</text></div>
+        </div>
+        <div class="key-row key-row-last">
+          <div class="calculator-key calculator-key-wide" onclick="InputDigit('0')"><text class="calculator-key-text">0</text></div>
+          <div class="calculator-key" onclick="InputDecimal"><text class="calculator-key-text">.</text></div>
+          <div class="calculator-key calculator-key-muted" onclick="ToggleSign"><text class="calculator-key-text">±</text></div>
+        </div>
+      </div>
+
+      <div if="{{activePanel == 'convert'}}" class="converter-panel">
+        <scroll class="converter-type-strip" scroll-x="true" bounces="false">
+          <div class="converter-type-inner">
+            <div class="converter-type {{converterType == 'length' ? 'converter-type-selected' : ''}}" onclick="SetConverterType('length')"><text class="converter-type-text">{{ $t("calculator.length") }}</text></div>
+            <div class="converter-type {{converterType == 'weight' ? 'converter-type-selected' : ''}}" onclick="SetConverterType('weight')"><text class="converter-type-text">{{ $t("calculator.weight") }}</text></div>
+            <div class="converter-type {{converterType == 'speed' ? 'converter-type-selected' : ''}}" onclick="SetConverterType('speed')"><text class="converter-type-text">{{ $t("calculator.speed") }}</text></div>
+            <div class="converter-type {{converterType == 'area' ? 'converter-type-selected' : ''}}" onclick="SetConverterType('area')"><text class="converter-type-text">{{ $t("calculator.area") }}</text></div>
+            <div class="converter-type {{converterType == 'temperature' ? 'converter-type-selected' : ''}}" onclick="SetConverterType('temperature')"><text class="converter-type-text">{{ $t("calculator.temperature") }}</text></div>
+          </div>
+        </scroll>
+
+        <div class="converter-value-card">
+          <text class="converter-caption">{{ $t("calculator.input") }}</text>
+          <text class="converter-input-value">{{ converterInput }}</text>
+        </div>
+
+        <div class="converter-unit-row">
+          <div class="converter-unit-box">
+            <text class="converter-unit-caption">{{ $t("calculator.from") }}</text>
+            <picker class="converter-picker" type="text" range="{{fromUnitLabels}}" selected="{{fromUnitIndex}}" onchange="OnFromUnitChange"></picker>
+          </div>
+          <text class="converter-arrow">→</text>
+          <div class="converter-unit-box">
+            <text class="converter-unit-caption">{{ $t("calculator.to") }}</text>
+            <picker class="converter-picker" type="text" range="{{toUnitLabels}}" selected="{{toUnitIndex}}" onchange="OnToUnitChange"></picker>
+          </div>
+        </div>
+
+        <div class="converter-result-card">
+          <text class="converter-caption">{{ $t("calculator.result") }}</text>
+          <text class="converter-result-value">{{ convertedValue }}</text>
+          <text class="converter-result-unit">{{ toUnitSymbol }}</text>
+        </div>
+
+        <div class="converter-key-row">
+          <div class="converter-key converter-key-muted" onclick="ClearConverter"><text class="converter-key-text">C</text></div>
+          <div class="converter-key converter-key-muted" onclick="DeleteConverter"><text class="converter-key-text">⌫</text></div>
+          <div class="converter-key" onclick="ToggleConverterSign"><text class="converter-key-text">±</text></div>
+        </div>
+        <div class="converter-key-row">
+          <div class="converter-key" onclick="InputConverterDigit('7')"><text class="converter-key-text">7</text></div>
+          <div class="converter-key" onclick="InputConverterDigit('8')"><text class="converter-key-text">8</text></div>
+          <div class="converter-key" onclick="InputConverterDigit('9')"><text class="converter-key-text">9</text></div>
+        </div>
+        <div class="converter-key-row">
+          <div class="converter-key" onclick="InputConverterDigit('4')"><text class="converter-key-text">4</text></div>
+          <div class="converter-key" onclick="InputConverterDigit('5')"><text class="converter-key-text">5</text></div>
+          <div class="converter-key" onclick="InputConverterDigit('6')"><text class="converter-key-text">6</text></div>
+        </div>
+        <div class="converter-key-row">
+          <div class="converter-key" onclick="InputConverterDigit('1')"><text class="converter-key-text">1</text></div>
+          <div class="converter-key" onclick="InputConverterDigit('2')"><text class="converter-key-text">2</text></div>
+          <div class="converter-key" onclick="InputConverterDigit('3')"><text class="converter-key-text">3</text></div>
+        </div>
+        <div class="converter-key-row converter-key-row-last">
+          <div class="converter-key converter-key-wide" onclick="InputConverterDigit('0')"><text class="converter-key-text">0</text></div>
+          <div class="converter-key" onclick="InputConverterDecimal"><text class="converter-key-text">.</text></div>
+        </div>
+      </div>
+      <text class="calculator-bottom-spacer"></text>
+    </scroll>
+  </div>
+</template>
+
+<script>
+const CONVERTER_DEFINITIONS = {
+  length: {
+    labels: ["m", "km", "cm", "in", "ft"],
+    symbols: ["m", "km", "cm", "in", "ft"],
+    factors: [1, 1000, 0.01, 0.0254, 0.3048]
+  },
+  weight: {
+    labels: ["kg", "g", "lb", "oz"],
+    symbols: ["kg", "g", "lb", "oz"],
+    factors: [1, 0.001, 0.45359237, 0.028349523125]
+  },
+  speed: {
+    labels: ["m/s", "km/h", "mph", "kn"],
+    symbols: ["m/s", "km/h", "mph", "kn"],
+    factors: [1, 0.2777777778, 0.44704, 0.5144444444]
+  },
+  area: {
+    labels: ["m²", "km²", "ha", "ft²", "ac"],
+    symbols: ["m²", "km²", "ha", "ft²", "ac"],
+    factors: [1, 1000000, 10000, 0.09290304, 4046.8564224]
+  },
+  temperature: {
+    labels: ["°C", "°F", "K"],
+    symbols: ["°C", "°F", "K"]
+  }
+}
+
+export default {
+  private: {
+    scrclass: "",
+    activePanel: "basic",
+    calculatorDisplay: "0",
+    calculatorExpression: "",
+    calculatorAccumulator: null,
+    calculatorOperator: "",
+    calculatorWaitingForOperand: false,
+    converterType: "length",
+    converterInput: "1",
+    fromUnitIndex: 0,
+    toUnitIndex: 1,
+    fromUnitLabels: ["m", "km", "cm", "in", "ft"],
+    toUnitLabels: ["m", "km", "cm", "in", "ft"],
+    toUnitSymbol: "km",
+    convertedValue: "0.001"
+  },
+  ShowBasic() {
+    this.activePanel = "basic"
+  },
+  ShowConverter() {
+    this.activePanel = "convert"
+  },
+  FormatNumber(value) {
+    if (!isFinite(value)) {
+      return "错误"
+    }
+    const rounded = Math.round(value * 1000000) / 1000000
+    return String(rounded)
+  },
+  InputDigit(digit) {
+    if (this.calculatorDisplay == "错误" || this.calculatorWaitingForOperand) {
+      this.calculatorDisplay = digit
+      this.calculatorWaitingForOperand = false
+      return
+    }
+    if (this.calculatorDisplay == "0") {
+      this.calculatorDisplay = digit
+      return
+    }
+    if (this.calculatorDisplay.length < 14) {
+      this.calculatorDisplay += digit
+    }
+  },
+  InputDecimal() {
+    if (this.calculatorDisplay == "错误" || this.calculatorWaitingForOperand) {
+      this.calculatorDisplay = "0."
+      this.calculatorWaitingForOperand = false
+      return
+    }
+    if (this.calculatorDisplay.indexOf(".") == -1) {
+      this.calculatorDisplay += "."
+    }
+  },
+  ToggleSign() {
+    if (this.calculatorDisplay != "0" && this.calculatorDisplay != "错误") {
+      this.calculatorDisplay = this.calculatorDisplay.indexOf("-") == 0 ? this.calculatorDisplay.substring(1) : "-" + this.calculatorDisplay
+    }
+  },
+  DeleteCalculator() {
+    if (this.calculatorWaitingForOperand || this.calculatorDisplay == "错误") {
+      return
+    }
+    this.calculatorDisplay = this.calculatorDisplay.length > 1 ? this.calculatorDisplay.substring(0, this.calculatorDisplay.length - 1) : "0"
+    if (this.calculatorDisplay == "-") {
+      this.calculatorDisplay = "0"
+    }
+  },
+  ClearCalculator() {
+    this.calculatorDisplay = "0"
+    this.calculatorExpression = ""
+    this.calculatorAccumulator = null
+    this.calculatorOperator = ""
+    this.calculatorWaitingForOperand = false
+  },
+  OperatorLabel(operator) {
+    if (operator == "*") return "×"
+    if (operator == "/") return "÷"
+    if (operator == "-") return "−"
+    return operator
+  },
+  Calculate(left, right, operator) {
+    if (operator == "+") return left + right
+    if (operator == "-") return left - right
+    if (operator == "*") return left * right
+    if (operator == "/") return right == 0 ? NaN : left / right
+    return right
+  },
+  InputOperator(operator) {
+    const inputValue = Number(this.calculatorDisplay)
+    if (!isFinite(inputValue)) {
+      this.ClearCalculator()
+      return
+    }
+    if (this.calculatorOperator && !this.calculatorWaitingForOperand) {
+      const result = this.Calculate(this.calculatorAccumulator, inputValue, this.calculatorOperator)
+      if (!isFinite(result)) {
+        this.calculatorDisplay = "错误"
+        this.calculatorExpression = ""
+        this.calculatorAccumulator = null
+        this.calculatorOperator = ""
+        return
+      }
+      this.calculatorDisplay = this.FormatNumber(result)
+      this.calculatorAccumulator = result
+    } else {
+      this.calculatorAccumulator = inputValue
+    }
+    this.calculatorOperator = operator
+    this.calculatorExpression = this.FormatNumber(this.calculatorAccumulator) + " " + this.OperatorLabel(operator)
+    this.calculatorWaitingForOperand = true
+  },
+  Evaluate() {
+    if (!this.calculatorOperator || this.calculatorWaitingForOperand) {
+      return
+    }
+    const rightValue = Number(this.calculatorDisplay)
+    const result = this.Calculate(this.calculatorAccumulator, rightValue, this.calculatorOperator)
+    if (!isFinite(result)) {
+      this.calculatorDisplay = "错误"
+      this.calculatorExpression = ""
+    } else {
+      this.calculatorExpression = this.FormatNumber(this.calculatorAccumulator) + " " + this.OperatorLabel(this.calculatorOperator) + " " + this.FormatNumber(rightValue) + " ="
+      this.calculatorDisplay = this.FormatNumber(result)
+    }
+    this.calculatorAccumulator = null
+    this.calculatorOperator = ""
+    this.calculatorWaitingForOperand = true
+  },
+  SetConverterType(type) {
+    const definition = CONVERTER_DEFINITIONS[type]
+    this.converterType = type
+    this.fromUnitLabels = definition.labels
+    this.toUnitLabels = definition.labels
+    this.fromUnitIndex = 0
+    this.toUnitIndex = definition.labels.length > 1 ? 1 : 0
+    this.toUnitSymbol = definition.symbols[this.toUnitIndex]
+    this.UpdateConversion()
+  },
+  OnFromUnitChange(event) {
+    this.fromUnitIndex = event.newSelected
+    this.UpdateConversion()
+  },
+  OnToUnitChange(event) {
+    this.toUnitIndex = event.newSelected
+    this.UpdateConversion()
+  },
+  InputConverterDigit(digit) {
+    if (this.converterInput == "0") {
+      this.converterInput = digit
+    } else if (this.converterInput.length < 14) {
+      this.converterInput += digit
+    }
+    this.UpdateConversion()
+  },
+  InputConverterDecimal() {
+    if (this.converterInput.indexOf(".") == -1) {
+      this.converterInput += "."
+      this.UpdateConversion()
+    }
+  },
+  ToggleConverterSign() {
+    if (this.converterInput != "0") {
+      this.converterInput = this.converterInput.indexOf("-") == 0 ? this.converterInput.substring(1) : "-" + this.converterInput
+      this.UpdateConversion()
+    }
+  },
+  DeleteConverter() {
+    this.converterInput = this.converterInput.length > 1 ? this.converterInput.substring(0, this.converterInput.length - 1) : "0"
+    if (this.converterInput == "-") {
+      this.converterInput = "0"
+    }
+    this.UpdateConversion()
+  },
+  ClearConverter() {
+    this.converterInput = "0"
+    this.UpdateConversion()
+  },
+  ConvertTemperature(value, fromIndex, toIndex) {
+    let celsius = value
+    if (fromIndex == 1) celsius = (value - 32) * 5 / 9
+    if (fromIndex == 2) celsius = value - 273.15
+    if (toIndex == 1) return celsius * 9 / 5 + 32
+    if (toIndex == 2) return celsius + 273.15
+    return celsius
+  },
+  UpdateConversion() {
+    const definition = CONVERTER_DEFINITIONS[this.converterType]
+    const rawValue = Number(this.converterInput)
+    this.toUnitSymbol = definition.symbols[this.toUnitIndex]
+    if (!isFinite(rawValue)) {
+      this.convertedValue = "错误"
+      return
+    }
+    if (this.converterType == "temperature") {
+      this.convertedValue = this.FormatNumber(this.ConvertTemperature(rawValue, this.fromUnitIndex, this.toUnitIndex))
+      return
+    }
+    const baseValue = rawValue * definition.factors[this.fromUnitIndex]
+    this.convertedValue = this.FormatNumber(baseValue / definition.factors[this.toUnitIndex])
+  },
+  onInit() {
+    this.SetConverterType("length")
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./calculator.less";
+</style>

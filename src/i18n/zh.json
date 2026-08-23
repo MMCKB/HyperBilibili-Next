@@ -106,7 +106,23 @@
         "title": "已缓存"
     },
     "toolbox": {
-        "title": "工具箱"
+        "title": "工具箱",
+        "calculator": "计算器",
+        "calculatorDescription": "基础计算与单位换算"
+    },
+    "calculator": {
+        "title": "计算器",
+        "basic": "基础计算",
+        "convert": "单位换算",
+        "length": "长度",
+        "weight": "重量",
+        "speed": "速度",
+        "area": "面积",
+        "temperature": "温度",
+        "input": "输入",
+        "from": "从",
+        "to": "到",
+        "result": "结果"
     },
     "search": {
         "title": "搜索",
