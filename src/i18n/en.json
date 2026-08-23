@@ -121,7 +121,9 @@
         "input": "Input",
         "from": "From",
         "to": "To",
-        "result": "Result"
+        "result": "Result",
+        "selectFrom": "Select source unit",
+        "selectTo": "Select target unit"
     },
     "search": {
         "title": "Search",

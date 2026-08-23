@@ -6,10 +6,16 @@
       <title-bar title="calculator.title" disable-back-press="true"></title-bar>
 
       <div class="panel-switch">
-        <div class="panel-switch-item {{activePanel == 'basic' ? 'panel-switch-selected' : ''}}" onclick="ShowBasic">
+        <div if="{{activePanel == 'basic'}}" class="panel-switch-item panel-switch-selected" onclick="ShowBasic">
           <text class="panel-switch-text">{{ $t("calculator.basic") }}</text>
         </div>
-        <div class="panel-switch-item {{activePanel == 'convert' ? 'panel-switch-selected' : ''}}" onclick="ShowConverter">
+        <div if="{{activePanel != 'basic'}}" class="panel-switch-item" onclick="ShowBasic">
+          <text class="panel-switch-text">{{ $t("calculator.basic") }}</text>
+        </div>
+        <div if="{{activePanel == 'convert'}}" class="panel-switch-item panel-switch-selected" onclick="ShowConverter">
+          <text class="panel-switch-text">{{ $t("calculator.convert") }}</text>
+        </div>
+        <div if="{{activePanel != 'convert'}}" class="panel-switch-item" onclick="ShowConverter">
           <text class="panel-switch-text">{{ $t("calculator.convert") }}</text>
         </div>
       </div>
@@ -68,14 +74,16 @@
         </div>
 
         <div class="converter-unit-row">
-          <div class="converter-unit-box">
-            <text class="converter-unit-caption">{{ $t("calculator.from") }}</text>
-            <picker class="converter-picker" type="text" range="{{fromUnitLabels}}" selected="{{fromUnitIndex}}" onchange="OnFromUnitChange"></picker>
+          <div class="converter-unit-choice" onclick="OpenUnitPicker('from')">
+            <text class="converter-unit-prefix">{{ $t("calculator.from") }}</text>
+            <text class="converter-unit-name">{{ fromUnitLabel }}</text>
+            <text class="converter-unit-chevron">⌄</text>
           </div>
           <text class="converter-arrow">→</text>
-          <div class="converter-unit-box">
-            <text class="converter-unit-caption">{{ $t("calculator.to") }}</text>
-            <picker class="converter-picker" type="text" range="{{toUnitLabels}}" selected="{{toUnitIndex}}" onchange="OnToUnitChange"></picker>
+          <div class="converter-unit-choice" onclick="OpenUnitPicker('to')">
+            <text class="converter-unit-prefix">{{ $t("calculator.to") }}</text>
+            <text class="converter-unit-name">{{ toUnitLabel }}</text>
+            <text class="converter-unit-chevron">⌄</text>
           </div>
         </div>
 
@@ -112,6 +120,20 @@
       </div>
       <text class="calculator-bottom-spacer"></text>
     </scroll>
+    <div if="{{unitDialogVisible}}" class="unit-dialog-mask">
+      <div class="unit-dialog">
+        <div class="unit-dialog-heading">
+          <text if="{{unitDialogTarget == 'from'}}" class="unit-dialog-title">{{ $t("calculator.selectFrom") }}</text>
+          <text if="{{unitDialogTarget == 'to'}}" class="unit-dialog-title">{{ $t("calculator.selectTo") }}</text>
+          <div class="unit-dialog-close" onclick="CloseUnitPicker"><text class="unit-dialog-close-text">×</text></div>
+        </div>
+        <scroll class="unit-dialog-list" scroll-y="true" bounces="false">
+          <div class="unit-dialog-option" for="{{unitDialogLabels}}" onclick="SelectUnit($item)">
+            <text class="unit-dialog-option-text">{{ $item }}</text>
+          </div>
+        </scroll>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -156,10 +178,13 @@ export default {
     converterInput: "1",
     fromUnitIndex: 0,
     toUnitIndex: 1,
-    fromUnitLabels: ["m", "km", "cm", "in", "ft"],
-    toUnitLabels: ["m", "km", "cm", "in", "ft"],
+    fromUnitLabel: "m",
+    toUnitLabel: "km",
     toUnitSymbol: "km",
-    convertedValue: "0.001"
+    convertedValue: "0.001",
+    unitDialogVisible: false,
+    unitDialogTarget: "",
+    unitDialogLabels: []
   },
   ShowBasic() {
     this.activePanel = "basic"
@@ -276,19 +301,37 @@ export default {
   SetConverterType(type) {
     const definition = CONVERTER_DEFINITIONS[type]
     this.converterType = type
-    this.fromUnitLabels = definition.labels
-    this.toUnitLabels = definition.labels
     this.fromUnitIndex = 0
     this.toUnitIndex = definition.labels.length > 1 ? 1 : 0
+    this.fromUnitLabel = definition.labels[this.fromUnitIndex]
+    this.toUnitLabel = definition.labels[this.toUnitIndex]
     this.toUnitSymbol = definition.symbols[this.toUnitIndex]
     this.UpdateConversion()
   },
-  OnFromUnitChange(event) {
-    this.fromUnitIndex = event.newSelected
-    this.UpdateConversion()
+  OpenUnitPicker(target) {
+    const definition = CONVERTER_DEFINITIONS[this.converterType]
+    this.unitDialogTarget = target
+    this.unitDialogLabels = definition.labels
+    this.unitDialogVisible = true
   },
-  OnToUnitChange(event) {
-    this.toUnitIndex = event.newSelected
+  CloseUnitPicker() {
+    this.unitDialogVisible = false
+    this.unitDialogTarget = ""
+  },
+  SelectUnit(label) {
+    const definition = CONVERTER_DEFINITIONS[this.converterType]
+    const selectedIndex = definition.labels.indexOf(label)
+    if (selectedIndex < 0) {
+      return
+    }
+    if (this.unitDialogTarget == "from") {
+      this.fromUnitIndex = selectedIndex
+      this.fromUnitLabel = label
+    } else {
+      this.toUnitIndex = selectedIndex
+      this.toUnitLabel = label
+    }
+    this.CloseUnitPicker()
     this.UpdateConversion()
   },
   InputConverterDigit(digit) {

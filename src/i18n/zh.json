@@ -122,7 +122,9 @@
         "input": "输入",
         "from": "从",
         "to": "到",
-        "result": "结果"
+        "result": "结果",
+        "selectFrom": "选择源单位",
+        "selectTo": "选择目标单位"
     },
     "search": {
         "title": "搜索",
