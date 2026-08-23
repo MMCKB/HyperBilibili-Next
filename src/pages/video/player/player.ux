@@ -1,5 +1,26 @@
 <template>
   <stack class="player-container">
+    <!-- 缓存提示页面 -->
+    <div if="{{ showCacheTips }}" class="cache-tips-page">
+      <scroll class="cache-tips-scroll" scroll-y="true">
+        <div class="cache-tips-content">
+          <text class="cache-tips-title">缓存提示</text>
+          <text class="cache-tips-description">由于系统限制，视频需要先缓存到本地才能播放，您可以在缓存列表中删除已缓存的视频。</text>
+          <div class="cache-tips-checkbox">
+            <input type="checkbox" class="cache-remember-checkbox" checked="{{ rememberCacheTips }}" onchange="toggleRememberCacheTips"></input>
+            <text class="cache-remember-text">不再提示</text>
+          </div>
+          <div class="cache-tips-buttons">
+            <div class="cache-btn cache-btn-primary" onclick="cacheAndPlay">
+              <text class="cache-btn-text">缓存音频</text>
+            </div>
+            <div class="cache-btn cache-btn-secondary" onclick="goBack">
+              <text class="cache-btn-text">返回</text>
+            </div>
+          </div>
+        </div>
+      </scroll>
+    </div>
     <!-- 进度调整界面 -->
     <div if="{{ showAdjustProgress }}" class="adjust-progress-overlay">
       <div class="adjust-progress-panel">
@@ -25,7 +46,7 @@
       </div>
     </div>
     <!-- 主播放器内容 -->
-    <swiper class="swiper-container" indicator="false" index="1" loop="false">
+    <swiper if="{{ !showCacheTips }}" class="swiper-container" indicator="false" index="1" loop="false">
       <!-- 功能栏页面（新播放器样式） -->
       <stack class="swiper-page" if="{{ newPlayerStyle }}">
       <div class="features-page">
@@ -144,12 +165,13 @@
       pendingSongId: null,
       videoMode: false,
       videoBvid: null,
-      videoStreamRetryCount: 0,
+      showCacheTips: false,
       showAdjustProgress: false,
       currentTime: 0,
       sliderValue: 0,
       showAdjustVolume: false,
       volumePercent: 50,
+      rememberCacheTips: false,
       cachedCoverUri: null
     },
     getImageUrl(picUrl) {
@@ -323,6 +345,7 @@
         that.playlistId = `video_bvid_${that.bvid}`;
         that.startIndex = 0;
         that.tracks = null;
+        that.showCacheTips = false;
        
         that.songList = [{
           id: that.bvid,
@@ -343,7 +366,21 @@
         that.playlistId = `video_bvid_${that.bvid}`;
         that.startIndex = 0;
         that.tracks = null;
-        that.startVideoAudioStream();
+       
+        storage.get({
+          key: 'skipCacheTips',
+          success: function(data) {
+            if (data === 'true') {
+              that.showCacheTips = false;
+              that.cacheAndPlay();
+            } else {
+              that.showCacheTips = true;
+            }
+          },
+          fail: function() {
+            that.showCacheTips = true;
+          }
+        });
       }
       const fromAppStart = that.fromAppStart || false;
       const hasNewPlaylist = that.playlistId && !fromAppStart;
@@ -546,7 +583,34 @@
       that.playerState.isPlaying = false;
       if (!that.playlistId) return;
       if (that.videoMode && that.videoBvid) {
-        that.startVideoAudioStream();
+        (async () => {
+          try {
+            const info = await global.biliclient.getVideoInfoByBVID(that.videoBvid);
+            if (requestId !== that.currentRequestId) {
+              return;
+            }
+            that.currSong = {
+              id: that.videoBvid,
+              name: info.title,
+              al: { picUrl: info.pic },
+              ar: [{ name: info.owner?.name || "未知" }]
+            };
+            that.songList = [that.currSong];
+            const audioUrl = await global.biliclient.getVideoBestAudioUrlByBVID(that.videoBvid);
+            if (requestId !== that.currentRequestId) {
+              return;
+            }
+            const maxUrlLength = 500;
+            if (audioUrl && audioUrl.length > maxUrlLength) {
+              that.downloadVideoAudioToLocal(audioUrl, requestId);
+              return;
+            }
+            that.currSong.url = audioUrl;
+            that.playCurrentSong();
+          } catch (e) {
+            that.handlePlaybackError('获取视频音频失败');
+          }
+        })();
         return;
       }
       if (that.playlistId.startsWith('downloaded_songs_') || that.playlistId.startsWith('local_playlist_')) {
@@ -672,7 +736,6 @@
           audio.oncanplay = function() {
             that.duration = audio.duration || 0;
             that.audioReady = true;
-            that.videoStreamRetryCount = 0;
             audio.oncanplay = null;
             that.isPlaying = true;
             that.playerState.isPlaying = true;
@@ -682,8 +745,12 @@
             that.audioReady = false;
             audio.onerror = null;
             audio.oncanplay = null;
-            console.log('视频音频在线播放错误');
-            that.retryVideoAudioStream(requestId);
+            console.log('视频音频播放错误');
+            setTimeout(() => {
+              if (requestId === that.currentRequestId) {
+                that.change(1);
+              }
+            }, 1000);
           };
           audio.src = that.currSong.url;
           setTimeout(function() {
@@ -796,81 +863,61 @@
         }
       }
     },
-    startVideoAudioStream(isRetry = false) {
+    cacheAndPlay() {
       const that = this;
-      if (!that.videoBvid) {
-        that.handlePlaybackError('视频信息不完整');
-        return;
+     
+      if (that.rememberCacheTips) {
+        storage.set({
+          key: 'skipCacheTips',
+          value: 'true',
+          success: function() {
+          },
+          fail: function(data, code) {
+          }
+        });
       }
-
-      if (!isRetry) {
-        that.videoStreamRetryCount = 0;
-      }
-
+     
+      that.showCacheTips = false;
       that.currentRequestId++;
       const requestId = that.currentRequestId;
-      prompt.showToast({
-        message: isRetry ? '正在刷新播放地址...' : '正在连接视频音频...',
-        duration: 1500
-      });
-
+     
+      prompt.showToast({ message: '正在获取视频信息...', duration: 2000 });
+     
       global.biliclient.getVideoInfoByBVID(that.videoBvid).then((videoInfo) => {
         if (requestId !== that.currentRequestId) {
           return;
         }
-
+       
         const coverUrl = videoInfo.pic ? videoInfo.pic + '@319w_150h' : '';
+       
         that.songList = [{
           id: that.videoBvid,
           name: videoInfo.title,
           al: { picUrl: coverUrl },
-          ar: [{ name: videoInfo.owner?.name || '未知' }]
+          ar: [{ name: videoInfo.owner.name }]
         }];
         that.currSong = that.songList[0];
         that.index = 0;
         that.imageLoaded = false;
         that.audioReady = false;
-
+       
         if (coverUrl) {
           that.downloadCoverImage(coverUrl, requestId);
         }
-
+       
         return global.biliclient.getVideoBestAudioUrlByBVID(that.videoBvid);
       }).then((audioUrl) => {
         if (requestId !== that.currentRequestId) {
           return;
         }
-        if (!audioUrl) {
-          throw new Error('audio stream not found');
-        }
-
-        that.currSong.url = audioUrl;
-        that.playCurrentSong();
+        that.downloadVideoAudioToLocal(audioUrl, requestId);
       }).catch((error) => {
         if (requestId !== that.currentRequestId) {
           return;
         }
-        that.handlePlaybackError('获取视频音频失败');
+        that.handlePlaybackError('获取视频信息失败');
+        that.showCacheTips = true;
       });
-    },
-    retryVideoAudioStream(requestId) {
-      const that = this;
-      if (requestId !== that.currentRequestId || !that.videoMode || !that.videoBvid) {
-        return;
-      }
-
-      if (that.videoStreamRetryCount >= 1) {
-        that.handlePlaybackError('在线播放失败，请检查网络后重试');
-        return;
-      }
-
-      that.videoStreamRetryCount++;
-      prompt.showToast({ message: '播放失败，正在重试...', duration: 1500 });
-      setTimeout(() => {
-        if (requestId === that.currentRequestId) {
-          that.startVideoAudioStream(true);
-        }
-      }, 300);
     },
     goBack() {
       router.back();
