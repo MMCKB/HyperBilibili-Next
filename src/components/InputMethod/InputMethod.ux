@@ -203,8 +203,28 @@
           <img if="{{!numFlag}}" src="./assets/horizontal/del.png" style="margin-left: 6px;padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('D')" />
           <img else src="./assets/horizontal/del2.png" style="margin-left: 6px;padding: 6px;" @click="onBtnClick('D')" />
         </div>
-        <!-- 这里使用show会导致每次输入都会加载全部候选列表，很卡 -->
-        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: 252px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down'}}">
+        <!-- 方屏中文九键展开：左侧选择拼音，右侧仅显示所选拼音对应的候选。 -->
+        <div class="rect-t9-expand-overlay" if="{{downFlag==='down' && screentype==='rect' && lang==='cn' && !numFlag && rectKeyboardtype==='T9'}}">
+          <div static class="rect-t9-expand-content">
+            <scroll class="rect-t9-pinyin-pane" scroll-y="{{true}}">
+              <div style="flex-direction:column;">
+                <text for="{{t9PinyinGroups}}" class="rect-t9-pinyin-item" style="background-color:{{$idx===t9SelectedPinyinIndex ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectT9Pinyin($idx)">{{t9PinyinGroups[$idx].pinyin}}</text>
+              </div>
+            </scroll>
+            <div class="rect-t9-hanzi-pane">
+              <list static style="width:100%;height:100%;">
+                <list-item type="t9PinyinRows67" class="item67" for="{{itemArray in t9SelectedRows}}">
+                  <div class="item column center" for="{{item in itemArray}}">
+                    <input class="calbtn02" type="button" value="{{item.text}}" @click="onT9PinyinHanziSelect(item)" />
+                  </div>
+                </list-item>
+              </list>
+            </div>
+          </div>
+          <img static style="margin-top:5px" src="./assets/horizontal/up2.png" @click="onBtnClick('down')" />
+        </div>
+        <!-- 其他布局继续使用原候选展开列表。 -->
+        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: 252px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down' && (screentype!=='rect' || lang!=='cn' || numFlag || rectKeyboardtype!=='T9')}}">
           <div static class="list67">
             <list static style="width:100%;height:100%;">
               <list-item type="waitingRows67" class="item67" for="{{itemArray in resultList2}}">
@@ -223,32 +243,8 @@
               <text class="rect-mode-button" style="background-color:{{lang==='cn' && rectKeyboardtype!=='T9' ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('cn')">中</text>
               <text class="rect-mode-button" style="background-color:{{lang==='en' && rectKeyboardtype!=='T9' ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('en')">英</text>
               <text class="rect-mode-button" style="background-color:{{rectKeyboardtype==='T9' ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('t9')">九</text>
-              <text class="rect-mode-button" style="font-size:24px" @click="openRectPanel('settings')">设置</text>
             </div>
           </scroll>
-        </div>
-        <!-- 方屏新增设置功能：当前提供按键振动和候选词数量两项即时生效的设置。 -->
-        <div class="rect-overlay rect-settings-overlay" if="{{rectPanel==='settings'}}">
-          <div class="rect-settings-header">
-            <text class="rect-settings-title">设置</text>
-            <text class="rect-panel-close" @click="closeRectPanel">完成</text>
-          </div>
-          <div class="rect-settings-row">
-            <text class="rect-settings-label">按键振动</text>
-            <text class="rect-settings-option" style="background-color:{{rectVibrateMode==='' ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="setRectVibrateMode('')">关</text>
-            <text class="rect-settings-option" style="background-color:{{rectVibrateMode==='short' ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="setRectVibrateMode('short')">短</text>
-            <text class="rect-settings-option" style="background-color:{{rectVibrateMode==='long' ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="setRectVibrateMode('long')">长</text>
-          </div>
-          <div class="rect-settings-row">
-            <text class="rect-settings-label">候选词</text>
-            <text class="rect-settings-option" style="background-color:{{rectCandidateCount===3 ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="setRectCandidateCount(3)">3</text>
-            <text class="rect-settings-option" style="background-color:{{rectCandidateCount===5 ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="setRectCandidateCount(5)">5</text>
-          </div>
-          <div class="rect-settings-row">
-            <text class="rect-settings-label">繁体输入</text>
-            <text class="rect-settings-option" style="background-color:{{!rectTraditionalInput ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="setRectTraditionalInput(false)">关</text>
-            <text class="rect-settings-option" style="background-color:{{rectTraditionalInput ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="setRectTraditionalInput(true)">开</text>
-          </div>
         </div>
       </div>
       <!-- 胶囊屏66 -->
@@ -336,6 +332,9 @@ function doSearchT9Dic(digits, traditional, cb) {
     cb([]);
   }
 }
+function getT9PinyinGroups(digits, traditional) {
+  return SimpleInputMethod.getT9PinyinGroups(digits, traditional) || [];
+}
 // 方屏中文 T9 中每个字母组只对应一个数字。按 ABC、DEF、GHI 即得到 234。
 const T9_GROUP_TO_DIGIT = {
   abc: "2",
@@ -378,6 +377,11 @@ export default {
     cval: "",
     // 仅方屏中文 T9 使用；保存按键数字序列，例如 ABC→DEF→GHI 为“234”。
     t9Digits: "",
+    // 方屏九键展开时使用：左侧为拼音组，右侧仅显示当前拼音组的汉字。
+    t9PinyinGroups: [],
+    t9SelectedPinyinIndex: 0,
+    t9SelectedCandidates: [],
+    t9SelectedRows: [],
     resultList: [],
     // 与 resultList 一一对应；音节单字候选保存后续拼音/数字串，支持逐音节确认。
     resultMeta: [],
@@ -484,40 +488,11 @@ export default {
       this.rectKeyboardtype = "T9";
     }
     this.resetReslutList();
-    this.emitRectSettingsChange();
-  },
-  setRectVibrateMode(mode) {
-    this.rectVibrateMode = mode;
-    this.onVibrate();
-    this.emitRectSettingsChange();
-  },
-  setRectCandidateCount(count) {
-    this.rectCandidateCount = count;
-    this.cvalList = [];
-    for (let i = 0; i < count; i++) {
-      this.cvalList.push(i);
-    }
-    this.resetReslutList();
-    this.onVibrate();
-    this.emitRectSettingsChange();
-  },
-  setRectTraditionalInput(enabled) {
-    this.rectTraditionalInput = enabled === true;
-    this.resetReslutList();
-    this.onVibrate();
-    this.emitRectSettingsChange();
   },
   toggleRectTraditionalInput() {
-    this.setRectTraditionalInput(!this.rectTraditionalInput);
-  },
-  emitRectSettingsChange() {
-    this.$emit("settingsChange", {
-      keyboardtype: this.rectKeyboardtype,
-      lang: this.lang,
-      vibratemode: this.rectVibrateMode,
-      maxlength: this.rectCandidateCount,
-      traditional: this.rectTraditionalInput,
-    });
+    this.rectTraditionalInput = !this.rectTraditionalInput;
+    this.resetReslutList();
+    this.onVibrate();
   },
   onRsSelect(txt, candidateIndex) {
     this.onVibrate();
@@ -532,6 +507,9 @@ export default {
         }
       }
     }
+    this.commitCandidate(txt, meta);
+  },
+  commitCandidate(txt, meta) {
     this.cval = meta && meta.remainderPinyin ? meta.remainderPinyin : "";
     if (this.isRectChineseT9()) {
       this.t9Digits = meta && meta.remainderDigits ? meta.remainderDigits : "";
@@ -542,6 +520,64 @@ export default {
     this.clearWaiting();
     this.resetReslutList();
     this.downFlag = "";
+  },
+  selectT9Pinyin(index) {
+    this.onVibrate();
+    if (!this.t9PinyinGroups[index]) {
+      return;
+    }
+    this.t9SelectedPinyinIndex = index;
+    this.setT9SelectedCandidates(this.t9PinyinGroups[index].candidates);
+  },
+  onT9PinyinHanziSelect(candidate) {
+    if (!candidate) {
+      return;
+    }
+    this.onVibrate();
+    this.commitCandidate(candidate.text, candidate);
+  },
+  setT9SelectedCandidates(candidates) {
+    this.t9SelectedCandidates = candidates || [];
+    this.t9SelectedRows = [];
+    let row = [];
+    for (let i = 0; i < this.t9SelectedCandidates.length; i++) {
+      row.push(this.t9SelectedCandidates[i]);
+      if (row.length === 3) {
+        this.t9SelectedRows.push(row);
+        row = [];
+      }
+    }
+    if (row.length) {
+      this.t9SelectedRows.push(row);
+    }
+  },
+  clearT9PinyinGroups() {
+    this.t9PinyinGroups = [];
+    this.t9SelectedPinyinIndex = 0;
+    this.t9SelectedCandidates = [];
+    this.t9SelectedRows = [];
+  },
+  refreshT9PinyinGroups() {
+    if (!this.isRectChineseT9() || !this.t9Digits) {
+      this.clearT9PinyinGroups();
+      return;
+    }
+    const selected = this.t9PinyinGroups[this.t9SelectedPinyinIndex];
+    const previousPinyin = selected ? selected.pinyin : "";
+    this.t9PinyinGroups = getT9PinyinGroups(this.t9Digits, this.rectTraditionalInput);
+    let index = 0;
+    for (let i = 0; i < this.t9PinyinGroups.length; i++) {
+      if (this.t9PinyinGroups[i].pinyin === previousPinyin) {
+        index = i;
+        break;
+      }
+    }
+    this.t9SelectedPinyinIndex = index;
+    if (this.t9PinyinGroups[index]) {
+      this.setT9SelectedCandidates(this.t9PinyinGroups[index].candidates);
+    } else {
+      this.setT9SelectedCandidates([]);
+    }
   },
   onBtnClick(sign) {
     this.onVibrate();
@@ -670,6 +706,7 @@ export default {
   },
   clearT9Input() {
     this.t9Digits = "";
+    this.clearT9PinyinGroups();
   },
   resetReslutList() {
     if (this.screentype != "circle") {
@@ -683,6 +720,7 @@ export default {
       if (!this.t9Digits) {
         this.resultList = [];
         this.resultMeta = [];
+        this.clearT9PinyinGroups();
         this.setResultListAll();
         return;
       }
@@ -735,6 +773,7 @@ export default {
     const traditional = this.rectTraditionalInput;
     doSearchT9Dic(digits, traditional, function (candidates) {
       that.setResultCandidates(candidates);
+      that.refreshT9PinyinGroups();
     });
   },
   onSelect(num) {
@@ -953,8 +992,8 @@ export default {
   /* 仅该局部滚动容器处理横向滑动；外层不绑定滑动事件。 */
 }
 .rect-mode-menu {
-  /* 四个大圆形菜单项保留完整内容宽度，由内部 scroll 横向查看。 */
-  min-width:432px;
+  /* 三个大圆形菜单项保留完整内容宽度，由内部 scroll 横向查看。 */
+  min-width:324px;
   height:100%;
   padding-left:18px;
   padding-right:18px;
@@ -973,54 +1012,6 @@ export default {
   border-radius:42px;
   text-align:center;
   border:3px solid rgba(255,255,255,0.14);
-}
-.rect-settings-overlay {
-  justify-content:flex-start;
-  flex-direction:column;
-  padding:10px 12px 0 12px;
-}
-.rect-settings-header {
-  width:100%;
-  height:38px;
-  flex-direction:row;
-  align-items:center;
-  justify-content:space-between;
-}
-.rect-settings-title {
-  color:#fff;
-  font-size:26px;
-  font-weight:bold;
-}
-.rect-panel-close {
-  color:rgb(13,132,255);
-  font-size:22px;
-  width:64px;
-  height:42px;
-  text-align:center;
-}
-.rect-settings-row {
-  width:100%;
-  height:64px;
-  flex-direction:row;
-  align-items:center;
-  border-top:2px solid #262626;
-}
-.rect-settings-label {
-  color:#fff;
-  width:92px;
-  font-size:21px;
-  font-weight:bold;
-}
-.rect-settings-option {
-  color:#fff;
-  font-size:21px;
-  font-weight:bold;
-  width:48px;
-  height:48px;
-  margin-left:8px;
-  border-radius:24px;
-  text-align:center;
-  border:3px solid rgba(255,255,255,0.12);
 }
 .calbtn67 {
 	color:rgb(255,255,255);
@@ -1056,6 +1047,45 @@ export default {
 	background-color:#262626;
 	border:3px solid rgba(255,255,255,0.06);
 	padding:0px 10px;
+}
+.rect-t9-expand-overlay {
+  position:absolute;
+  left:0px;
+  top:0px;
+  width:100%;
+  height:252px;
+  background-color:black;
+  justify-content:center;
+  flex-direction:column;
+  align-items:center;
+}
+.rect-t9-expand-content {
+  width:96.4%;
+  height:170px;
+  flex-direction:row;
+  border-radius:30px;
+  background-color:#262626;
+  border:3px solid rgba(255,255,255,0.06);
+  overflow:hidden;
+}
+.rect-t9-pinyin-pane {
+  width:32%;
+  height:100%;
+  border-right:2px solid rgba(255,255,255,0.10);
+}
+.rect-t9-pinyin-item {
+  color:#fff;
+  height:42px;
+  width:100%;
+  font-size:24px;
+  text-align:center;
+  border-radius:0px;
+}
+.rect-t9-hanzi-pane {
+  flex:1;
+  height:100%;
+  padding-left:4px;
+  padding-right:4px;
 }
 .item67 {
 	height:50px;

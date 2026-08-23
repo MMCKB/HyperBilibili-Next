@@ -403,6 +403,49 @@ SimpleInputMethod.getT9Candidates = function(digits, traditional = false) {
     return [mergeEntries(createEntries(phraseWords), phraseSyllableEntries, genericSyllableEntries, singleEntries), matchedPinyin];
 };
 
+// 九键展开面板使用的拼音分组。每组保留各自汉字候选和后续数字，
+// 使用户可先在左侧选择 hao、gao 等拼音，再在右侧选择对应汉字。
+SimpleInputMethod.getT9PinyinGroups = function(digits, traditional = false) {
+    if (!digits) {
+        return [];
+    }
+    const activeDict = traditional ? this.traditionalDict : this.dict;
+    const groups = [];
+    const seen = {};
+    function addGroup(pinyin, entries) {
+        if (!pinyin || seen[pinyin] || !entries || !entries.length) {
+            return;
+        }
+        seen[pinyin] = true;
+        groups.push({ pinyin: pinyin, candidates: entries });
+    }
+
+    const phraseMatches = getT9PhraseMatches(digits, activeDict, traditional);
+    for (let i = 0; i < phraseMatches.pinyin.length; i++) {
+        const pinyin = phraseMatches.pinyin[i];
+        addGroup(pinyin, createEntries(getPhraseWords(pinyin, activeDict, traditional)));
+    }
+
+    const exactPinyin = activeDict.t9Syllables[digits] || [];
+    for (let i = 0; i < exactPinyin.length; i++) {
+        addGroup(exactPinyin[i], buildT9GroupEntries([exactPinyin[i]], activeDict, ''));
+    }
+
+    const syllables = splitT9Syllables(digits, activeDict);
+    if (syllables.length >= 2) {
+        let remainderDigits = '';
+        for (let i = 1; i < syllables.length; i++) {
+            remainderDigits += syllables[i].digits;
+        }
+        const firstSyllable = syllables[0];
+        for (let i = 0; i < firstSyllable.pinyin.length; i++) {
+            const pinyin = firstSyllable.pinyin[i];
+            addGroup(pinyin, buildT9GroupEntries([pinyin], activeDict, remainderDigits));
+        }
+    }
+    return groups;
+};
+
 SimpleInputMethod.getT9Hanzi = function(digits, traditional = false) {
     const result = this.getT9Candidates(digits, traditional);
     return [entriesToTexts(result[0]), result[1]];
