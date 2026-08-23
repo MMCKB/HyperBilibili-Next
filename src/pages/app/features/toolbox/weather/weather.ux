@@ -22,8 +22,7 @@
           <div class="weather-page weather-page-now">
             <div class="weather-page-top">
               <div class="weather-location-copy">
-                <text class="weather-location">{{ locationName }}</text>
-                <text class="weather-update">{{ updateText }}</text>
+                <div class="weather-location-line"><text class="weather-location">{{ locationName }}</text><text class="weather-update">{{ updateText }}</text></div>
               </div>
               <div class="weather-page-action" onclick="RefreshWeather"><text class="weather-page-action-text">↻</text></div>
               <div class="weather-page-action" onclick="OpenSettings"><text class="weather-page-action-text">⚙</text></div>
@@ -53,14 +52,14 @@
           <div class="weather-page weather-page-forecast">
             <text class="weather-page-title">{{ $t("weather.hourly") }}</text>
             <text class="weather-page-subtitle">{{ $t("weather.nextHours") }}</text>
-            <div class="weather-hour-grid">
+            <scroll class="weather-hour-scroll" scroll-x="true" bounces="false"><div class="weather-hour-grid">
               <div class="weather-hour-card" for="{{hourlyItems}}">
                 <text class="weather-hour-time">{{ $item.time }}</text>
                 <text class="weather-hour-icon">{{ $item.icon }}</text>
                 <text class="weather-hour-temperature">{{ $item.temperature }}</text>
                 <text class="weather-hour-rain">{{ $item.rain }}</text>
               </div>
-            </div>
+            </div></scroll>
             <text class="weather-page-title weather-daily-heading">{{ $t("weather.daily") }}</text>
             <div class="weather-daily-card" for="{{dailyItems}}">
               <text class="weather-daily-date">{{ $item.date }}</text>
@@ -69,18 +68,16 @@
               <text class="weather-daily-temperature">{{ $item.temperature }}</text>
               <text class="weather-daily-rain">{{ $item.rain }}</text>
             </div>
-            <div class="weather-page-bottom"><text class="weather-swipe-hint">{{ $t("weather.swipeUpDown") }}</text><div class="weather-page-dots"><text class="weather-page-dot">●</text><text class="weather-page-dot weather-page-dot-active">●</text><text class="weather-page-dot">●</text></div></div>
+            <div class="weather-page-bottom"><div class="weather-page-dots"><text class="weather-page-dot">●</text><text class="weather-page-dot weather-page-dot-active">●</text><text class="weather-page-dot">●</text></div></div>
           </div>
 
           <div class="weather-page weather-page-detail">
-            <text class="weather-page-title">{{ $t("weather.airAndLife") }}</text>
             <div if="{{aqiText}}" class="weather-air-card"><text class="weather-air-title">{{ $t("weather.airQuality") }}</text><text class="weather-air-value">{{ aqiText }}</text><text class="weather-air-detail">{{ pollutantText }}</text></div>
             <div if="{{rainSummary}}" class="weather-rain-card"><text class="weather-rain-label">{{ $t("weather.minutely") }}</text><text class="weather-rain-value">{{ rainSummary }}</text></div>
             <div if="{{alertTitle}}" class="weather-alert-card"><text class="weather-alert-label">{{ $t("weather.alert") }}</text><text class="weather-alert-value">{{ alertTitle }}</text></div>
             <div class="weather-life-card" for="{{lifeIndexItems}}"><text class="weather-life-name">{{ $item.name }}</text><text class="weather-life-category">{{ $item.category }}</text></div>
             <div class="weather-astro-card"><div class="weather-astro-item"><text class="weather-astro-label">{{ $t("weather.sunrise") }}</text><text class="weather-astro-value">{{ sunriseText }}</text></div><div class="weather-astro-item"><text class="weather-astro-label">{{ $t("weather.sunset") }}</text><text class="weather-astro-value">{{ sunsetText }}</text></div><div class="weather-astro-item"><text class="weather-astro-label">{{ $t("weather.moon") }}</text><text class="weather-astro-value">{{ moonText }}</text></div></div>
-            <text class="weather-attribution">{{ $t("weather.attribution") }}</text>
-            <div class="weather-page-bottom"><text class="weather-swipe-hint">{{ $t("weather.swipeDown") }}</text><div class="weather-page-dots"><text class="weather-page-dot">●</text><text class="weather-page-dot">●</text><text class="weather-page-dot weather-page-dot-active">●</text></div></div>
+            <div class="weather-page-bottom"><div class="weather-page-dots"><text class="weather-page-dot">●</text><text class="weather-page-dot">●</text><text class="weather-page-dot weather-page-dot-active">●</text></div></div>
           </div>
         </swiper>
       </div>
@@ -159,10 +156,15 @@ export default {
     this.humidityText = current.humidity === undefined ? "--" : String(current.humidity) + "%"
     this.windText = current.windSpeed === undefined ? "--" : current.windSpeed + " km/h"
     this.uvText = current.uvIndex === undefined ? "--" : String(current.uvIndex)
-    this.updateText = current.obsTime ? this.$t("weather.updated") + " " + formatForecastTime(current.obsTime) : ""
+    this.updateText = current.obsTime ? this.$t("weather.updatedAt") + formatForecastTime(current.obsTime) : ""
+    const locations = bundle.location && Array.isArray(bundle.location.location) ? bundle.location.location : []
+    const currentLocation = locations.length ? locations[0] : null
+    if (currentLocation && currentLocation.name) {
+      this.locationName = currentLocation.name
+    }
 
     const hours = bundle.hourly && Array.isArray(bundle.hourly.hourly) ? bundle.hourly.hourly : []
-    this.hourlyItems = hours.slice(0, 4).map((item) => ({ time: formatForecastTime(item.fxTime), icon: weatherConditionSymbol(item.icon), temperature: item.temp === undefined ? "--" : item.temp + "°", rain: item.pop === undefined ? "--" : String(item.pop) + "%" }))
+    this.hourlyItems = hours.slice(0, 24).map((item) => ({ time: formatForecastTime(item.fxTime), icon: weatherConditionSymbol(item.icon), temperature: item.temp === undefined ? "--" : item.temp + "°", rain: item.pop === undefined ? "--" : String(item.pop) + "%" }))
     const days = bundle.daily && Array.isArray(bundle.daily.daily) ? bundle.daily.daily : []
     this.dailyItems = days.slice(0, 3).map((item) => ({ date: formatShortDate(item.fxDate), icon: weatherConditionSymbol(item.iconDay), condition: item.textDay || "--", temperature: item.tempMin === undefined || item.tempMax === undefined ? "--" : item.tempMin + "–" + item.tempMax + "°", rain: item.pop === undefined ? "" : String(item.pop) + "%" }))
     const firstDay = days.length ? days[0] : null

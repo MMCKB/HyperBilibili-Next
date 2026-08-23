@@ -118,6 +118,7 @@
         "openSettings": "Open Settings",
         "loadFailed": "Weather data could not be loaded. Check your network and API configuration.",
         "updated": "Updated",
+        "updatedAt": "Updated ",
         "feelsLike": "Feels like",
         "humidity": "Humidity",
         "wind": "Wind",

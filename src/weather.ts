@@ -185,7 +185,8 @@ export async function loadWeatherBundle(settings: WeatherSettings = WEATHER_SETT
     safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/air/now" + queryString(common))),
     safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/warning/now" + queryString(common))),
     safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/indices/1d" + queryString({ type: "1,3,5,9", location, lang: "zh" }))),
-    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/minutely/5m" + queryString(common)))
+    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/minutely/5m" + queryString(common))),
+    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/geo/v2/city/lookup" + queryString({ location, number: "1", lang: "zh" })))
   ]);
   if (!requests[0] || !requests[0].now) throw createApiError("weather-unavailable");
   return {
@@ -195,7 +196,8 @@ export async function loadWeatherBundle(settings: WeatherSettings = WEATHER_SETT
     air: requests[3],
     alerts: requests[4],
     indices: requests[5],
-    minutely: requests[6]
+    minutely: requests[6],
+    location: requests[7]
   };
 }
 

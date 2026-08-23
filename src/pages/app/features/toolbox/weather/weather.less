@@ -108,6 +108,11 @@
   flex-direction: column;
 }
 
+.weather-location-line {
+  flex-direction: row;
+  align-items: center;
+}
+
 .weather-location {
   color: #FFFFFF;
   font-size: 29px;
@@ -116,8 +121,9 @@
 
 .weather-update {
   color: #939393;
-  font-size: 15px;
-  margin-top: 1px;
+  font-size: 16px;
+  margin-left: 9px;
+  margin-top: 4px;
 }
 
 .weather-page-action {
@@ -138,7 +144,7 @@
 
 .weather-now-card {
   width: 392px;
-  height: 202px;
+  height: 220px;
   border-radius: 28px;
   background-color: #202124;
   margin-top: 18px;
@@ -152,7 +158,7 @@
 .weather-condition-icon {
   width: 142px;
   color: #FFD34E;
-  font-size: 86px;
+  font-size: 92px;
   text-align: center;
 }
 
@@ -165,10 +171,10 @@
 
 .weather-temperature {
   color: #FFFFFF;
-  font-size: 76px;
+  font-size: 80px;
   font-weight: 300;
-  height: 80px;
-  line-height: 80px;
+  height: 84px;
+  line-height: 84px;
 }
 
 .weather-condition {
@@ -193,7 +199,7 @@
 
 .weather-metric-card {
   width: 126px;
-  height: 90px;
+  height: 98px;
   border-radius: 17px;
   background-color: #202124;
   flex-direction: column;
@@ -258,15 +264,21 @@
   margin-bottom: 8px;
 }
 
-.weather-hour-grid {
+.weather-hour-scroll {
   width: 392px;
+  height: 123px;
+}
+
+.weather-hour-grid {
+  width: 2400px;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: flex-start;
 }
 
 .weather-hour-card {
   width: 92px;
   height: 123px;
+  margin-right: 8px;
   border-radius: 18px;
   background-color: #202124;
   flex-direction: column;
@@ -342,14 +354,14 @@
 }
 
 .weather-page-detail {
-  padding-top: 4px;
+  padding-top: 24px;
 }
 
 .weather-air-card,
 .weather-rain-card,
 .weather-alert-card {
   width: 392px;
-  min-height: 58px;
+  min-height: 70px;
   border-radius: 16px;
   background-color: #202124;
   margin-top: 8px;
@@ -417,7 +429,7 @@
 
 .weather-life-card {
   width: 392px;
-  height: 43px;
+  height: 52px;
   border-radius: 12px;
   background-color: #202124;
   flex-direction: row;
@@ -440,7 +452,7 @@
 
 .weather-astro-card {
   width: 392px;
-  height: 68px;
+  height: 82px;
   border-radius: 16px;
   background-color: #202124;
   margin-top: 8px;
