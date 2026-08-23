@@ -2,17 +2,20 @@
 
 <template>
   <div class="page">
-    <title-bar title="toolbox.title"></title-bar>
-    <div class="toolbox-content">
-      <div class="toolbox-card" onclick="OpenCalculator">
-        <div class="toolbox-card-icon"><text class="toolbox-card-icon-text">+</text></div>
-        <div class="toolbox-card-copy">
-          <text class="toolbox-card-title">{{ $t("toolbox.calculator") }}</text>
-          <text class="toolbox-card-subtitle">{{ $t("toolbox.calculatorDescription") }}</text>
+    <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="false">
+      <title-bar title="toolbox.title"></title-bar>
+      <div class="toolbox-content">
+        <div class="toolbox-card" onclick="OpenCalculator">
+          <div class="toolbox-card-icon"><text class="toolbox-card-icon-text">+</text></div>
+          <div class="toolbox-card-copy">
+            <text class="toolbox-card-title">{{ $t("toolbox.calculator") }}</text>
+            <text class="toolbox-card-subtitle">{{ $t("toolbox.calculatorDescription") }}</text>
+          </div>
+          <text class="toolbox-card-arrow">›</text>
         </div>
-        <text class="toolbox-card-arrow">›</text>
       </div>
-    </div>
+      <text style="height: 30px"></text>
+    </scroll>
   </div>
 </template>
 

@@ -37,7 +37,7 @@
                     <image src="/common/arealist_savedcontent.png"></image>
                     <text class="smallbtntext">{{ $t("arealist.downloads") }}</text>
                 </div>
-                <div class="smallbtn" style="margin-left: 18px; background-color: {{colors.toolbox}}" onclick="GoPage('app/features/toolbox')">
+                <div class="smallbtn" style="margin-left: 18px; background-color: {{colors.toolbox}}" onclick="OpenToolbox">
                     <div class="toolbox-entry-icon"><text class="toolbox-entry-icon-text">工</text></div>
                     <text class="smallbtntext">{{ $t("arealist.toolbox") }}</text>
                 </div>
@@ -96,6 +96,16 @@ export default {
     onInit(){
         global.logger.log("lastpage=", this.lastpage)
         this.colors[this.lastpage] = "#FF7DA8"
+    },
+    OpenToolbox(){
+        try{
+            router.push({
+                uri: "pages/app/features/toolbox"
+            })
+        }
+        catch(e){
+            global.logger.error(e.toString())
+        }
     },
     GoPage(pagename){
         try{
