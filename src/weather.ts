@@ -1,10 +1,16 @@
 import { fetch, storage } from "./tsimports"
 
+export interface WeatherCity {
+  locationId: string;
+  locationName: string;
+}
+
 export interface WeatherSettings {
   apiHost: string;
   apiKey: string;
   locationName: string;
   locationId: string;
+  savedCities: WeatherCity[];
   latitude: string;
   longitude: string;
   timezone: string;
@@ -14,12 +20,14 @@ export interface WeatherSettings {
 }
 
 const WEATHER_STORAGE_KEY = "qweather_settings";
+export const MAX_WEATHER_CITIES = 5;
 
 export let WEATHER_SETTINGS: WeatherSettings = {
   apiHost: "",
   apiKey: "",
   locationName: "",
   locationId: "",
+  savedCities: [],
   latitude: "",
   longitude: "",
   timezone: "",
@@ -27,6 +35,25 @@ export let WEATHER_SETTINGS: WeatherSettings = {
   adm1: "",
   adm2: ""
 };
+
+function normalizeCities(cities: any, activeLocationId: string, activeLocationName: string): WeatherCity[] {
+  const values = Array.isArray(cities) ? cities : [];
+  const unique: WeatherCity[] = [];
+  values.forEach((city: any) => {
+    const locationId = String(city && city.locationId ? city.locationId : "").trim();
+    if (!locationId || unique.some((item) => item.locationId === locationId)) return;
+    unique.push({ locationId, locationName: String(city && city.locationName ? city.locationName : "").trim() });
+  });
+  const activeId = String(activeLocationId || "").trim();
+  if (activeId && !unique.some((item) => item.locationId === activeId)) {
+    unique.unshift({ locationId: activeId, locationName: String(activeLocationName || "").trim() });
+  }
+  return unique.slice(0, MAX_WEATHER_CITIES);
+}
+
+export function getSavedWeatherCities(settings: WeatherSettings = WEATHER_SETTINGS): WeatherCity[] {
+  return normalizeCities(settings.savedCities, settings.locationId, settings.locationName);
+}
 
 function normalizeHost(host: string): string {
   return String(host || "")
@@ -91,10 +118,14 @@ export function loadWeatherSettings(): Promise<WeatherSettings> {
         if (data) {
           try {
             const stored = JSON.parse(data);
-            WEATHER_SETTINGS = {
+            const nextSettings = {
               ...WEATHER_SETTINGS,
               ...stored,
               apiHost: normalizeHost(stored.apiHost || WEATHER_SETTINGS.apiHost)
+            };
+            WEATHER_SETTINGS = {
+              ...nextSettings,
+              savedCities: normalizeCities(nextSettings.savedCities, nextSettings.locationId, nextSettings.locationName)
             };
           } catch (error) {
             global.logger.log("Failed to parse weather settings");
@@ -108,10 +139,14 @@ export function loadWeatherSettings(): Promise<WeatherSettings> {
 }
 
 export function saveWeatherSettings(params: Partial<WeatherSettings>): Promise<WeatherSettings> {
-  WEATHER_SETTINGS = {
+  const nextSettings = {
     ...WEATHER_SETTINGS,
     ...params,
     apiHost: normalizeHost(params.apiHost === undefined ? WEATHER_SETTINGS.apiHost : params.apiHost)
+  };
+  WEATHER_SETTINGS = {
+    ...nextSettings,
+    savedCities: normalizeCities(nextSettings.savedCities, nextSettings.locationId, nextSettings.locationName)
   };
   return new Promise((resolve) => {
     storage.set({
@@ -121,6 +156,30 @@ export function saveWeatherSettings(params: Partial<WeatherSettings>): Promise<W
       fail: () => resolve(WEATHER_SETTINGS)
     });
   });
+}
+
+export async function addWeatherCity(locationId: string): Promise<WeatherSettings> {
+  const id = String(locationId || "").trim();
+  if (!id) throw createApiError("missing-location");
+  const cities = getSavedWeatherCities();
+  const existing = cities.find((city) => city.locationId === id);
+  if (!existing && cities.length >= MAX_WEATHER_CITIES) throw createApiError("city-limit");
+  const nextCities = existing ? cities : cities.concat([{ locationId: id, locationName: "" }]);
+  return saveWeatherSettings({ locationId: id, locationName: existing ? existing.locationName : "", savedCities: nextCities });
+}
+
+export async function selectWeatherCity(locationId: string): Promise<WeatherSettings> {
+  const id = String(locationId || "").trim();
+  const city = getSavedWeatherCities().find((item) => item.locationId === id);
+  if (!city) throw createApiError("unknown-city");
+  return saveWeatherSettings({ locationId: city.locationId, locationName: city.locationName });
+}
+
+export async function updateWeatherCityName(locationId: string, locationName: string): Promise<WeatherSettings> {
+  const id = String(locationId || "").trim();
+  const name = String(locationName || "").trim();
+  const cities = getSavedWeatherCities().map((city) => city.locationId === id ? { ...city, locationName: name } : city);
+  return saveWeatherSettings({ savedCities: cities, locationName: WEATHER_SETTINGS.locationId === id ? name : WEATHER_SETTINGS.locationName });
 }
 
 export function hasWeatherApiCredentials(settings: WeatherSettings = WEATHER_SETTINGS): boolean {

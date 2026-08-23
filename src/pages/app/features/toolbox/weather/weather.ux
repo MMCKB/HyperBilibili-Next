@@ -1,4 +1,5 @@
 <import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
 
 <template>
   <div class="page">
@@ -25,7 +26,7 @@
                 <div class="weather-location-line"><text class="weather-location">{{ locationName }}</text><text class="weather-update">{{ updateText }}</text></div>
               </div>
               <div class="weather-page-action" onclick="RefreshWeather"><text class="weather-page-action-text">↻</text></div>
-              <div class="weather-page-action" onclick="OpenSettings"><text class="weather-page-action-text">⚙</text></div>
+              <div class="weather-page-action" onclick="OpenCityPicker"><text class="weather-page-action-text">⌖</text></div>
             </div>
 
             <div class="weather-now-card">
@@ -82,12 +83,22 @@
         </swiper>
       </div>
     </div>
+    <div class="weather-city-mask" if="{{cityPickerOpen}}">
+      <div class="weather-city-panel">
+        <div class="weather-city-panel-header"><text class="weather-city-panel-title">{{ $t("weather.switchCity") }}</text><text class="weather-city-panel-close" onclick="CloseCityPicker">×</text></div>
+        <text class="weather-city-panel-hint">{{ $t("weather.savedCities") }}</text>
+        <div class="weather-city-row" for="{{cityItems}}" onclick="SwitchCity($item)"><div class="weather-city-row-copy"><text class="weather-city-row-name">{{ $item.name }}</text><text class="weather-city-row-id">{{ $item.locationId }}</text></div><text class="weather-city-row-active" if="{{ $item.active }}">✓</text></div>
+        <div class="weather-city-add" if="{{cityItems.length < maxCities}}" onclick="OpenCityInput"><text class="weather-city-add-text">{{ $t("weather.addCity") }}</text><text class="weather-city-count">{{ cityItems.length }}/{{ maxCities }}</text></div>
+        <div class="weather-city-settings" onclick="OpenSettings"><text class="weather-city-settings-text">{{ $t("weather.openSettings") }}</text></div>
+      </div>
+    </div>
+    <full-screen-input style="position: absolute" if="{{showCityInput}}" initial-text="{{cityInputSeed}}" @send="FinishCityInput" @exit="ExitCityInput"></full-screen-input>
   </div>
 </template>
 
 <script>
 import router from "@system.router"
-import { loadWeatherSettings, isWeatherReady, loadWeatherBundle, weatherConditionSymbol, formatForecastTime, formatShortDate, WEATHER_SETTINGS } from "@src/weather.ts"
+import { loadWeatherSettings, isWeatherReady, loadWeatherBundle, weatherConditionSymbol, formatForecastTime, formatShortDate, getSavedWeatherCities, addWeatherCity, selectWeatherCity, updateWeatherCityName, MAX_WEATHER_CITIES, WEATHER_SETTINGS } from "@src/weather.ts"
 
 export default {
   private: {
@@ -113,7 +124,12 @@ export default {
     lifeIndexItems: [],
     sunriseText: "--",
     sunsetText: "--",
-    moonText: "--"
+    moonText: "--",
+    cityPickerOpen: false,
+    cityItems: [],
+    maxCities: MAX_WEATHER_CITIES,
+    showCityInput: false,
+    cityInputSeed: ""
   },
   async onInit() {
     await this.LoadPage()
@@ -128,6 +144,7 @@ export default {
       return
     }
     this.locationName = settings.locationName || settings.locationId
+    this.RefreshCityItems(settings)
     this.RefreshWeather()
   },
   async RefreshWeather() {
@@ -135,7 +152,7 @@ export default {
     this.errorMessage = ""
     try {
       const bundle = await loadWeatherBundle(WEATHER_SETTINGS)
-      this.ApplyWeatherBundle(bundle)
+      await this.ApplyWeatherBundle(bundle)
       this.loading = false
     } catch (error) {
       this.loading = false
@@ -146,7 +163,7 @@ export default {
   PageChanged(index) {
     this.pageIndex = index.index
   },
-  ApplyWeatherBundle(bundle) {
+  async ApplyWeatherBundle(bundle) {
     const current = bundle.current && bundle.current.now ? bundle.current.now : null
     if (!current) throw new Error("missing-current")
     this.currentTemperature = current.temp === undefined ? "--" : current.temp + "°"
@@ -161,6 +178,11 @@ export default {
     const currentLocation = locations.length ? locations[0] : null
     if (currentLocation && currentLocation.name) {
       this.locationName = currentLocation.name
+      const selectedCity = getSavedWeatherCities().find((city) => city.locationId === WEATHER_SETTINGS.locationId)
+      if (!selectedCity || selectedCity.locationName !== currentLocation.name) {
+        await updateWeatherCityName(WEATHER_SETTINGS.locationId, currentLocation.name)
+        this.RefreshCityItems(WEATHER_SETTINGS)
+      }
     }
 
     const hours = bundle.hourly && Array.isArray(bundle.hourly.hourly) ? bundle.hourly.hourly : []
@@ -184,7 +206,57 @@ export default {
     const labels = { "new-moon": "新月", "waxing-crescent": "蛾眉月", "first-quarter": "上弦月", "waxing-gibbous": "盈凸月", "full-moon": "满月", "waning-gibbous": "亏凸月", "last-quarter": "下弦月", "waning-crescent": "残月" }
     return labels[phase] || phase || "--"
   },
+  RefreshCityItems(settings = WEATHER_SETTINGS) {
+    this.cityItems = getSavedWeatherCities(settings).map((city) => ({
+      locationId: city.locationId,
+      name: city.locationName || city.locationId,
+      active: city.locationId === settings.locationId
+    }))
+  },
+  OpenCityPicker() {
+    this.RefreshCityItems(WEATHER_SETTINGS)
+    this.cityPickerOpen = true
+  },
+  CloseCityPicker() {
+    this.cityPickerOpen = false
+  },
+  OpenCityInput() {
+    if (this.cityItems.length >= this.maxCities) return
+    this.cityInputSeed = ""
+    this.showCityInput = true
+  },
+  ExitCityInput() {
+    this.showCityInput = false
+    this.cityInputSeed = ""
+  },
+  async FinishCityInput(evt) {
+    const locationId = String(evt.detail && evt.detail.content ? evt.detail.content : "").trim()
+    this.ExitCityInput()
+    if (!locationId) return
+    try {
+      await addWeatherCity(locationId)
+      this.cityPickerOpen = false
+      this.locationName = WEATHER_SETTINGS.locationName || WEATHER_SETTINGS.locationId
+      this.RefreshCityItems(WEATHER_SETTINGS)
+      await this.RefreshWeather()
+    } catch (error) {
+      this.errorMessage = error && error.message === "city-limit" ? this.$t("weather.cityLimitReached") : this.$t("weather.addCityFailed")
+    }
+  },
+  async SwitchCity(city) {
+    if (!city || !city.locationId) return
+    this.cityPickerOpen = false
+    try {
+      await selectWeatherCity(city.locationId)
+      this.locationName = WEATHER_SETTINGS.locationName || WEATHER_SETTINGS.locationId
+      this.RefreshCityItems(WEATHER_SETTINGS)
+      await this.RefreshWeather()
+    } catch (error) {
+      this.errorMessage = this.$t("weather.switchCityFailed")
+    }
+  },
   OpenSettings() {
+    this.cityPickerOpen = false
     router.push({ uri: "pages/app/features/toolbox/weather/settings" })
   }
 }
