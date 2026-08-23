@@ -172,6 +172,9 @@
             "pages/app/features/savedcontent": {
                 "component": "savedcontent"
             },
+            "pages/app/features/toolbox": {
+                "component": "toolbox"
+            },
             "pages/debug/componentstest": {
                 "component": "componentstest"
             },

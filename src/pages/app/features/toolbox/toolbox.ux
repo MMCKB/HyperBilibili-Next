@@ -1,0 +1,20 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+
+<template>
+  <div class="page">
+    <title-bar title="toolbox.title"></title-bar>
+  </div>
+</template>
+
+<script>
+export default {
+  private: {
+    scrclass: ""
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./toolbox.less";
+</style>

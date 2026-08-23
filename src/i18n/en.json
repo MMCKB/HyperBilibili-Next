@@ -17,6 +17,7 @@
         "my": "My Profile",
         "settings": "Settings",
         "downloads": "Downloads",
+        "toolbox": "Toolbox",
         "scrollToSearch": "Swipe up to search"
     },
     "dmlist": {
@@ -102,6 +103,9 @@
     },
     "savedcontent": {
         "title": "Saved Content"
+    },
+    "toolbox": {
+        "title": "Toolbox"
     },
     "search": {
         "title": "Search",
