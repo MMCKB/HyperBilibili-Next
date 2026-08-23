@@ -243,7 +243,7 @@ export async function loadWeatherBundle(settings: WeatherSettings = WEATHER_SETT
     safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/weather/3d" + queryString(common))),
     safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/air/now" + queryString(common))),
     safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/warning/now" + queryString(common))),
-    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/indices/1d" + queryString({ type: "1,3,5,9", location, lang: "zh" }))),
+    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/indices/1d" + queryString({ type: "1,2,3,5", location, lang: "zh" }))),
     safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/minutely/5m" + queryString(common))),
     safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/geo/v2/city/lookup" + queryString({ location, number: "1", lang: "zh" })))
   ]);
@@ -269,6 +269,19 @@ export function weatherConditionSymbol(code: string): string {
   if (number >= 400 && number <= 499) return "❄";
   if (number >= 500 && number <= 599) return "≋";
   return "●";
+}
+
+export function weatherConditionAsset(code: string): string {
+  const number = Number(code);
+  if (number === 100 || number === 150) return "/common/weather/sunny.png";
+  if ((number >= 101 && number <= 103) || (number >= 151 && number <= 153)) return "/common/weather/partly.png";
+  if (number === 104) return "/common/weather/cloudy.png";
+  if (number >= 200 && number <= 213) return "/common/weather/wind.png";
+  if (number >= 300 && number <= 399) return "/common/weather/rain.png";
+  if (number >= 400 && number <= 499) return "/common/weather/snow.png";
+  if (number >= 500 && number <= 515) return "/common/weather/fog.png";
+  if (number >= 516 && number <= 599) return "/common/weather/hail.png";
+  return "/common/weather/cloudy.png";
 }
 
 export function formatForecastTime(time: string): string {
