@@ -80,7 +80,7 @@
           </div>
           <image class="control-icon" src="/common/icon/next.png" onclick="change(1)" />
         </div>
-        <div class="footer">
+        <div class="footer" style="background-color: {{toolbarBackgroundColor}}; border-radius: {{toolbarRadius}}px;">
           <image class="icon" src="/common/icon/volume.png" onclick="goToVolume" />
           <image class="icon" src="/common/icon/play-list.png" onclick="goToList" />
           <image class="icon" src="{{ getPlayModeIcon() }}" onclick="togglePlayMode" />
@@ -172,7 +172,10 @@
       showAdjustVolume: false,
       volumePercent: 50,
       rememberCacheTips: false,
-      cachedCoverUri: null
+      cachedCoverUri: null,
+      toolbarOpacity: 30,
+      toolbarRadius: 30,
+      toolbarBackgroundColor: "rgba(0, 0, 0, 0.3)"
     },
     getImageUrl(picUrl) {
       if (!picUrl) return '/common/icon/default_album.png';
@@ -335,8 +338,16 @@
         });
       };
     },
+    loadPlayerToolbarAppearance() {
+      const opacity = Math.max(15, Math.min(75, Number(global.settings.SETTINGS.playerToolbarOpacity) || 30));
+      const radius = Math.max(0, Math.min(50, Number(global.settings.SETTINGS.playerToolbarRadius) || 30));
+      this.toolbarOpacity = opacity;
+      this.toolbarRadius = radius;
+      this.toolbarBackgroundColor = `rgba(0, 0, 0, ${opacity / 100})`;
+    },
     onInit() {
       const that = this;
+      that.loadPlayerToolbarAppearance();
       that.isPlaying = false;
       that.playerState.isPlaying = false;
       if (that.cachedAudioUri && that.cachedTitle) {

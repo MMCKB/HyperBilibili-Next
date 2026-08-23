@@ -219,6 +219,9 @@
             },
             "pages/app/features/settings/cleartmp": {
                 "component": "cleartmp"
+            },
+            "pages/app/features/settings/playerappearance": {
+                "component": "playerappearance"
             }
         }
     }

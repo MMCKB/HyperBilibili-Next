@@ -35,6 +35,11 @@
         <text class="setext_small">{{ $t("settings.startupPage") }}</text>
         <text class="countset_num">{{ startupPage }}</text>
       </div>
+      <div class="setbase" @click="GoPlayerAppearance()">
+        <div class="seticon"></div>
+        <text class="setext_small">{{ $t("settings.playerAppearance") }}</text>
+        <image class="arrow" src="/common/arrow_right.png"></image>
+      </div>
       <div class="setbase" @click="ClearTmp()">
         <image class="seticon" src="/common/settings_removetmp.png"></image>
         <text class="setext_small">{{ $t("settings.clearTemp") }}</text>
@@ -100,6 +105,11 @@ export default {
   GoDebug() {
     router.push({
       uri: "pages/debug/componentstest"
+    })
+  },
+  GoPlayerAppearance() {
+    router.push({
+      uri: "pages/app/features/settings/playerappearance"
     })
   },
   ClearTmp() {

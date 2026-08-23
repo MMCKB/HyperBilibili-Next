@@ -139,7 +139,18 @@
         "logOut": "退出登录",
         "donation": "捐赠",
         "about": "关于应用",
-        "debug": "调试"
+        "debug": "调试",
+        "playerAppearance": "播放器外观"
+    },
+    "playerAppearance": {
+        "title": "播放器外观",
+        "description": "调整播放器底部工具栏的背景不透明度和圆角。",
+        "preview": "效果预览",
+        "opacity": "背景不透明度",
+        "opacityHint": "数值越小，工具栏背景越透明。",
+        "radius": "工具栏圆角",
+        "radiusHint": "数值越大，工具栏边角越圆润。",
+        "restoreDefaults": "恢复默认"
     },
     "opensoftware": {
         "title": "开源软件声明"

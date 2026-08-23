@@ -1,0 +1,94 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="default-button" src="@components/DefaultButton/DefaultButton.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="true">
+      <title-bar title="playerAppearance.title"></title-bar>
+
+      <text class="page-description">{{ $t("playerAppearance.description") }}</text>
+
+      <div class="preview-panel">
+        <text class="section-title">{{ $t("playerAppearance.preview") }}</text>
+        <div class="preview-background">
+          <div class="toolbar-preview" style="background-color: {{toolbarBackgroundColor}}; border-radius: {{toolbarRadius}}px;">
+            <image class="preview-icon" src="/common/icon/volume.png"></image>
+            <image class="preview-icon" src="/common/icon/play-list.png"></image>
+            <image class="preview-icon" src="/common/icon/repeat.png"></image>
+            <image class="preview-icon" src="/common/icon/progress.png"></image>
+            <image class="preview-icon" src="/common/icon/exit.png"></image>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-heading">
+          <text class="setting-title">{{ $t("playerAppearance.opacity") }}</text>
+          <text class="setting-value">{{ toolbarOpacity }}%</text>
+        </div>
+        <text class="setting-hint">{{ $t("playerAppearance.opacityHint") }}</text>
+        <slider class="appearance-slider" min="15" max="75" step="5" value="{{ toolbarOpacity }}" onchange="onOpacityChange"></slider>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-heading">
+          <text class="setting-title">{{ $t("playerAppearance.radius") }}</text>
+          <text class="setting-value">{{ toolbarRadius }}px</text>
+        </div>
+        <text class="setting-hint">{{ $t("playerAppearance.radiusHint") }}</text>
+        <slider class="appearance-slider" min="0" max="50" step="2" value="{{ toolbarRadius }}" onchange="onRadiusChange"></slider>
+      </div>
+
+      <default-button @click="restoreDefaults" primary="true" margin-top="24px" text="playerAppearance.restoreDefaults"></default-button>
+      <text style="margin-top: 30px"></text>
+    </scroll>
+  </div>
+</template>
+
+<script>
+export default {
+  private: {
+    toolbarOpacity: 30,
+    toolbarRadius: 30,
+    toolbarBackgroundColor: "rgba(0, 0, 0, 0.3)",
+    scrclass: ""
+  },
+  updatePreview() {
+    const opacity = Math.max(15, Math.min(75, Number(this.toolbarOpacity) || 30));
+    const radius = Math.max(0, Math.min(50, Number(this.toolbarRadius) || 0));
+    this.toolbarOpacity = opacity;
+    this.toolbarRadius = radius;
+    this.toolbarBackgroundColor = `rgba(0, 0, 0, ${opacity / 100})`;
+  },
+  saveAppearance() {
+    this.updatePreview();
+    global.settings.saveSettings({
+      playerToolbarOpacity: this.toolbarOpacity,
+      playerToolbarRadius: this.toolbarRadius
+    });
+  },
+  onOpacityChange(event) {
+    this.toolbarOpacity = event.progress;
+    this.saveAppearance();
+  },
+  onRadiusChange(event) {
+    this.toolbarRadius = event.progress;
+    this.saveAppearance();
+  },
+  restoreDefaults() {
+    this.toolbarOpacity = 30;
+    this.toolbarRadius = 30;
+    this.saveAppearance();
+  },
+  onInit() {
+    this.toolbarOpacity = global.settings.SETTINGS.playerToolbarOpacity;
+    this.toolbarRadius = global.settings.SETTINGS.playerToolbarRadius;
+    this.updatePreview();
+  }
+}
+</script>
+
+<style lang="less">
+@import '@less/global.less';
+@import './playerappearance.less';
+</style>

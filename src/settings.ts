@@ -11,6 +11,8 @@ interface SettingsInterface {
   // 是否在评论区加载并显示图片（会影响低性能设备流畅度）
   enableCommentPictures: boolean;
   startupPage: string;
+  playerToolbarOpacity: number;
+  playerToolbarRadius: number;
 
   // 下面的设置项将不在设置页面中展示
   agreedAllAgreements: boolean;
@@ -37,6 +39,8 @@ export let SETTINGS: SettingsInterface = {
   enableFullAnimation: false,
   enableCommentPictures: false,
   startupPage: "主页",
+  playerToolbarOpacity: 30,
+  playerToolbarRadius: 30,
 
   agreedAllAgreements: false, // 是否已同意所有协议（用户协议 隐私协议 etc.）
   enableUserTracker: true,

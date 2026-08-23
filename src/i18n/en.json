@@ -138,7 +138,18 @@
         "logOut": "Log Out",
         "donation": "Donate",
         "about": "About the App",
-        "debug": "Debug"
+        "debug": "Debug",
+        "playerAppearance": "Player Appearance"
+    },
+    "playerAppearance": {
+        "title": "Player Appearance",
+        "description": "Adjust the background opacity and corner radius of the player toolbar.",
+        "preview": "Preview",
+        "opacity": "Background Opacity",
+        "opacityHint": "Lower values make the toolbar background more transparent.",
+        "radius": "Toolbar Corner Radius",
+        "radiusHint": "Higher values make the toolbar corners more rounded.",
+        "restoreDefaults": "Restore Defaults"
     },
     "debug": {
         "title": "Debug",
