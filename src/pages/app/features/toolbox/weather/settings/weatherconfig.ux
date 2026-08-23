@@ -1,0 +1,151 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll weather-config-scroll {{scrclass}}" scroll-y="true" bounces="false">
+      <title-bar title="weather.settingsTitle"></title-bar>
+      <div class="weather-config-content">
+        <div class="weather-config-hero">
+          <text class="weather-config-hero-icon">☁</text>
+          <text class="weather-config-hero-title">{{ $t("weather.settingsSubtitle") }}</text>
+          <text class="weather-config-hero-copy">{{ $t("weather.settingsHint") }}</text>
+        </div>
+
+        <div class="weather-config-card" onclick="EditHost">
+          <text class="weather-config-label">{{ $t("weather.apiHost") }}</text>
+          <text class="weather-config-value">{{ apiHostDisplay }}</text>
+          <text class="weather-config-arrow">›</text>
+        </div>
+
+        <div class="weather-config-card" onclick="EditApiKey">
+          <text class="weather-config-label">{{ $t("weather.apiKey") }}</text>
+          <text class="weather-config-value">{{ apiKeyDisplay }}</text>
+          <text class="weather-config-arrow">›</text>
+        </div>
+
+        <div class="weather-config-card" onclick="OpenCitySearch">
+          <text class="weather-config-label">{{ $t("weather.weatherLocation") }}</text>
+          <text class="weather-config-value">{{ locationDisplay }}</text>
+          <text class="weather-config-arrow">›</text>
+        </div>
+
+        <div class="weather-config-status" if="{{statusText}}"><text class="weather-config-status-text">{{ statusText }}</text></div>
+
+        <div class="weather-config-test" onclick="TestConnection"><text class="weather-config-test-text">{{ $t("weather.testConnection") }}</text></div>
+        <div class="weather-config-save" onclick="SaveAndContinue"><text class="weather-config-save-text">{{ $t("weather.saveConfiguration") }}</text></div>
+
+        <text class="weather-config-security">{{ $t("weather.localOnly") }}</text>
+        <text class="weather-config-attribution">{{ $t("weather.attribution") }}</text>
+      </div>
+      <text class="weather-config-bottom-spacer"></text>
+    </scroll>
+    <full-screen-input style="position: absolute" if="{{showInput}}" initial-text="{{inputSeed}}" @send="FinishInput" @exit="ExitInput"></full-screen-input>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import prompt from "@system.prompt"
+import { loadWeatherSettings, saveWeatherSettings, hasWeatherApiCredentials, isWeatherReady, testWeatherSettings, WEATHER_SETTINGS } from "@src/weather.ts"
+
+export default {
+  private: {
+    scrclass: "",
+    apiHostDisplay: "--",
+    apiKeyDisplay: "--",
+    locationDisplay: "--",
+    statusText: "",
+    showInput: false,
+    inputTarget: "",
+    inputSeed: "",
+    firstSetup: true
+  },
+  async onInit() {
+    await this.RefreshSettings()
+    this.firstSetup = !isWeatherReady(WEATHER_SETTINGS)
+  },
+  async onShow() {
+    await this.RefreshSettings()
+  },
+  async RefreshSettings() {
+    const settings = await loadWeatherSettings()
+    this.apiHostDisplay = settings.apiHost || this.$t("weather.notConfigured")
+    this.apiKeyDisplay = settings.apiKey ? this.MaskApiKey(settings.apiKey) : this.$t("weather.notConfigured")
+    this.locationDisplay = settings.locationName || this.$t("weather.selectCity")
+  },
+  MaskApiKey(value) {
+    const text = String(value || "")
+    if (text.length <= 4) return "••••"
+    return "••••••" + text.slice(-4)
+  },
+  EditHost() {
+    this.inputTarget = "host"
+    this.inputSeed = WEATHER_SETTINGS.apiHost || ""
+    this.showInput = true
+  },
+  EditApiKey() {
+    this.inputTarget = "key"
+    this.inputSeed = WEATHER_SETTINGS.apiKey || ""
+    this.showInput = true
+  },
+  ExitInput() {
+    this.showInput = false
+    this.inputTarget = ""
+    this.inputSeed = ""
+  },
+  async FinishInput(evt) {
+    const value = String(evt.detail && evt.detail.content ? evt.detail.content : "").trim()
+    if (!value) {
+      this.ExitInput()
+      return
+    }
+    if (this.inputTarget == "host") {
+      await saveWeatherSettings({ apiHost: value })
+    } else if (this.inputTarget == "key") {
+      await saveWeatherSettings({ apiKey: value })
+    }
+    this.ExitInput()
+    await this.RefreshSettings()
+  },
+  OpenCitySearch() {
+    if (!hasWeatherApiCredentials(WEATHER_SETTINGS)) {
+      this.statusText = this.$t("weather.fillApiFirst")
+      return
+    }
+    router.push({ uri: "pages/app/features/toolbox/weather/search" })
+  },
+  async TestConnection() {
+    if (!isWeatherReady(WEATHER_SETTINGS)) {
+      this.statusText = this.$t("weather.fillAllFirst")
+      return false
+    }
+    this.statusText = this.$t("weather.testing")
+    try {
+      const result = await testWeatherSettings(WEATHER_SETTINGS)
+      if (!result || (result.code && result.code != "200")) {
+        throw new Error("api-error")
+      }
+      this.statusText = this.$t("weather.connectionSuccess")
+      return true
+    } catch (error) {
+      this.statusText = this.$t("weather.connectionFailed")
+      return false
+    }
+  },
+  async SaveAndContinue() {
+    const passed = await this.TestConnection()
+    if (!passed) return
+    if (this.firstSetup) {
+      router.replace({ uri: "pages/app/features/toolbox/weather" })
+    } else {
+      router.back()
+    }
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./weatherconfig.less";
+</style>

@@ -1,0 +1,109 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll weather-search-scroll {{scrclass}}" scroll-y="true" bounces="false">
+      <title-bar title="weather.searchCityTitle"></title-bar>
+      <div class="weather-search-content">
+        <div class="weather-search-trigger" onclick="OpenInput">
+          <text class="weather-search-trigger-text">{{ searchPrompt }}</text>
+          <text class="weather-search-trigger-icon">⌕</text>
+        </div>
+        <text class="weather-search-hint">{{ $t("weather.searchCityHint") }}</text>
+
+        <div if="{{loading}}" class="weather-search-message"><text class="weather-search-message-text">{{ $t("weather.searching") }}</text></div>
+        <div if="{{!loading && statusText}}" class="weather-search-message"><text class="weather-search-message-text">{{ statusText }}</text></div>
+
+        <div class="weather-city-card" for="{{cityItems}}" onclick="SelectCity($item)">
+          <div class="weather-city-copy">
+            <text class="weather-city-name">{{ $item.name }}</text>
+            <text class="weather-city-detail">{{ $item.detail }}</text>
+          </div>
+          <text class="weather-city-arrow">›</text>
+        </div>
+      </div>
+      <text class="weather-search-bottom-spacer"></text>
+    </scroll>
+    <full-screen-input style="position: absolute" if="{{showInput}}" initial-text="{{query}}" @send="SearchInputCompleted" @exit="ExitInput"></full-screen-input>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import { loadWeatherSettings, hasWeatherApiCredentials, searchWeatherCities, saveWeatherSettings, cityDisplayName, WEATHER_SETTINGS } from "@src/weather.ts"
+
+export default {
+  private: {
+    scrclass: "",
+    showInput: false,
+    query: "",
+    searchPrompt: "",
+    statusText: "",
+    loading: false,
+    cityItems: []
+  },
+  async onInit() {
+    await loadWeatherSettings()
+    this.searchPrompt = this.$t("weather.searchCityPlaceholder")
+    if (!hasWeatherApiCredentials(WEATHER_SETTINGS)) {
+      this.statusText = this.$t("weather.fillApiFirst")
+    }
+  },
+  OpenInput() {
+    this.showInput = true
+  },
+  ExitInput() {
+    this.showInput = false
+  },
+  async SearchInputCompleted(evt) {
+    this.showInput = false
+    const keyword = String(evt.detail && evt.detail.content ? evt.detail.content : "").trim()
+    if (!keyword) return
+    this.query = keyword
+    this.searchPrompt = keyword
+    await this.SearchCities()
+  },
+  async SearchCities() {
+    if (!hasWeatherApiCredentials(WEATHER_SETTINGS)) {
+      this.statusText = this.$t("weather.fillApiFirst")
+      return
+    }
+    this.loading = true
+    this.statusText = ""
+    this.cityItems = []
+    try {
+      const cities = await searchWeatherCities(this.query, WEATHER_SETTINGS)
+      this.cityItems = cities.map((item) => ({
+        ...item,
+        name: item.name || "--",
+        detail: cityDisplayName(item) || item.country || "--"
+      }))
+      if (!this.cityItems.length) {
+        this.statusText = this.$t("weather.noCityFound")
+      }
+    } catch (error) {
+      this.statusText = this.$t("weather.searchFailed")
+    }
+    this.loading = false
+  },
+  async SelectCity(item) {
+    await saveWeatherSettings({
+      locationName: item.name || "",
+      locationId: item.id || "",
+      latitude: item.lat || "",
+      longitude: item.lon || "",
+      timezone: item.tz || "",
+      country: item.country || "",
+      adm1: item.adm1 || "",
+      adm2: item.adm2 || ""
+    })
+    router.back()
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./weathersearch.less";
+</style>

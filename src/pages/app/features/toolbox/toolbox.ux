@@ -5,7 +5,15 @@
     <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="false">
       <title-bar title="toolbox.title"></title-bar>
       <div class="toolbox-content">
-        <div class="toolbox-card" onclick="OpenCalculator">
+        <div class="toolbox-card" onclick="OpenWeather">
+          <div class="toolbox-card-icon toolbox-weather-icon"><text class="toolbox-card-icon-text">☁</text></div>
+          <div class="toolbox-card-copy">
+            <text class="toolbox-card-title">{{ $t("toolbox.weather") }}</text>
+            <text class="toolbox-card-subtitle">{{ $t("toolbox.weatherDescription") }}</text>
+          </div>
+          <text class="toolbox-card-arrow">›</text>
+        </div>
+        <div class="toolbox-card toolbox-card-next" onclick="OpenCalculator">
           <div class="toolbox-card-icon"><text class="toolbox-card-icon-text">+</text></div>
           <div class="toolbox-card-copy">
             <text class="toolbox-card-title">{{ $t("toolbox.calculator") }}</text>
@@ -25,6 +33,11 @@ import router from "@system.router"
 export default {
   private: {
     scrclass: ""
+  },
+  OpenWeather() {
+    router.push({
+      uri: "pages/app/features/toolbox/weather"
+    })
   },
   OpenCalculator() {
     router.push({

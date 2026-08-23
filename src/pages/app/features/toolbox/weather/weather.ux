@@ -1,0 +1,227 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll weather-scroll {{scrclass}}" scroll-y="true" bounces="false">
+      <title-bar title="weather.title"></title-bar>
+
+      <div if="{{loading}}" class="weather-loading-card">
+        <text class="weather-loading-text">{{ $t("weather.loading") }}</text>
+      </div>
+
+      <div if="{{!loading && errorMessage}}" class="weather-error-card">
+        <text class="weather-error-text">{{ errorMessage }}</text>
+        <div class="weather-retry" onclick="RefreshWeather"><text class="weather-retry-text">{{ $t("weather.retry") }}</text></div>
+        <div class="weather-settings-link" onclick="OpenSettings"><text class="weather-settings-link-text">{{ $t("weather.openSettings") }}</text></div>
+      </div>
+
+      <div if="{{!loading && !errorMessage}}" class="weather-content">
+        <div class="weather-heading-row">
+          <div class="weather-location-copy">
+            <text class="weather-location">{{ locationName }}</text>
+            <text class="weather-update">{{ updateText }}</text>
+          </div>
+          <div class="weather-heading-actions">
+            <text class="weather-action" onclick="RefreshWeather">↻</text>
+            <text class="weather-action" onclick="OpenSettings">⚙</text>
+          </div>
+        </div>
+
+        <div class="weather-now-card">
+          <text class="weather-condition-icon">{{ currentIcon }}</text>
+          <div class="weather-now-copy">
+            <text class="weather-temperature">{{ currentTemperature }}</text>
+            <text class="weather-condition">{{ currentCondition }}</text>
+            <text class="weather-feels">{{ feelsLikeText }}</text>
+          </div>
+        </div>
+
+        <div class="weather-metric-row">
+          <div class="weather-metric-card"><text class="weather-metric-label">{{ $t("weather.humidity") }}</text><text class="weather-metric-value">{{ humidityText }}</text></div>
+          <div class="weather-metric-card"><text class="weather-metric-label">{{ $t("weather.wind") }}</text><text class="weather-metric-value">{{ windText }}</text></div>
+          <div class="weather-metric-card"><text class="weather-metric-label">{{ $t("weather.uv") }}</text><text class="weather-metric-value">{{ uvText }}</text></div>
+        </div>
+
+        <div class="weather-section">
+          <div class="weather-section-title-row"><text class="weather-section-title">{{ $t("weather.hourly") }}</text><text class="weather-section-note">{{ $t("weather.nextHours") }}</text></div>
+          <scroll class="weather-hourly-strip" scroll-x="true" bounces="false">
+            <div class="weather-hourly-inner">
+              <div class="weather-hour-card" for="{{hourlyItems}}">
+                <text class="weather-hour-time">{{ $item.time }}</text>
+                <text class="weather-hour-icon">{{ $item.icon }}</text>
+                <text class="weather-hour-temperature">{{ $item.temperature }}</text>
+                <text class="weather-hour-rain">{{ $item.rain }}</text>
+              </div>
+            </div>
+          </scroll>
+        </div>
+
+        <div class="weather-section" if="{{dailyItems.length}}">
+          <text class="weather-section-title">{{ $t("weather.daily") }}</text>
+          <div class="weather-daily-card" for="{{dailyItems}}">
+            <text class="weather-daily-date">{{ $item.date }}</text>
+            <text class="weather-daily-icon">{{ $item.icon }}</text>
+            <text class="weather-daily-condition">{{ $item.condition }}</text>
+            <text class="weather-daily-temperature">{{ $item.temperature }}</text>
+            <text class="weather-daily-rain">{{ $item.rain }}</text>
+          </div>
+        </div>
+
+        <div class="weather-section" if="{{rainSummary || alertTitle}}">
+          <text class="weather-section-title">{{ $t("weather.rainAndAlert") }}</text>
+          <div if="{{rainSummary}}" class="weather-rain-card"><text class="weather-rain-label">{{ $t("weather.minutely") }}</text><text class="weather-rain-value">{{ rainSummary }}</text></div>
+          <div if="{{alertTitle}}" class="weather-alert-card"><text class="weather-alert-label">{{ $t("weather.alert") }}</text><text class="weather-alert-value">{{ alertTitle }}</text></div>
+        </div>
+
+        <div class="weather-section" if="{{aqiText || lifeIndexItems.length}}">
+          <text class="weather-section-title">{{ $t("weather.airAndLife") }}</text>
+          <div if="{{aqiText}}" class="weather-air-card">
+            <text class="weather-air-title">{{ $t("weather.airQuality") }}</text>
+            <text class="weather-air-value">{{ aqiText }}</text>
+            <text class="weather-air-detail">{{ pollutantText }}</text>
+          </div>
+          <div class="weather-life-card" for="{{lifeIndexItems}}">
+            <text class="weather-life-name">{{ $item.name }}</text>
+            <text class="weather-life-category">{{ $item.category }}</text>
+          </div>
+        </div>
+
+        <div class="weather-astro-card" if="{{sunriseText || sunsetText || moonText}}">
+          <div><text class="weather-astro-label">{{ $t("weather.sunrise") }}</text><text class="weather-astro-value">{{ sunriseText }}</text></div>
+          <div><text class="weather-astro-label">{{ $t("weather.sunset") }}</text><text class="weather-astro-value">{{ sunsetText }}</text></div>
+          <div><text class="weather-astro-label">{{ $t("weather.moon") }}</text><text class="weather-astro-value">{{ moonText }}</text></div>
+        </div>
+
+        <text class="weather-attribution">{{ $t("weather.attribution") }}</text>
+        <text class="weather-bottom-spacer"></text>
+      </div>
+    </scroll>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import prompt from "@system.prompt"
+import { loadWeatherSettings, isWeatherReady, loadWeatherBundle, weatherConditionSymbol, formatForecastTime, formatShortDate, WEATHER_SETTINGS } from "@src/weather.ts"
+
+export default {
+  private: {
+    scrclass: "",
+    loading: true,
+    errorMessage: "",
+    locationName: "",
+    updateText: "",
+    currentTemperature: "--",
+    currentCondition: "--",
+    currentIcon: "●",
+    feelsLikeText: "",
+    humidityText: "--",
+    windText: "--",
+    uvText: "--",
+    hourlyItems: [],
+    dailyItems: [],
+    rainSummary: "",
+    alertTitle: "",
+    aqiText: "",
+    pollutantText: "",
+    lifeIndexItems: [],
+    sunriseText: "",
+    sunsetText: "",
+    moonText: ""
+  },
+  async onInit() {
+    await this.LoadPage()
+  },
+  async onShow() {
+    await this.LoadPage()
+  },
+  async LoadPage() {
+    const settings = await loadWeatherSettings()
+    if (!isWeatherReady(settings)) {
+      router.replace({ uri: "pages/app/features/toolbox/weather/settings" })
+      return
+    }
+    this.locationName = settings.locationName
+    this.RefreshWeather()
+  },
+  async RefreshWeather() {
+    if (this.loading && this.locationName === "") {
+      this.loading = true
+    } else {
+      this.loading = true
+    }
+    this.errorMessage = ""
+    try {
+      const bundle = await loadWeatherBundle(WEATHER_SETTINGS)
+      this.ApplyWeatherBundle(bundle)
+      this.loading = false
+    } catch (error) {
+      this.loading = false
+      this.errorMessage = this.$t("weather.loadFailed")
+    }
+  },
+  ApplyWeatherBundle(bundle) {
+    const current = bundle.current && bundle.current.current ? bundle.current.current : null
+    if (!current) {
+      throw new Error("missing-current")
+    }
+    this.currentTemperature = current.temperature ? current.temperature.value + "°" : "--"
+    this.currentCondition = current.condition ? current.condition.text : "--"
+    this.currentIcon = weatherConditionSymbol(current.condition && current.condition.code)
+    this.feelsLikeText = current.feelsLike ? this.$t("weather.feelsLike") + " " + current.feelsLike.value + "°" : ""
+    this.humidityText = current.humidity === undefined ? "--" : Math.round(Number(current.humidity) * 100) + "%"
+    this.windText = current.wind && current.wind.speed ? current.wind.speed.value + " " + current.wind.speed.unit : "--"
+    this.uvText = current.uvIndex === undefined ? "--" : String(current.uvIndex)
+    this.updateText = current.observationTime ? this.$t("weather.updated") + " " + formatForecastTime(current.observationTime) : ""
+
+    const hours = bundle.hourly && Array.isArray(bundle.hourly.hours) ? bundle.hourly.hours : []
+    this.hourlyItems = hours.map((item) => ({
+      time: formatForecastTime(item.forecastTime),
+      icon: weatherConditionSymbol(item.condition && item.condition.code),
+      temperature: item.temperature ? item.temperature.value + "°" : "--",
+      rain: item.precipitation && item.precipitation.probability !== undefined ? Math.round(Number(item.precipitation.probability) * 100) + "%" : ""
+    }))
+
+    const days = bundle.daily && Array.isArray(bundle.daily.days) ? bundle.daily.days : []
+    this.dailyItems = days.map((item) => ({
+      date: formatShortDate(item.forecastStartTime),
+      icon: weatherConditionSymbol(item.daytime && item.daytime.condition && item.daytime.condition.code),
+      condition: item.daytime && item.daytime.condition ? item.daytime.condition.text : "--",
+      temperature: item.temperatureMin && item.temperatureMax ? item.temperatureMin.value + "–" + item.temperatureMax.value + "°" : "--",
+      rain: item.daytime && item.daytime.precipitation && item.daytime.precipitation.probability !== undefined ? Math.round(Number(item.daytime.precipitation.probability) * 100) + "%" : ""
+    }))
+
+    const firstDay = days.length ? days[0] : null
+    this.sunriseText = firstDay && firstDay.astro ? formatForecastTime(firstDay.astro.sunrise) : ""
+    this.sunsetText = firstDay && firstDay.astro ? formatForecastTime(firstDay.astro.sunset) : ""
+    this.moonText = firstDay && firstDay.astro ? this.MoonLabel(firstDay.astro.moonPhase) : ""
+
+    this.rainSummary = bundle.minutely && bundle.minutely.summary ? bundle.minutely.summary : ""
+    const alerts = bundle.alerts && Array.isArray(bundle.alerts.alerts) ? bundle.alerts.alerts : []
+    this.alertTitle = alerts.length && alerts[0].headline ? alerts[0].headline : ""
+
+    const airIndexes = bundle.air && Array.isArray(bundle.air.indexes) ? bundle.air.indexes : []
+    const airIndex = airIndexes.length ? airIndexes[0] : null
+    this.aqiText = airIndex ? "AQI " + airIndex.aqiDisplay + " " + (airIndex.category || "") : ""
+    this.pollutantText = airIndex && airIndex.primaryPollutant ? airIndex.primaryPollutant.name || airIndex.primaryPollutant.code : ""
+
+    const indices = bundle.indices && Array.isArray(bundle.indices.daily) ? bundle.indices.daily : []
+    this.lifeIndexItems = indices.slice(0, 4).map((item) => ({ name: item.name || "--", category: item.category || "--" }))
+  },
+  MoonLabel(phase) {
+    const labels = {
+      "new-moon": "新月", "waxing-crescent": "蛾眉月", "first-quarter": "上弦月", "waxing-gibbous": "盈凸月",
+      "full-moon": "满月", "waning-gibbous": "亏凸月", "last-quarter": "下弦月", "waning-crescent": "残月"
+    }
+    return labels[phase] || phase || ""
+  },
+  OpenSettings() {
+    router.push({ uri: "pages/app/features/toolbox/weather/settings" })
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./weather.less";
+</style>
