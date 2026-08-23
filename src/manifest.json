@@ -172,9 +172,6 @@
             "pages/app/features/savedcontent": {
                 "component": "savedcontent"
             },
-            "pages/app/features/notes": {
-                "component": "notes"
-            },
             "pages/debug/componentstest": {
                 "component": "componentstest"
             },

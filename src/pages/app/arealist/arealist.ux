@@ -37,10 +37,6 @@
                     <image src="/common/arealist_savedcontent.png"></image>
                     <text class="smallbtntext">{{ $t("arealist.downloads") }}</text>
                 </div>
-                <div class="smallbtn" style="margin-left: 18px; background-color: {{colors.notes}}" onclick="GoPage('app/features/notes')">
-                    <div class="notes-entry-icon"><text class="notes-entry-icon-text">便</text></div>
-                    <text class="smallbtntext">{{ $t("arealist.notes") }}</text>
-                </div>
             </div>
             <text style="font-size: 24px; font-weight: 600; margin-top: 50px">{{ $t("arealist.scrollToSearch") }}</text>
             <text style="margin-top: 450px;"></text>
@@ -65,8 +61,7 @@ export default {
             dynamic: "#222222",
             mypage: "#222222",
             settings: "#222222",
-            savedcontent: "#222222",
-            notes: "#222222"
+            savedcontent: "#222222"
         },
         anims: {
             ChangePageFX: null,
