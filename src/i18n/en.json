@@ -198,7 +198,9 @@
         "title": "2048",
         "score": "Score",
         "best": "Best",
+        "undo": "Undo",
         "restart": "Restart",
+        "swipeHint": "Swipe anywhere on the board",
         "gameOver": "Game over. Tap Restart to play again."
     },
     "search": {

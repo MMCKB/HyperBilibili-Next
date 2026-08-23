@@ -7,23 +7,19 @@
       <div class="game2048-score-card">
         <div class="game2048-score-item"><text class="game2048-score-label">{{ $t("game2048.score") }}</text><text class="game2048-score-value">{{ scoreText }}</text></div>
         <div class="game2048-score-item"><text class="game2048-score-label">{{ $t("game2048.best") }}</text><text class="game2048-score-value game2048-best-value">{{ bestScoreText }}</text></div>
+        <div if="{{canUndo}}" class="game2048-undo" onclick="UndoMove"><text class="game2048-undo-text">{{ $t("game2048.undo") }}</text></div>
+        <div if="{{!canUndo}}" class="game2048-undo game2048-undo-disabled"><text class="game2048-undo-text game2048-undo-text-disabled">{{ $t("game2048.undo") }}</text></div>
         <div class="game2048-restart" onclick="RestartGame"><text class="game2048-restart-text">{{ $t("game2048.restart") }}</text></div>
       </div>
-      <div class="game2048-play-area">
-        <div class="game2048-board"><div class="game2048-tile {{ $item.tileClass }}" for="{{gameTiles}}"><text class="game2048-tile-value">{{ $item.label }}</text></div></div>
-        <div class="game2048-controls">
-          <div class="game2048-control-row"><div class="game2048-control" onclick="MoveUp"><text class="game2048-control-text">↑</text></div></div>
-          <div class="game2048-control-row"><div class="game2048-control" onclick="MoveLeft"><text class="game2048-control-text">←</text></div><div class="game2048-control" onclick="MoveRight"><text class="game2048-control-text">→</text></div></div>
-          <div class="game2048-control-row"><div class="game2048-control" onclick="MoveDown"><text class="game2048-control-text">↓</text></div></div>
-        </div>
-      </div>
+      <div class="game2048-board" @swipe="HandleBoardSwipe"><div class="game2048-tile {{ $item.tileClass }}" for="{{gameTiles}}"><text class="game2048-tile-value">{{ $item.label }}</text></div></div>
       <text if="{{gameMessage}}" class="game2048-message">{{ gameMessage }}</text>
+      <text if="{{!gameMessage}}" class="game2048-hint">{{ $t("game2048.swipeHint") }}</text>
     </div>
   </div>
 </template>
 
 <script>
-import { createGame2048State, loadGame2048State, moveGame2048, isGame2048Over, saveGame2048State } from "@src/game2048.ts"
+import { createGame2048State, loadGame2048State, moveGame2048, undoGame2048, isGame2048Over, saveGame2048State } from "@src/game2048.ts"
 
 export default {
   private: {
@@ -31,7 +27,9 @@ export default {
     bestScoreText: "0",
     gameTiles: [],
     gameMessage: "",
-    gameState: null
+    gameState: null,
+    canUndo: false,
+    animationVariant: 0
   },
   async onInit() {
     await this.LoadGame()
@@ -41,32 +39,45 @@ export default {
   },
   async LoadGame() {
     const state = await loadGame2048State()
-    this.ApplyGameState(state)
+    this.ApplyGameState(state, -1)
   },
-  ApplyGameState(state) {
+  ApplyGameState(state, spawnedIndex) {
+    const previousBoard = this.gameState && this.gameState.board ? this.gameState.board.slice() : []
     this.gameState = state
     this.scoreText = String(state.score)
     this.bestScoreText = String(state.bestScore)
-    this.gameTiles = state.board.map((value) => ({
-      label: value ? String(value) : "",
-      tileClass: "game2048-tile-" + (value > 2048 ? "super" : value)
-    }))
+    this.canUndo = Array.isArray(state.undoBoard) && state.undoBoard.length === 16
+    this.animationVariant = this.animationVariant === 0 ? 1 : 0
+    this.gameTiles = state.board.map((value, index) => {
+      const changed = spawnedIndex === index || (previousBoard.length === 16 && value && previousBoard[index] !== value)
+      return {
+        label: value ? String(value) : "",
+        tileClass: "game2048-tile-" + (value > 2048 ? "super" : value) + (changed ? " game2048-tile-animate-" + this.animationVariant : "")
+      }
+    })
     this.gameMessage = isGame2048Over(state.board) ? this.$t("game2048.gameOver") : ""
   },
   async Move(direction) {
     if (!this.gameState || isGame2048Over(this.gameState.board)) return
     const result = moveGame2048(this.gameState, direction)
     if (!result.moved) return
-    this.ApplyGameState(result.state)
+    this.ApplyGameState(result.state, result.spawnedIndex)
     await saveGame2048State(result.state)
   },
-  MoveUp() { this.Move("up") },
-  MoveDown() { this.Move("down") },
-  MoveLeft() { this.Move("left") },
-  MoveRight() { this.Move("right") },
+  HandleBoardSwipe(event) {
+    const direction = event && event.direction
+    if (direction === "left" || direction === "right" || direction === "up" || direction === "down") this.Move(direction)
+  },
+  async UndoMove() {
+    if (!this.gameState) return
+    const result = undoGame2048(this.gameState)
+    if (!result.undone) return
+    this.ApplyGameState(result.state, -1)
+    await saveGame2048State(result.state)
+  },
   async RestartGame() {
     const state = createGame2048State(this.gameState && this.gameState.bestScore)
-    this.ApplyGameState(state)
+    this.ApplyGameState(state, -1)
     await saveGame2048State(state)
   }
 }

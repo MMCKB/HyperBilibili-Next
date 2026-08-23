@@ -199,8 +199,10 @@
         "title": "2048",
         "score": "当前分数",
         "best": "最高分",
-        "restart": "重新开始",
-        "gameOver": "游戏结束，点击重新开始"
+        "undo": "撤销",
+        "restart": "重开",
+        "swipeHint": "在棋盘上向任意方向滑动",
+        "gameOver": "游戏结束，点击重开"
     },
     "search": {
         "title": "搜索",

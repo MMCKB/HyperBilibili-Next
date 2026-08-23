@@ -6,10 +6,18 @@ export interface Game2048State {
   board: number[];
   score: number;
   bestScore: number;
+  undoBoard?: number[];
+  undoScore?: number;
+}
+
+export interface Game2048MoveResult {
+  state: Game2048State;
+  moved: boolean;
+  spawnedIndex: number;
 }
 
 const GAME_2048_STORAGE_KEY = "toolbox_2048_state";
-const BOARD_SIZE = 8;
+const BOARD_SIZE = 4;
 const CELL_COUNT = BOARD_SIZE * BOARD_SIZE;
 
 function isValidTile(value: any): boolean {
@@ -26,20 +34,20 @@ function createEmptyBoard(): number[] {
   return Array(CELL_COUNT).fill(0);
 }
 
-function addRandomTile(board: number[]): number[] {
+function addRandomTile(board: number[]): { board: number[]; index: number } {
   const available: number[] = [];
   board.forEach((value, index) => {
     if (!value) available.push(index);
   });
-  if (!available.length) return board.slice();
+  if (!available.length) return { board: board.slice(), index: -1 };
   const next = board.slice();
   const index = available[Math.floor(Math.random() * available.length)];
   next[index] = Math.random() < 0.9 ? 2 : 4;
-  return next;
+  return { board: next, index };
 }
 
 function createNewBoard(): number[] {
-  return addRandomTile(addRandomTile(createEmptyBoard()));
+  return addRandomTile(addRandomTile(createEmptyBoard()).board).board;
 }
 
 function normalizeState(value: any): Game2048State {
@@ -49,7 +57,11 @@ function normalizeState(value: any): Game2048State {
   if (!board.length) {
     return { board: createNewBoard(), score: 0, bestScore: storedBestScore };
   }
-  return { board, score: storedScore, bestScore: storedBestScore };
+  const undoBoard = normalizeBoard(value && value.undoBoard);
+  const undoScore = Math.max(0, Number(value && value.undoScore) || 0);
+  return undoBoard.length
+    ? { board, score: storedScore, bestScore: storedBestScore, undoBoard, undoScore }
+    : { board, score: storedScore, bestScore: storedBestScore };
 }
 
 function readLine(board: number[], index: number, direction: Game2048Direction): number[] {
@@ -96,7 +108,7 @@ export function createGame2048State(previousBestScore: number = 0): Game2048Stat
   return { board: createNewBoard(), score: 0, bestScore: Math.max(0, Number(previousBestScore) || 0) };
 }
 
-export function moveGame2048(state: Game2048State, direction: Game2048Direction): { state: Game2048State; moved: boolean } {
+export function moveGame2048(state: Game2048State, direction: Game2048Direction): Game2048MoveResult {
   const source = normalizeState(state);
   const nextBoard = source.board.slice();
   let gained = 0;
@@ -108,9 +120,30 @@ export function moveGame2048(state: Game2048State, direction: Game2048Direction)
     gained += result.gained;
     writeLine(nextBoard, result.values, index, direction);
   }
-  if (!moved) return { state: source, moved: false };
+  if (!moved) return { state: source, moved: false, spawnedIndex: -1 };
+  const added = addRandomTile(nextBoard);
   const score = source.score + gained;
-  return { state: { board: addRandomTile(nextBoard), score, bestScore: Math.max(source.bestScore, score) }, moved: true };
+  return {
+    state: {
+      board: added.board,
+      score,
+      bestScore: Math.max(source.bestScore, score),
+      undoBoard: source.board.slice(),
+      undoScore: source.score
+    },
+    moved: true,
+    spawnedIndex: added.index
+  };
+}
+
+export function undoGame2048(state: Game2048State): { state: Game2048State; undone: boolean } {
+  const source = normalizeState(state);
+  const undoBoard = normalizeBoard(source.undoBoard);
+  if (!undoBoard.length) return { state: source, undone: false };
+  return {
+    state: { board: undoBoard, score: Math.max(0, Number(source.undoScore) || 0), bestScore: source.bestScore },
+    undone: true
+  };
 }
 
 export function isGame2048Over(board: number[]): boolean {

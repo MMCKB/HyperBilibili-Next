@@ -1,30 +1,34 @@
 .page { flex-direction: column; background-color: #000000; }
 .game2048-shell { width: 392px; align-self: center; flex-direction: column; align-items: center; }
-.game2048-score-card { width: 392px; height: 64px; border-radius: 18px; background-color: #202124; flex-direction: row; align-items: center; padding-left: 16px; padding-right: 12px; }
-.game2048-score-item { width: 102px; flex-direction: column; align-items: center; }
-.game2048-score-label { color: #A4A4A7; font-size: 14px; }
-.game2048-score-value { color: #FFFFFF; font-size: 24px; font-weight: 600; margin-top: 1px; }
+.game2048-score-card { width: 392px; height: 64px; border-radius: 18px; background-color: #202124; flex-direction: row; align-items: center; padding-left: 12px; padding-right: 10px; }
+.game2048-score-item { width: 80px; flex-direction: column; align-items: center; }
+.game2048-score-label { color: #A4A4A7; font-size: 13px; }
+.game2048-score-value { color: #FFFFFF; font-size: 23px; font-weight: 600; margin-top: 1px; }
 .game2048-best-value { color: #FF9CBE; }
-.game2048-restart { width: 118px; height: 42px; margin-left: auto; border-radius: 14px; background-color: #3A2A33; align-items: center; justify-content: center; }
-.game2048-restart-text { color: #FF9CBE; font-size: 18px; font-weight: 600; }
-.game2048-play-area { width: 392px; height: 300px; margin-top: 12px; flex-direction: row; justify-content: space-between; }
-.game2048-board { width: 300px; height: 300px; padding-left: 9px; padding-top: 9px; flex-direction: row; flex-wrap: wrap; background-color: #2A2B30; border-radius: 22px; }
-.game2048-tile { width: 33px; height: 33px; margin-right: 3px; margin-bottom: 3px; border-radius: 7px; background-color: #38393E; align-items: center; justify-content: center; }
-.game2048-tile-value { color: #FFFFFF; font-size: 13px; font-weight: 600; text-align: center; }
-.game2048-tile-2 { background-color: #44454B; }
-.game2048-tile-4 { background-color: #595A61; }
-.game2048-tile-8 { background-color: #5C4050; }
-.game2048-tile-16 { background-color: #714657; }
-.game2048-tile-32 { background-color: #874B63; }
-.game2048-tile-64 { background-color: #A25171; }
-.game2048-tile-128 { background-color: #8A6B3C; }
-.game2048-tile-256 { background-color: #A87D40; }
-.game2048-tile-512 { background-color: #C48E45; }
-.game2048-tile-1024 { background-color: #D09B4D; }
+.game2048-undo { width: 74px; height: 42px; margin-left: auto; border-radius: 13px; background-color: #2A3840; align-items: center; justify-content: center; }
+.game2048-undo-disabled { background-color: #29292D; }
+.game2048-undo-text { color: #86CFFF; font-size: 17px; font-weight: 600; }
+.game2048-undo-text-disabled { color: #67676C; }
+.game2048-restart { width: 94px; height: 42px; margin-left: 8px; border-radius: 13px; background-color: #3A2A33; align-items: center; justify-content: center; }
+.game2048-restart-text { color: #FF9CBE; font-size: 17px; font-weight: 600; }
+.game2048-board { width: 392px; height: 392px; margin-top: 12px; padding-left: 11px; padding-top: 11px; flex-direction: row; flex-wrap: wrap; background-color: #292A2F; border-radius: 24px; }
+.game2048-tile { width: 86px; height: 86px; margin-right: 7px; margin-bottom: 7px; border-radius: 15px; background-color: #393A40; align-items: center; justify-content: center; }
+.game2048-tile-value { color: #FFFFFF; font-size: 31px; font-weight: 700; text-align: center; }
+.game2048-tile-2 { background-color: #556D8A; }
+.game2048-tile-4 { background-color: #668E9D; }
+.game2048-tile-8 { background-color: #6D7CC8; }
+.game2048-tile-16 { background-color: #825FC3; }
+.game2048-tile-32 { background-color: #A253AF; }
+.game2048-tile-64 { background-color: #C3508F; }
+.game2048-tile-128 { background-color: #E36A7C; }
+.game2048-tile-256 { background-color: #EF8B63; }
+.game2048-tile-512 { background-color: #E7AD58; }
+.game2048-tile-1024 { background-color: #D4C85B; }
 .game2048-tile-2048, .game2048-tile-super { background-color: #FF9CBE; }
-.game2048-tile-2048 .game2048-tile-value, .game2048-tile-super .game2048-tile-value { color: #251820; }
-.game2048-message { width: 392px; height: 22px; color: #FF9CBE; font-size: 16px; text-align: center; margin-top: 4px; }
-.game2048-controls { width: 80px; height: 300px; flex-direction: column; align-items: center; justify-content: center; }
-.game2048-control-row { height: 62px; flex-direction: row; justify-content: center; }
-.game2048-control { width: 34px; height: 48px; margin-left: 3px; margin-right: 3px; border-radius: 12px; background-color: #27282C; align-items: center; justify-content: center; }
-.game2048-control-text { color: #FF9CBE; font-size: 25px; text-align: center; }
+.game2048-tile-2048 .game2048-tile-value, .game2048-tile-super .game2048-tile-value { color: #2D1F28; }
+.game2048-tile-animate-0 { animation-name: game2048-tile-pop; animation-duration: 170ms; animation-timing-function: ease-out; }
+.game2048-tile-animate-1 { animation-name: game2048-tile-pop-alt; animation-duration: 170ms; animation-timing-function: ease-out; }
+@keyframes game2048-tile-pop { 0% { transform: scale(0.76); } 100% { transform: scale(1); } }
+@keyframes game2048-tile-pop-alt { 0% { transform: scale(0.76); } 100% { transform: scale(1); } }
+.game2048-message { width: 392px; height: 22px; color: #FF9CBE; font-size: 16px; text-align: center; margin-top: 5px; }
+.game2048-hint { width: 392px; height: 22px; color: #8D8E94; font-size: 15px; text-align: center; margin-top: 5px; }
