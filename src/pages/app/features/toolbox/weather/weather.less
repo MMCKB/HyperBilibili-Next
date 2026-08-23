@@ -10,18 +10,18 @@
 
 .weather-pager-wrap {
   width: 100%;
-  flex: 1;
-  min-height: 0;
+  height: 452px;
+  flex: none;
 }
 
 .weather-pager {
   width: 100%;
-  height: 100%;
+  height: 452px;
 }
 
 .weather-page {
   width: 100%;
-  height: 100%;
+  height: 452px;
   flex-direction: column;
   align-items: center;
   background-color: #000000;
@@ -29,8 +29,8 @@
 
 .weather-loading-card,
 .weather-error-card {
-  width: 340px;
-  min-height: 205px;
+  width: 392px;
+  min-height: 232px;
   align-self: center;
   margin-top: 38px;
   border-radius: 24px;
@@ -97,8 +97,8 @@
 }
 
 .weather-page-top {
-  width: 340px;
-  height: 44px;
+  width: 392px;
+  height: 48px;
   flex-direction: row;
   align-items: center;
 }
@@ -110,7 +110,7 @@
 
 .weather-location {
   color: #FFFFFF;
-  font-size: 27px;
+  font-size: 29px;
   font-weight: 600;
 }
 
@@ -121,8 +121,8 @@
 }
 
 .weather-page-action {
-  width: 38px;
-  height: 38px;
+  width: 42px;
+  height: 42px;
   margin-left: 8px;
   border-radius: 13px;
   background-color: #27282C;
@@ -137,53 +137,63 @@
 }
 
 .weather-now-card {
-  width: 340px;
-  height: 158px;
-  border-radius: 26px;
+  width: 392px;
+  height: 174px;
+  border-radius: 28px;
   background-color: #202124;
-  margin-top: 12px;
+  margin-top: 14px;
   align-items: center;
   justify-content: center;
-  flex-direction: column;
+  flex-direction: row;
+  padding-left: 34px;
+  padding-right: 34px;
 }
 
 .weather-condition-icon {
+  width: 142px;
   color: #FFD34E;
-  font-size: 43px;
-  height: 44px;
+  font-size: 78px;
+  text-align: center;
+}
+
+.weather-now-copy {
+  flex: 1;
+  flex-direction: column;
+  margin-left: 20px;
+  justify-content: center;
 }
 
 .weather-temperature {
   color: #FFFFFF;
-  font-size: 58px;
+  font-size: 70px;
   font-weight: 300;
-  height: 60px;
-  line-height: 60px;
+  height: 73px;
+  line-height: 73px;
 }
 
 .weather-condition {
   color: #FFFFFF;
-  font-size: 20px;
+  font-size: 25px;
   font-weight: 600;
-  margin-top: 2px;
+  margin-top: 3px;
 }
 
 .weather-feels {
   color: #ABABAB;
-  font-size: 16px;
-  margin-top: 2px;
+  font-size: 18px;
+  margin-top: 5px;
 }
 
 .weather-metric-row {
-  width: 340px;
+  width: 392px;
   flex-direction: row;
   justify-content: space-between;
   margin-top: 10px;
 }
 
 .weather-metric-card {
-  width: 116px;
-  height: 65px;
+  width: 126px;
+  height: 76px;
   border-radius: 17px;
   background-color: #202124;
   flex-direction: column;
@@ -193,18 +203,18 @@
 
 .weather-metric-label {
   color: #99999C;
-  font-size: 16px;
+  font-size: 18px;
 }
 
 .weather-metric-value {
   color: #FFFFFF;
-  font-size: 21px;
+  font-size: 24px;
   font-weight: 600;
   margin-top: 3px;
 }
 
 .weather-page-bottom {
-  width: 340px;
+  width: 392px;
   margin-top: auto;
   padding-bottom: 11px;
   align-items: center;
@@ -233,7 +243,7 @@
 }
 
 .weather-page-title {
-  width: 340px;
+  width: 392px;
   color: #FFFFFF;
   font-size: 27px;
   font-weight: 600;
@@ -241,7 +251,7 @@
 }
 
 .weather-page-subtitle {
-  width: 340px;
+  width: 392px;
   color: #969699;
   font-size: 16px;
   margin-top: 3px;
@@ -249,13 +259,13 @@
 }
 
 .weather-hour-grid {
-  width: 340px;
+  width: 392px;
   flex-direction: row;
   justify-content: space-between;
 }
 
 .weather-hour-card {
-  width: 80px;
+  width: 92px;
   height: 105px;
   border-radius: 18px;
   background-color: #202124;
@@ -289,7 +299,7 @@
 }
 
 .weather-daily-card {
-  width: 340px;
+  width: 392px;
   height: 42px;
   border-radius: 14px;
   background-color: #202124;
@@ -338,7 +348,7 @@
 .weather-air-card,
 .weather-rain-card,
 .weather-alert-card {
-  width: 340px;
+  width: 392px;
   min-height: 48px;
   border-radius: 16px;
   background-color: #202124;
@@ -406,7 +416,7 @@
 }
 
 .weather-life-card {
-  width: 340px;
+  width: 392px;
   height: 37px;
   border-radius: 12px;
   background-color: #202124;
@@ -429,7 +439,7 @@
 }
 
 .weather-astro-card {
-  width: 340px;
+  width: 392px;
   height: 58px;
   border-radius: 16px;
   background-color: #202124;

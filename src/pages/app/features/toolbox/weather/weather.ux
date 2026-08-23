@@ -31,9 +31,11 @@
 
             <div class="weather-now-card">
               <text class="weather-condition-icon">{{ currentIcon }}</text>
-              <text class="weather-temperature">{{ currentTemperature }}</text>
-              <text class="weather-condition">{{ currentCondition }}</text>
-              <text class="weather-feels">{{ feelsLikeText }}</text>
+              <div class="weather-now-copy">
+                <text class="weather-temperature">{{ currentTemperature }}</text>
+                <text class="weather-condition">{{ currentCondition }}</text>
+                <text class="weather-feels">{{ feelsLikeText }}</text>
+              </div>
             </div>
 
             <div class="weather-metric-row">
