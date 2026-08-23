@@ -54,26 +54,21 @@ export default {
       100
     )
     this.anims.splash.start()
-
-    if (!global.settings.SETTINGS.agreedAllAgreements) {
-      // 首次启动：Logo 停留在中央，并在原退出动画开始前淡入启动按钮。
-      setTimeout(() => {
-        this.showFirstLaunchButton = true
-      }, 850)
-      return
-    }
-
-    // 已同意协议：保留原有的 Logo 退出与自动跳转流程。
     setTimeout(() => {
       this.anims.splash_out.start()
-      setTimeout(() => this.FinishReturningSplashFlow(), 500)
+      setTimeout(() => this.FinishSplashFlow(), 500)
     }, 1000)
   },
-  async FinishReturningSplashFlow() {
+  async FinishSplashFlow() {
     if (!(await this.$app.$def.jumpcheck.NetworkCheck())) {
       router.replace({
         uri: "pages/error/networkerror"
       })
+      return
+    }
+
+    if (!global.settings.SETTINGS.agreedAllAgreements) {
+      this.showFirstLaunchButton = true
       return
     }
 
