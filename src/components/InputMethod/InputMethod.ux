@@ -207,7 +207,7 @@
         <div class="rect-t9-expand-overlay" if="{{downFlag==='down' && screentype==='rect' && lang==='cn' && !numFlag && rectKeyboardtype==='T9'}}">
           <div static class="rect-t9-expand-content">
             <scroll class="rect-t9-pinyin-pane" scroll-y="{{true}}">
-              <div style="flex-direction:column;">
+              <div style="width:100%;flex-direction:column;">
                 <text for="{{t9PinyinGroups}}" class="rect-t9-pinyin-item" style="background-color:{{$idx===t9SelectedPinyinIndex ? 'rgb(13,132,255)' : 'transparent'}}" @click="selectT9Pinyin($idx)">{{t9PinyinGroups[$idx].pinyin}}</text>
               </div>
             </scroll>
