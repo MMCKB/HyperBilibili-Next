@@ -11,7 +11,7 @@
         <div if="{{!canUndo}}" class="game2048-undo game2048-undo-disabled"><text class="game2048-undo-text game2048-undo-text-disabled">{{ $t("game2048.undo") }}</text></div>
         <div class="game2048-restart" onclick="RestartGame"><text class="game2048-restart-text">{{ $t("game2048.restart") }}</text></div>
       </div>
-      <div class="game2048-board" @swipe="HandleBoardSwipe"><div class="game2048-tile {{ $item.tileClass }}" for="{{gameTiles}}"><text class="game2048-tile-value">{{ $item.label }}</text></div></div>
+      <div class="game2048-board" ontouchstart="HandleBoardTouchStart" ontouchend="HandleBoardTouchEnd"><div class="game2048-tile {{ $item.tileClass }}" for="{{gameTiles}}"><text class="game2048-tile-value">{{ $item.label }}</text></div></div>
       <text if="{{gameMessage}}" class="game2048-message">{{ gameMessage }}</text>
       <text if="{{!gameMessage}}" class="game2048-hint">{{ $t("game2048.swipeHint") }}</text>
     </div>
@@ -29,7 +29,9 @@ export default {
     gameMessage: "",
     gameState: null,
     canUndo: false,
-    animationVariant: 0
+    animationVariant: 0,
+    touchStartX: -1,
+    touchStartY: -1
   },
   async onInit() {
     await this.LoadGame()
@@ -64,9 +66,29 @@ export default {
     this.ApplyGameState(result.state, result.spawnedIndex)
     await saveGame2048State(result.state)
   },
-  HandleBoardSwipe(event) {
-    const direction = event && event.direction
-    if (direction === "left" || direction === "right" || direction === "up" || direction === "down") this.Move(direction)
+  GetTouchPoint(event) {
+    const list = event && (event.changedTouches || event.touches)
+    return list && list.length ? list[0] : null
+  },
+  HandleBoardTouchStart(event) {
+    const point = this.GetTouchPoint(event)
+    if (!point) return
+    this.touchStartX = Number(point.clientX)
+    this.touchStartY = Number(point.clientY)
+  },
+  HandleBoardTouchEnd(event) {
+    const point = this.GetTouchPoint(event)
+    if (!point || this.touchStartX < 0 || this.touchStartY < 0) return
+    const deltaX = Number(point.clientX) - this.touchStartX
+    const deltaY = Number(point.clientY) - this.touchStartY
+    this.touchStartX = -1
+    this.touchStartY = -1
+    if (Math.max(Math.abs(deltaX), Math.abs(deltaY)) < 18) return
+    if (Math.abs(deltaX) > Math.abs(deltaY)) {
+      this.Move(deltaX > 0 ? "right" : "left")
+    } else {
+      this.Move(deltaY > 0 ? "down" : "up")
+    }
   },
   async UndoMove() {
     if (!this.gameState) return
