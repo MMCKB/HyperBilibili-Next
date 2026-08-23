@@ -1,6 +1,6 @@
 # HyperBilibili-Next
 
-> 运行在 Xiaomi Vela OS 上的第三方哔哩哔哩客户端
+> 运行在 Xiaomi Vela OS 上的第三方哔哩哔哩客户端。因为闲的无聊（不知道加啥功能），所以还增加了一个工具箱功能，里面有很多实用的功能
 
 ![Build Status](https://github.com/MMCKB/HyperBilibili-Next/actions/workflows/build.yml/badge.svg)
 [![GitHub Release](https://img.shields.io/github/v/release/MMCKB/HyperBilibili-Next)](https://github.com/MMCKB/HyperBilibili-Next/releases)
