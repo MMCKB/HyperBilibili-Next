@@ -6,8 +6,6 @@
     <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="true">
       <title-bar title="playerAppearance.title"></title-bar>
 
-      <text class="page-description">{{ $t("playerAppearance.description") }}</text>
-
       <div class="preview-panel">
         <text class="section-title">{{ $t("playerAppearance.preview") }}</text>
         <div class="preview-background">
@@ -26,8 +24,13 @@
           <text class="setting-title">{{ $t("playerAppearance.opacity") }}</text>
           <text class="setting-value">{{ toolbarOpacity }}%</text>
         </div>
-        <text class="setting-hint">{{ $t("playerAppearance.opacityHint") }}</text>
-        <slider class="appearance-slider" min="15" max="75" step="5" value="{{ toolbarOpacity }}" onchange="onOpacityChange"></slider>
+        <div class="slider-wrapper">
+          <slider class="appearance-slider" min="0" max="100" step="1" value="{{ toolbarOpacity }}" onchange="onOpacityChange"></slider>
+        </div>
+        <div class="adjust-buttons">
+          <div class="adjust-button" onclick="adjustOpacity(-1)"><text class="adjust-button-text">−</text></div>
+          <div class="adjust-button" onclick="adjustOpacity(1)"><text class="adjust-button-text">+</text></div>
+        </div>
       </div>
 
       <div class="setting-card">
@@ -35,11 +38,16 @@
           <text class="setting-title">{{ $t("playerAppearance.radius") }}</text>
           <text class="setting-value">{{ toolbarRadius }}px</text>
         </div>
-        <text class="setting-hint">{{ $t("playerAppearance.radiusHint") }}</text>
-        <slider class="appearance-slider" min="0" max="50" step="2" value="{{ toolbarRadius }}" onchange="onRadiusChange"></slider>
+        <div class="slider-wrapper">
+          <slider class="appearance-slider" min="0" max="50" step="1" value="{{ toolbarRadius }}" onchange="onRadiusChange"></slider>
+        </div>
+        <div class="adjust-buttons">
+          <div class="adjust-button" onclick="adjustRadius(-1)"><text class="adjust-button-text">−</text></div>
+          <div class="adjust-button" onclick="adjustRadius(1)"><text class="adjust-button-text">+</text></div>
+        </div>
       </div>
 
-      <default-button @click="restoreDefaults" primary="true" margin-top="24px" text="playerAppearance.restoreDefaults"></default-button>
+      <default-button @click="restoreDefaults" primary="true" margin-top="20px" text="playerAppearance.restoreDefaults"></default-button>
       <text style="margin-top: 30px"></text>
     </scroll>
   </div>
@@ -53,12 +61,17 @@ export default {
     toolbarBackgroundColor: "rgba(0, 0, 0, 0.3)",
     scrclass: ""
   },
+  clampValue(value, min, max, fallback) {
+    const numericValue = Number(value);
+    if (isNaN(numericValue)) {
+      return fallback;
+    }
+    return Math.max(min, Math.min(max, Math.round(numericValue)));
+  },
   updatePreview() {
-    const opacity = Math.max(15, Math.min(75, Number(this.toolbarOpacity) || 30));
-    const radius = Math.max(0, Math.min(50, Number(this.toolbarRadius) || 0));
-    this.toolbarOpacity = opacity;
-    this.toolbarRadius = radius;
-    this.toolbarBackgroundColor = `rgba(0, 0, 0, ${opacity / 100})`;
+    this.toolbarOpacity = this.clampValue(this.toolbarOpacity, 0, 100, 30);
+    this.toolbarRadius = this.clampValue(this.toolbarRadius, 0, 50, 30);
+    this.toolbarBackgroundColor = `rgba(0, 0, 0, ${this.toolbarOpacity / 100})`;
   },
   saveAppearance() {
     this.updatePreview();
@@ -73,6 +86,14 @@ export default {
   },
   onRadiusChange(event) {
     this.toolbarRadius = event.progress;
+    this.saveAppearance();
+  },
+  adjustOpacity(delta) {
+    this.toolbarOpacity = Number(this.toolbarOpacity) + delta;
+    this.saveAppearance();
+  },
+  adjustRadius(delta) {
+    this.toolbarRadius = Number(this.toolbarRadius) + delta;
     this.saveAppearance();
   },
   restoreDefaults() {
