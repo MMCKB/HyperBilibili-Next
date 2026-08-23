@@ -271,6 +271,19 @@ export function weatherConditionSymbol(code: string): string {
   return "●";
 }
 
+export function weatherConditionAsset(code: string): string {
+  const number = Number(code);
+  if (number === 100 || number === 150) return "/common/images/weather_sunny.png";
+  if ((number >= 101 && number <= 103) || (number >= 151 && number <= 153)) return "/common/images/weather_partly.png";
+  if (number === 104) return "/common/images/weather_cloudy.png";
+  if (number >= 200 && number <= 213) return "/common/images/weather_wind.png";
+  if (number >= 300 && number <= 399) return "/common/images/weather_rain.png";
+  if (number >= 400 && number <= 499) return "/common/images/weather_snow.png";
+  if (number >= 500 && number <= 515) return "/common/images/weather_fog.png";
+  if (number >= 516 && number <= 599) return "/common/images/weather_hail.png";
+  return "/common/images/weather_cloudy.png";
+}
+
 export function formatForecastTime(time: string): string {
   if (!time) return "--";
   const match = String(time).match(/T(\d{2}:\d{2})/);
