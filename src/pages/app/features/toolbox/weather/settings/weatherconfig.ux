@@ -132,24 +132,24 @@ export default {
     this.statusText = this.$t("weather.testing")
     try {
       const result = await testWeatherSettings(WEATHER_SETTINGS)
-      if (!result || !result.current || (result.current.code && result.current.code != "200")) {
-        throw new Error("api-error")
+      if (!result || !result.now) {
+        throw new Error("invalid-weather-response")
       }
-      const location = result.location
       await saveWeatherSettings({
-        locationName: location.name || "",
-        latitude: location.lat || "",
-        longitude: location.lon || "",
-        timezone: location.tz || "",
-        country: location.country || "",
-        adm1: location.adm1 || "",
-        adm2: location.adm2 || ""
+        locationName: WEATHER_SETTINGS.locationId,
+        latitude: "",
+        longitude: "",
+        timezone: "",
+        country: "",
+        adm1: "",
+        adm2: ""
       })
       this.statusText = this.$t("weather.connectionSuccess")
       await this.RefreshSettings()
       return true
     } catch (error) {
-      this.statusText = this.$t("weather.connectionFailed")
+      const reason = error && error.message ? " (" + error.message + ")" : ""
+      this.statusText = this.$t("weather.connectionFailed") + reason
       return false
     }
   },

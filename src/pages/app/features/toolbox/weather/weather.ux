@@ -141,7 +141,7 @@ export default {
       router.replace({ uri: "pages/app/features/toolbox/weather/settings" })
       return
     }
-    this.locationName = settings.locationName
+    this.locationName = settings.locationName || settings.locationId
     this.RefreshWeather()
   },
   async RefreshWeather() {
@@ -157,53 +157,53 @@ export default {
       this.loading = false
     } catch (error) {
       this.loading = false
-      this.errorMessage = this.$t("weather.loadFailed")
+      const reason = error && error.message ? " (" + error.message + ")" : ""
+      this.errorMessage = this.$t("weather.loadFailed") + reason
     }
   },
   ApplyWeatherBundle(bundle) {
-    const current = bundle.current && bundle.current.current ? bundle.current.current : null
+    const current = bundle.current && bundle.current.now ? bundle.current.now : null
     if (!current) {
       throw new Error("missing-current")
     }
-    this.currentTemperature = current.temperature ? current.temperature.value + "°" : "--"
-    this.currentCondition = current.condition ? current.condition.text : "--"
-    this.currentIcon = weatherConditionSymbol(current.condition && current.condition.code)
-    this.feelsLikeText = current.feelsLike ? this.$t("weather.feelsLike") + " " + current.feelsLike.value + "°" : ""
-    this.humidityText = current.humidity === undefined ? "--" : Math.round(Number(current.humidity) * 100) + "%"
-    this.windText = current.wind && current.wind.speed ? current.wind.speed.value + " " + current.wind.speed.unit : "--"
+    this.currentTemperature = current.temp === undefined ? "--" : current.temp + "°"
+    this.currentCondition = current.text || "--"
+    this.currentIcon = weatherConditionSymbol(current.icon)
+    this.feelsLikeText = current.feelsLike === undefined ? "" : this.$t("weather.feelsLike") + " " + current.feelsLike + "°"
+    this.humidityText = current.humidity === undefined ? "--" : String(current.humidity) + "%"
+    this.windText = current.windSpeed === undefined ? "--" : current.windSpeed + " km/h"
     this.uvText = current.uvIndex === undefined ? "--" : String(current.uvIndex)
-    this.updateText = current.observationTime ? this.$t("weather.updated") + " " + formatForecastTime(current.observationTime) : ""
+    this.updateText = current.obsTime ? this.$t("weather.updated") + " " + formatForecastTime(current.obsTime) : ""
 
-    const hours = bundle.hourly && Array.isArray(bundle.hourly.hours) ? bundle.hourly.hours : []
-    this.hourlyItems = hours.map((item) => ({
-      time: formatForecastTime(item.forecastTime),
-      icon: weatherConditionSymbol(item.condition && item.condition.code),
-      temperature: item.temperature ? item.temperature.value + "°" : "--",
-      rain: item.precipitation && item.precipitation.probability !== undefined ? Math.round(Number(item.precipitation.probability) * 100) + "%" : ""
+    const hours = bundle.hourly && Array.isArray(bundle.hourly.hourly) ? bundle.hourly.hourly : []
+    this.hourlyItems = hours.slice(0, 4).map((item) => ({
+      time: formatForecastTime(item.fxTime),
+      icon: weatherConditionSymbol(item.icon),
+      temperature: item.temp === undefined ? "--" : item.temp + "°",
+      rain: item.pop === undefined ? "" : String(item.pop) + "%"
     }))
 
-    const days = bundle.daily && Array.isArray(bundle.daily.days) ? bundle.daily.days : []
+    const days = bundle.daily && Array.isArray(bundle.daily.daily) ? bundle.daily.daily : []
     this.dailyItems = days.map((item) => ({
-      date: formatShortDate(item.forecastStartTime),
-      icon: weatherConditionSymbol(item.daytime && item.daytime.condition && item.daytime.condition.code),
-      condition: item.daytime && item.daytime.condition ? item.daytime.condition.text : "--",
-      temperature: item.temperatureMin && item.temperatureMax ? item.temperatureMin.value + "–" + item.temperatureMax.value + "°" : "--",
-      rain: item.daytime && item.daytime.precipitation && item.daytime.precipitation.probability !== undefined ? Math.round(Number(item.daytime.precipitation.probability) * 100) + "%" : ""
+      date: formatShortDate(item.fxDate),
+      icon: weatherConditionSymbol(item.iconDay),
+      condition: item.textDay || "--",
+      temperature: item.tempMin === undefined || item.tempMax === undefined ? "--" : item.tempMin + "–" + item.tempMax + "°",
+      rain: item.pop === undefined ? "" : String(item.pop) + "%"
     }))
 
     const firstDay = days.length ? days[0] : null
-    this.sunriseText = firstDay && firstDay.astro ? formatForecastTime(firstDay.astro.sunrise) : ""
-    this.sunsetText = firstDay && firstDay.astro ? formatForecastTime(firstDay.astro.sunset) : ""
-    this.moonText = firstDay && firstDay.astro ? this.MoonLabel(firstDay.astro.moonPhase) : ""
+    this.sunriseText = firstDay ? formatForecastTime(firstDay.sunrise) : ""
+    this.sunsetText = firstDay ? formatForecastTime(firstDay.sunset) : ""
+    this.moonText = firstDay ? this.MoonLabel(firstDay.moonPhase) : ""
 
     this.rainSummary = bundle.minutely && bundle.minutely.summary ? bundle.minutely.summary : ""
-    const alerts = bundle.alerts && Array.isArray(bundle.alerts.alerts) ? bundle.alerts.alerts : []
-    this.alertTitle = alerts.length && alerts[0].headline ? alerts[0].headline : ""
+    const alerts = bundle.alerts && Array.isArray(bundle.alerts.warning) ? bundle.alerts.warning : []
+    this.alertTitle = alerts.length && alerts[0].title ? alerts[0].title : ""
 
-    const airIndexes = bundle.air && Array.isArray(bundle.air.indexes) ? bundle.air.indexes : []
-    const airIndex = airIndexes.length ? airIndexes[0] : null
-    this.aqiText = airIndex ? "AQI " + airIndex.aqiDisplay + " " + (airIndex.category || "") : ""
-    this.pollutantText = airIndex && airIndex.primaryPollutant ? airIndex.primaryPollutant.name || airIndex.primaryPollutant.code : ""
+    const airNow = bundle.air && bundle.air.now ? bundle.air.now : null
+    this.aqiText = airNow ? "AQI " + (airNow.aqi || "--") + " " + (airNow.category || "") : ""
+    this.pollutantText = airNow ? (airNow.primary || "") : ""
 
     const indices = bundle.indices && Array.isArray(bundle.indices.daily) ? bundle.indices.daily : []
     this.lifeIndexItems = indices.slice(0, 4).map((item) => ({ name: item.name || "--", category: item.category || "--" }))

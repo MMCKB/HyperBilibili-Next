@@ -47,6 +47,42 @@ function buildUrl(host: string, path: string): string {
   return "https://" + normalizedHost + path;
 }
 
+function queryString(params: Record<string, string>): string {
+  const values = Object.keys(params)
+    .filter((key) => params[key] !== undefined && params[key] !== null && params[key] !== "")
+    .map((key) => encodeURIComponent(key) + "=" + encodeURIComponent(params[key]));
+  return values.length ? "?" + values.join("&") : "";
+}
+
+function createApiError(message: string): Error {
+  return new Error(message || "api-error");
+}
+
+function unwrapFetchResponse(response: any): any {
+  let transport = response;
+  if (transport && transport.data && typeof transport.data === "object" &&
+    (typeof transport.data.code === "number" || transport.data.headers || transport.data.data !== undefined)) {
+    transport = transport.data;
+  }
+
+  const httpCode = transport && typeof transport.code === "number" ? transport.code : 0;
+  let body = transport && transport.data !== undefined ? transport.data : transport;
+  if (typeof body === "string") {
+    try {
+      body = JSON.parse(body);
+    } catch (error) {
+      throw createApiError(httpCode ? "http-" + httpCode : "invalid-response");
+    }
+  }
+  if (httpCode && (httpCode < 200 || httpCode >= 300)) {
+    throw createApiError("http-" + httpCode);
+  }
+  if (body && body.code && String(body.code) !== "200") {
+    throw createApiError("qweather-" + body.code);
+  }
+  return body;
+}
+
 export function loadWeatherSettings(): Promise<WeatherSettings> {
   return new Promise((resolve) => {
     storage.get({
@@ -77,7 +113,6 @@ export function saveWeatherSettings(params: Partial<WeatherSettings>): Promise<W
     ...params,
     apiHost: normalizeHost(params.apiHost === undefined ? WEATHER_SETTINGS.apiHost : params.apiHost)
   };
-
   return new Promise((resolve) => {
     storage.set({
       key: WEATHER_STORAGE_KEY,
@@ -96,58 +131,38 @@ export function hasWeatherLocationId(settings: WeatherSettings = WEATHER_SETTING
   return !!String(settings.locationId || "").trim();
 }
 
-export function hasWeatherLocation(settings: WeatherSettings = WEATHER_SETTINGS): boolean {
-  return !!(hasWeatherLocationId(settings) && settings.latitude && settings.longitude);
-}
-
 export function isWeatherReady(settings: WeatherSettings = WEATHER_SETTINGS): boolean {
-  return hasWeatherApiCredentials(settings) && hasWeatherLocation(settings);
+  return hasWeatherApiCredentials(settings) && hasWeatherLocationId(settings);
 }
 
 async function requestJson(host: string, apiKey: string, path: string): Promise<any> {
-  const response = await fetch.fetch({
-    url: buildUrl(host, path),
-    responseType: "json",
-    header: {
-      "X-QW-Api-Key": String(apiKey || "").trim(),
-      "Accept": "application/json"
-    }
-  });
-  return response && response.data ? response.data : response;
-}
-
-function queryString(params: Record<string, string>): string {
-  const values = Object.keys(params)
-    .filter((key) => params[key] !== undefined && params[key] !== null && params[key] !== "")
-    .map((key) => encodeURIComponent(key) + "=" + encodeURIComponent(params[key]));
-  return values.length ? "?" + values.join("&") : "";
-}
-
-export async function resolveWeatherLocationId(settings: WeatherSettings = WEATHER_SETTINGS): Promise<any> {
-  if (!hasWeatherApiCredentials(settings) || !hasWeatherLocationId(settings)) {
-    throw new Error("missing-location-id");
+  let response: any;
+  try {
+    response = await fetch.fetch({
+      url: buildUrl(host, path),
+      responseType: "json",
+      header: {
+        "X-QW-Api-Key": String(apiKey || "").trim(),
+        "Accept": "application/json",
+        "Accept-Encoding": "gzip"
+      }
+    });
+  } catch (error) {
+    const code = error && error.code ? error.code : "network";
+    throw createApiError("fetch-" + code);
   }
-
-  const result = await requestJson(
-    settings.apiHost,
-    settings.apiKey,
-    "/geo/v2/city/lookup" + queryString({ location: String(settings.locationId).trim(), number: "1", lang: "zh" })
-  );
-  const location = result && Array.isArray(result.location) && result.location.length ? result.location[0] : null;
-  if (!location || !location.lat || !location.lon) {
-    throw new Error("invalid-location-id");
-  }
-  return location;
+  return unwrapFetchResponse(response);
 }
 
 export async function testWeatherSettings(settings: WeatherSettings = WEATHER_SETTINGS): Promise<any> {
-  const location = await resolveWeatherLocationId(settings);
-  const current = await requestJson(
+  if (!hasWeatherApiCredentials(settings) || !hasWeatherLocationId(settings)) {
+    throw createApiError("missing-settings");
+  }
+  return requestJson(
     settings.apiHost,
     settings.apiKey,
-    "/weather/v1/current/" + encodeURIComponent(location.lat) + "/" + encodeURIComponent(location.lon) + queryString({ localTime: "true", lang: "zh" })
+    "/v7/weather/now" + queryString({ location: String(settings.locationId).trim(), lang: "zh" })
   );
-  return { location, current };
 }
 
 async function safeRequest(task: () => Promise<any>): Promise<any> {
@@ -160,23 +175,19 @@ async function safeRequest(task: () => Promise<any>): Promise<any> {
 }
 
 export async function loadWeatherBundle(settings: WeatherSettings = WEATHER_SETTINGS): Promise<any> {
-  if (!isWeatherReady(settings)) throw new Error("missing-settings");
-
-  const latitude = encodeURIComponent(settings.latitude);
-  const longitude = encodeURIComponent(settings.longitude);
-  const localized = queryString({ localTime: "true", lang: "zh" });
-  const coordinate = encodeURIComponent(settings.longitude + "," + settings.latitude);
-
+  if (!isWeatherReady(settings)) throw createApiError("missing-settings");
+  const location = String(settings.locationId).trim();
+  const common = { location, lang: "zh" };
   const requests = await Promise.all([
-    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/weather/v1/current/" + latitude + "/" + longitude + localized)),
-    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/weather/v1/hourly/" + latitude + "/" + longitude + queryString({ hours: "4", localTime: "true", lang: "zh" }))),
-    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/weather/v1/daily/" + latitude + "/" + longitude + queryString({ days: "3", localTime: "true", lang: "zh" }))),
-    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/airquality/v1/current/" + latitude + "/" + longitude + queryString({ lang: "zh" }))),
-    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/weatheralert/v1/current/" + latitude + "/" + longitude + localized)),
-    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/indices/1d" + queryString({ type: "1,3,5,9", location: settings.locationId || settings.longitude + "," + settings.latitude, lang: "zh" }))),
-    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/minutely/5m?location=" + coordinate + "&lang=zh"))
+    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/weather/now" + queryString(common))),
+    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/weather/24h" + queryString(common))),
+    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/weather/3d" + queryString(common))),
+    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/air/now" + queryString(common))),
+    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/warning/now" + queryString(common))),
+    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/indices/1d" + queryString({ type: "1,3,5,9", location, lang: "zh" }))),
+    safeRequest(() => requestJson(settings.apiHost, settings.apiKey, "/v7/minutely/5m" + queryString(common)))
   ]);
-
+  if (!requests[0] || !requests[0].now) throw createApiError("weather-unavailable");
   return {
     current: requests[0],
     hourly: requests[1],
