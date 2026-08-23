@@ -21,6 +21,14 @@
           </div>
           <text class="toolbox-card-arrow">›</text>
         </div>
+        <div class="toolbox-card toolbox-card-next" onclick="OpenGame2048">
+          <div class="toolbox-card-icon"><text class="toolbox-card-game-icon">2048</text></div>
+          <div class="toolbox-card-copy">
+            <text class="toolbox-card-title">{{ $t("toolbox.game2048") }}</text>
+            <text class="toolbox-card-subtitle">{{ $t("toolbox.game2048Description") }}</text>
+          </div>
+          <text class="toolbox-card-arrow">›</text>
+        </div>
       </div>
       <text style="height: 30px"></text>
     </scroll>
@@ -42,6 +50,11 @@ export default {
   OpenCalculator() {
     router.push({
       uri: "pages/app/features/toolbox/calculator"
+    })
+  },
+  OpenGame2048() {
+    router.push({
+      uri: "pages/app/features/toolbox/game2048"
     })
   }
 }

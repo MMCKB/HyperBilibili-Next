@@ -110,7 +110,9 @@
         "weather": "天气",
         "weatherDescription": "和风天气与城市预报",
         "calculator": "计算器",
-        "calculatorDescription": "基础计算与单位换算"
+        "calculatorDescription": "基础计算与单位换算",
+        "game2048": "2048",
+        "game2048Description": "合并数字并挑战最高分"
     },
     "weather": {
         "title": "天气",
@@ -192,6 +194,13 @@
         "result": "结果",
         "selectFrom": "选择源单位",
         "selectTo": "选择目标单位"
+    },
+    "game2048": {
+        "title": "2048",
+        "score": "当前分数",
+        "best": "最高分",
+        "restart": "重新开始",
+        "gameOver": "游戏结束，点击重新开始"
     },
     "search": {
         "title": "搜索",

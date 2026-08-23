@@ -1,0 +1,78 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+
+<template>
+  <div class="page">
+    <title-bar title="game2048.title"></title-bar>
+    <div class="game2048-shell">
+      <div class="game2048-score-card">
+        <div class="game2048-score-item"><text class="game2048-score-label">{{ $t("game2048.score") }}</text><text class="game2048-score-value">{{ scoreText }}</text></div>
+        <div class="game2048-score-item"><text class="game2048-score-label">{{ $t("game2048.best") }}</text><text class="game2048-score-value game2048-best-value">{{ bestScoreText }}</text></div>
+        <div class="game2048-restart" onclick="RestartGame"><text class="game2048-restart-text">{{ $t("game2048.restart") }}</text></div>
+      </div>
+      <div class="game2048-play-area">
+        <div class="game2048-board"><div class="game2048-tile {{ $item.tileClass }}" for="{{gameTiles}}"><text class="game2048-tile-value">{{ $item.label }}</text></div></div>
+        <div class="game2048-controls">
+          <div class="game2048-control-row"><div class="game2048-control" onclick="MoveUp"><text class="game2048-control-text">↑</text></div></div>
+          <div class="game2048-control-row"><div class="game2048-control" onclick="MoveLeft"><text class="game2048-control-text">←</text></div><div class="game2048-control" onclick="MoveRight"><text class="game2048-control-text">→</text></div></div>
+          <div class="game2048-control-row"><div class="game2048-control" onclick="MoveDown"><text class="game2048-control-text">↓</text></div></div>
+        </div>
+      </div>
+      <text if="{{gameMessage}}" class="game2048-message">{{ gameMessage }}</text>
+    </div>
+  </div>
+</template>
+
+<script>
+import { createGame2048State, loadGame2048State, moveGame2048, isGame2048Over, saveGame2048State } from "@src/game2048.ts"
+
+export default {
+  private: {
+    scoreText: "0",
+    bestScoreText: "0",
+    gameTiles: [],
+    gameMessage: "",
+    gameState: null
+  },
+  async onInit() {
+    await this.LoadGame()
+  },
+  async onShow() {
+    if (!this.gameState) await this.LoadGame()
+  },
+  async LoadGame() {
+    const state = await loadGame2048State()
+    this.ApplyGameState(state)
+  },
+  ApplyGameState(state) {
+    this.gameState = state
+    this.scoreText = String(state.score)
+    this.bestScoreText = String(state.bestScore)
+    this.gameTiles = state.board.map((value) => ({
+      label: value ? String(value) : "",
+      tileClass: "game2048-tile-" + (value > 2048 ? "super" : value)
+    }))
+    this.gameMessage = isGame2048Over(state.board) ? this.$t("game2048.gameOver") : ""
+  },
+  async Move(direction) {
+    if (!this.gameState || isGame2048Over(this.gameState.board)) return
+    const result = moveGame2048(this.gameState, direction)
+    if (!result.moved) return
+    this.ApplyGameState(result.state)
+    await saveGame2048State(result.state)
+  },
+  MoveUp() { this.Move("up") },
+  MoveDown() { this.Move("down") },
+  MoveLeft() { this.Move("left") },
+  MoveRight() { this.Move("right") },
+  async RestartGame() {
+    const state = createGame2048State(this.gameState && this.gameState.bestScore)
+    this.ApplyGameState(state)
+    await saveGame2048State(state)
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./game2048.less";
+</style>

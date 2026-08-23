@@ -178,6 +178,9 @@
             "pages/app/features/toolbox/calculator": {
                 "component": "calculator"
             },
+            "pages/app/features/toolbox/game2048": {
+                "component": "game2048"
+            },
             "pages/app/features/toolbox/weather": {
                 "component": "weather"
             },

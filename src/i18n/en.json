@@ -109,7 +109,9 @@
         "weather": "Weather",
         "weatherDescription": "QWeather and city forecasts",
         "calculator": "Calculator",
-        "calculatorDescription": "Calculations and unit conversions"
+        "calculatorDescription": "Calculations and unit conversions",
+        "game2048": "2048",
+        "game2048Description": "Merge tiles and beat your best score"
     },
     "weather": {
         "title": "Weather",
@@ -191,6 +193,13 @@
         "result": "Result",
         "selectFrom": "Select source unit",
         "selectTo": "Select target unit"
+    },
+    "game2048": {
+        "title": "2048",
+        "score": "Score",
+        "best": "Best",
+        "restart": "Restart",
+        "gameOver": "Game over. Tap Restart to play again."
     },
     "search": {
         "title": "Search",
