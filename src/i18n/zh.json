@@ -30,9 +30,6 @@
         "notSupportedMessage": "该消息暂不支持显示",
         "selectEmoji": "选择表情"
     },
-    "splash": {
-        "start": "澎湃哔哩，启动！"
-    },
     "eularead": {
         "title": "协议",
         "sectitle": "在使用澎湃哔哩（Hyperbili）之前，您需要仔细阅读并同意《用户协议》与《隐私政策》。"
