@@ -208,7 +208,7 @@
           <div static class="rect-t9-expand-content">
             <scroll class="rect-t9-pinyin-pane" scroll-y="{{true}}">
               <div style="flex-direction:column;padding:4px;">
-                <text for="{{t9PinyinGroups}}" class="rect-t9-pinyin-item" style="background-color:{{$idx===t9SelectedPinyinIndex ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectT9Pinyin($idx)">{{t9PinyinGroups[$idx].pinyin}}</text>
+                <text for="{{t9PinyinGroups}}" class="rect-t9-pinyin-item" style="background-color:{{$idx===t9SelectedPinyinIndex ? 'rgb(13,132,255)' : 'transparent'}}" @click="selectT9Pinyin($idx)">{{t9PinyinGroups[$idx].pinyin}}</text>
               </div>
             </scroll>
             <div class="rect-t9-hanzi-pane">
@@ -1075,17 +1075,16 @@ export default {
 }
 .rect-t9-pinyin-item {
   color:#fff;
-  height:48px;
+  height:34px;
   width:100%;
-  margin-bottom:5px;
-  font-size:22px;
+  margin-bottom:2px;
+  font-size:20px;
   font-weight:bold;
-  line-height:48px;
+  line-height:34px;
   lines:1;
-  text-overflow:ellipsis;
+  text-overflow:clip;
   text-align:center;
   border-radius:10px;
-  border:2px solid rgba(255,255,255,0.12);
 }
 .rect-t9-hanzi-pane {
   flex:1;
