@@ -3,7 +3,7 @@
 <template>
   <div class="page">
     <scroll class="calculator-scroll {{scrclass}}" scroll-y="true" bounces="false">
-      <title-bar title="calculator.title" disable-back-press="true"></title-bar>
+      <title-bar title="calculator.title"></title-bar>
 
       <div class="panel-switch">
         <div if="{{activePanel == 'basic'}}" class="panel-switch-item panel-switch-selected" onclick="ShowBasic">
