@@ -1066,21 +1066,21 @@ export default {
   background-color:transparent;
 }
 .rect-t9-pinyin-pane {
-  width:31%;
+  width:43%;
   height:100%;
-  padding:4px;
+  padding:5px;
   background-color:#1f1f1f;
   border-radius:24px;
   border:3px solid rgba(255,255,255,0.12);
 }
 .rect-t9-pinyin-item {
   color:#fff;
-  height:34px;
+  height:38px;
   width:100%;
-  margin-bottom:2px;
-  font-size:20px;
+  margin-bottom:3px;
+  font-size:23px;
   font-weight:bold;
-  line-height:34px;
+  line-height:38px;
   lines:1;
   text-overflow:clip;
   text-align:center;
