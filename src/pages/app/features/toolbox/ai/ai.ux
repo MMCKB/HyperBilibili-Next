@@ -24,7 +24,7 @@
           <text class="ai-chat-empty-title">{{ $t("aiChat.readyTitle") }}</text>
           <text class="ai-chat-empty-copy">{{ $t("aiChat.readyHint") }}</text>
         </div>
-        <div for="{{messages}}">
+        <div for="{{visibleMessages}}">
           <div class="ai-chat-message-row ai-chat-user-row" if="{{ $item.role == 'user' }}">
             <div class="ai-chat-bubble ai-chat-user-bubble"><text class="ai-chat-bubble-text ai-chat-user-text">{{ $item.content }}</text></div>
           </div>
@@ -50,6 +50,7 @@ import { AI_SETTINGS, isAIReady, loadAISettings, sendAIChat } from "@src/ai.ts"
 export default {
   private: {
     messages: [],
+    visibleMessages: [],
     hasMessages: false,
     isConfigured: false,
     isSending: false,
@@ -141,6 +142,7 @@ export default {
   ClearMessages() {
     if (this.isSending) return
     this.messages = []
+    this.visibleMessages = []
     this.hasMessages = false
     this.statusText = ""
     this.inputPreview = ""
@@ -153,6 +155,8 @@ export default {
   },
   RefreshMessages() {
     this.messages = this.messages.slice()
+    this.visibleMessages = this.messages.slice(-6)
+    this.visibleMessages = this.visibleMessages.slice()
     setTimeout(() => this.ScrollToEnd(), 140)
   },
   ScrollToEnd() {
