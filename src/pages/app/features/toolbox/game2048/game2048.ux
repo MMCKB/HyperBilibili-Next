@@ -1,7 +1,7 @@
 <import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
 
 <template>
-  <div class="page game2048-fixed-page" @swipe="LockPageSwipe" ontouchstart="LockPageTouch" ontouchmove="LockPageTouch" ontouchend="LockPageTouch">
+  <scroll class="page game2048-fixed-page" scroll-y="false" bounces="false" ontouchstart="LockPageTouch" ontouchmove="LockPageTouch" ontouchend="LockPageTouch">
     <title-bar title="game2048.title"></title-bar>
     <div class="game2048-shell">
       <div class="game2048-score-card">
@@ -12,7 +12,7 @@
         <div class="game2048-restart" onclick="RestartGame"><text class="game2048-restart-text">{{ $t("game2048.restart") }}</text></div>
       </div>
       <div class="game2048-board-area">
-        <div class="game2048-board" @swipe="LockPageSwipe" ontouchstart="HandleBoardTouchStart" ontouchmove="LockPageTouch" ontouchend="HandleBoardTouchEnd"><div class="game2048-tile {{ $item.tileClass }}" for="{{gameTiles}}"><text class="game2048-tile-value">{{ $item.label }}</text></div></div>
+        <div class="game2048-board" ontouchstart="HandleBoardTouchStart" ontouchmove="LockPageTouch" ontouchend="HandleBoardTouchEnd"><div class="game2048-tile {{ $item.tileClass }}" for="{{gameTiles}}"><text class="game2048-tile-value">{{ $item.label }}</text></div></div>
         <div if="{{gameMessage}}" class="game2048-gameover-mask">
           <div class="game2048-gameover-card">
             <text class="game2048-gameover-title">{{ $t("game2048.gameOverTitle") }}</text>
@@ -23,7 +23,7 @@
       </div>
       <text if="{{!gameMessage}}" class="game2048-hint">{{ $t("game2048.swipeHint") }}</text>
     </div>
-  </div>
+  </scroll>
 </template>
 
 <script>
@@ -77,9 +77,6 @@ export default {
   StopNativeGesture(event) {
     if (event && event.stopPropagation) event.stopPropagation()
     if (event && event.preventDefault) event.preventDefault()
-  },
-  LockPageSwipe(event) {
-    this.StopNativeGesture(event)
   },
   LockPageTouch(event) {
     this.StopNativeGesture(event)

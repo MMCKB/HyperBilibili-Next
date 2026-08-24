@@ -13,7 +13,7 @@
       <div class="ai-chat-meta-button" onclick="OpenSettings"><text class="ai-chat-meta-button-text">{{ $t("aiChat.settings") }}</text></div>
       <div class="ai-chat-meta-button ai-chat-clear" onclick="ClearMessages"><text class="ai-chat-meta-button-text">{{ $t("aiChat.clear") }}</text></div>
     </div>
-    <scroll class="scroll ai-chat-scroll" scroll-y="true" id="ai-chat-scroll" bounces="true">
+    <scroll class="scroll ai-chat-scroll" scroll-y="true" id="ai-chat-scroll" bounces="false">
       <div class="ai-chat-content">
         <div if="{{!isConfigured}}" class="ai-chat-empty-card" onclick="OpenSettings">
           <text class="ai-chat-empty-title">{{ $t("aiChat.notReadyTitle") }}</text>
