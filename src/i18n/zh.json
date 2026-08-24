@@ -222,7 +222,7 @@
         "saveConfiguration": "保存配置",
         "configurationSaved": "配置已保存",
         "localOnly": "API Key 仅保存在本机，不会写入应用代码或仓库。",
-        "compatibilityHint": "目前支持 OpenAI Chat Completions 兼容接口。",
+        "compatibilityHint": "目前支持 OpenAI Chat Completions 兼容接口；可填写根地址或以 /chat/completions 结尾的完整地址。",
         "customProvider": "自定义供应商",
         "notReadyTitle": "请先配置 AI 服务",
         "notReadyHint": "填写供应商、API 地址、API Key 和模型名称后即可开始对话。",

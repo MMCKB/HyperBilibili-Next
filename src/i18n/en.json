@@ -221,7 +221,7 @@
         "saveConfiguration": "Save settings",
         "configurationSaved": "Settings saved",
         "localOnly": "The API key is stored only on this device and is never written to app code or the repository.",
-        "compatibilityHint": "OpenAI Chat Completions compatible APIs are currently supported.",
+        "compatibilityHint": "OpenAI Chat Completions compatible APIs are supported. Enter either the API root or a full URL ending in /chat/completions.",
         "customProvider": "Custom provider",
         "notReadyTitle": "Configure AI first",
         "notReadyHint": "Enter a provider, API endpoint, API key, and model name to begin.",

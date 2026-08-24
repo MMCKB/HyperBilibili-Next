@@ -28,6 +28,11 @@ function normalizeApiHost(value: string): string {
   return host.replace(/\/+$/, "");
 }
 
+function chatCompletionsUrl(value: string): string {
+  const host = normalizeApiHost(value);
+  return /\/chat\/completions$/i.test(host) ? host : host + "/chat/completions";
+}
+
 function isSafeApiHost(value: string): boolean {
   return /^https:\/\/[a-zA-Z0-9.-]+(?::\d+)?(?:\/[a-zA-Z0-9._~!$&'()*+,;=:@%/-]*)?$/.test(value);
 }
@@ -53,11 +58,13 @@ function unwrapFetchResponse(response: any): any {
     }
   }
   if (httpCode && (httpCode < 200 || httpCode >= 300)) {
-    const detail = body && body.error && body.error.message ? ":" + body.error.message : "";
-    throw createAiError("http-" + httpCode + detail);
+    const errorBody = body && body.error;
+    const detail = typeof errorBody === "string" ? errorBody : (errorBody && (errorBody.message || errorBody.code));
+    throw createAiError("http-" + httpCode + (detail ? ":" + detail : ""));
   }
   if (body && body.error) {
-    throw createAiError(String(body.error.message || body.error.code || "provider-error"));
+    const errorBody = body.error;
+    throw createAiError(typeof errorBody === "string" ? errorBody : String(errorBody.message || errorBody.code || "provider-error"));
   }
   return body;
 }
@@ -160,7 +167,7 @@ export async function sendAIChat(messages: AIChatMessage[], settings: AISettings
   let response: any;
   try {
     response = await fetch.fetch({
-      url: apiHost + "/chat/completions",
+      url: chatCompletionsUrl(apiHost),
       method: "POST",
       responseType: "json",
       header: {
