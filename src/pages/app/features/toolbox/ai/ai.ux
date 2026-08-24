@@ -3,7 +3,7 @@
 <import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
 
 <template>
-  <div class="page ai-chat-page">
+  <div class="page ai-chat-page" ontouchstart="HandlePageTouchStart" ontouchend="HandlePageTouchEnd">
     <title-bar title="aiChat.title"></title-bar>
     <div class="ai-chat-meta">
       <div class="ai-chat-provider" onclick="OpenSettings">
@@ -58,7 +58,9 @@ export default {
     statusText: "",
     inputPreview: "",
     inputSeed: "",
-    showInput: false
+    showInput: false,
+    pageTouchStartX: -1,
+    pageTouchStartY: -1
   },
   async onInit() {
     await this.RefreshSettings()
@@ -74,6 +76,27 @@ export default {
   },
   OpenSettings() {
     router.push({ uri: "pages/app/features/toolbox/ai/settings" })
+  },
+  GetTouchPoint(event) {
+    const list = event && (event.changedTouches || event.touches)
+    return list && list.length ? list[0] : null
+  },
+  HandlePageTouchStart(event) {
+    if (this.showInput) return
+    const point = this.GetTouchPoint(event)
+    if (!point) return
+    this.pageTouchStartX = Number(point.clientX)
+    this.pageTouchStartY = Number(point.clientY)
+  },
+  HandlePageTouchEnd(event) {
+    if (this.showInput || this.pageTouchStartX < 0 || this.pageTouchStartY < 0) return
+    const point = this.GetTouchPoint(event)
+    if (!point) return
+    const deltaX = Number(point.clientX) - this.pageTouchStartX
+    const deltaY = Number(point.clientY) - this.pageTouchStartY
+    this.pageTouchStartX = -1
+    this.pageTouchStartY = -1
+    if (deltaX > 56 && Math.abs(deltaX) > Math.abs(deltaY)) router.back()
   },
   OpenInput() {
     if (!this.isConfigured) {
