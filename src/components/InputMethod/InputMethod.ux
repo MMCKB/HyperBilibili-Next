@@ -137,10 +137,10 @@
         </div>
       </div>
       <!-- 方屏67 -->
-      <div if="{{screentype==='rect'}}" style="width: 100%;height: 255px;flex-direction: column;overflow:visible">
+      <div if="{{screentype==='rect'}}" style="width: 100%;height: 321px;flex-direction: column">
         <!-- 九键中文 -->
-        <div if="{{rectKeyboardtype=='T9' && !numFlag}}" style="position:absolute;top:-11px;width:100%;height:276px;justify-content: center;">
-          <div style="top:77px;height:189px;width:100%;align-items: stretch;justify-content: space-between;flex-direction: column;padding:6px 3px">
+        <div if="{{rectKeyboardtype=='T9' && !numFlag}}" style="position:absolute;top:-11px;width:100%;height:342px;justify-content: center;">
+          <div style="top:120px;height:189px;width:100%;align-items: stretch;justify-content: space-between;flex-direction: column;padding:6px 3px">
             <div class="keyboard-rows-rect-t9">
               <!-- 手机式九键左上角空格键；中文候选仍通过顶部候选栏直接点按确认。 -->
               <text class="calbtnt9 calbtnt9-rect" @click="onBtnClick('space')">空格</text>
@@ -154,8 +154,8 @@
             </div>
           </div>
         </div>
-        <div else style="position:absolute;top:-11px;width:100%;height:276px;justify-content: center">
-          <progress percent="{{percent67}}" style="position:absolute;bottom: 12px;width:80px;color:#ffffff;stroke-width:6px;layer-color:#262626;"></progress>
+        <div else style="position:absolute;top:-11px;width:100%;height:342px;justify-content: center">
+          <progress percent="{{percent67}}" style="position:absolute;bottom: 78px;width:80px;color:#ffffff;stroke-width:6px;layer-color:#262626;"></progress>
           <scroll id="keyboard67" scroll-x="{{true}}" onscroll="handelScroll">
             <div if="{{!numFlag}}" style="left: 6px; flex-direction: column;">
               <div static style="margin-left: 0px;margin-top: 0px;height: 60px;">
@@ -182,7 +182,7 @@
             </div>
           </scroll>
         </div>
-        <!-- 方屏候选栏上方的紧凑五键显示栏；不改变原候选栏和原键盘位置。 -->
+        <!-- 方屏候选栏下方的紧凑五键栏；候选栏保持原位，仅为本栏预留键盘空间。 -->
         <div class="rect-five-key-bar" style="width:{{screenWidth - 12}}px;" if="{{downFlag==='' && rectPanel==='' }}">
           <text class="rect-five-key-enter" @click="onBtnClick('cursorEnter')">回车</text>
           <div class="rect-five-key-directions">
@@ -236,7 +236,7 @@
           <img static style="margin-top:5px" src="./assets/horizontal/up2.png" @click="onBtnClick('down')" />
         </div>
         <!-- 其他布局继续使用原候选展开列表。 -->
-        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: 252px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down' && (screentype!=='rect' || lang!=='cn' || numFlag || rectKeyboardtype!=='T9')}}">
+        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: {{screentype==='rect' ? 321 : 252}}px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down' && (screentype!=='rect' || lang!=='cn' || numFlag || rectKeyboardtype!=='T9')}}">
           <div static class="list67">
             <list static style="width:100%;height:100%;">
               <list-item type="waitingRows67" class="item67" for="{{itemArray in resultList2}}">
@@ -923,8 +923,7 @@ export default {
 		width:100%;
 		position:absolute;
 		left:0;
-		bottom:0;
-		overflow:visible
+		bottom:0
 }
 .item {
 	height:52px;
@@ -1025,7 +1024,7 @@ export default {
   left:0px;
   top:0px;
   width:100%;
-  height:252px;
+  height:321px;
   background-color:black;
   justify-content:center;
   align-items:center;
@@ -1058,7 +1057,7 @@ export default {
 }
 .rect-five-key-bar {
   position:absolute;
-  top:-40px;
+  top:70px;
   left:6px;
   height:36px;
   flex-direction:row;
@@ -1109,7 +1108,7 @@ export default {
 	#keyboard67 {
 		position:absolute;
 		left:0px;
-		top:82px;
+		top:120px;
 	width:100%;
 	height:170px;
 }
@@ -1133,12 +1132,12 @@ export default {
   position:absolute;
   left:0px;
   top:0px;
-  width:100%;
-  height:252px;
-  background-color:black;
-  justify-content:center;
-  flex-direction:column;
-  align-items:center;
+	  width:100%;
+	  height:321px;
+	  background-color:black;
+	  justify-content:center;
+	  flex-direction:column;
+	  align-items:center;
 }
 .rect-t9-expand-content {
   width:96.4%;
