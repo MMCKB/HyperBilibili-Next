@@ -171,7 +171,7 @@ export async function sendAIChat(messages: AIChatMessage[], settings: AISettings
       data: JSON.stringify({
         model: String(settings.model).trim(),
         messages: history,
-        max_tokens: 256,
+        max_tokens: 1024,
         stream: false
       })
     });
