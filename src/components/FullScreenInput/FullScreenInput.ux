@@ -3,7 +3,7 @@
 
 <template>
     <div class="inputpanel">
-        <input-method if="{{global_show && !emojimode}}" style="position: absolute" hide={{keyboardHide}} @complete="InputEvent" @delete="InputDelete" @cursor="InputCursor" screentype="{{screentype}}" vibratemode="short"></input-method>
+        <input-method if="{{global_show && !emojimode}}" style="position: absolute" hide={{keyboardHide}} @complete="InputEvent" @delete="InputDelete" screentype="{{screentype}}" vibratemode="short"></input-method>
         <div class="inputactions">
             <div style="margin-left: 35px" @click="ExitInput">
                 <image class="inputaction_img" src="/common/textinput_back.png"></image>
@@ -17,7 +17,7 @@
             </div>
         </div>
         <div class="inputshow">
-            <text class="inputshow_text">{{ input_display }}</text>
+            <text class="inputshow_text">{{ input_text }}</text>
         </div>
         <!-- 表情选择面板 -->
         <emoji-picker if="{{emojimode}}" @selectemoji="AppendEmoji" @close="CloseEmoji"></emoji-picker>
@@ -38,113 +38,14 @@ export default {
     data: {
         global_show: false,
         input_text: "",
-        // 纯内存编辑位置，0 表示正文开头，input_text.length 表示正文末尾。
-        cursorIndex: 0,
-        // 仅用于界面显示的光标，不会被发送到正文。
-        input_display: "│",
         screentype: "",
         emojimode: false
     },
-    NormalizeCursor(index){
-        const length = this.input_text.length
-        let normalized = Math.max(0, Math.min(length, index))
-        // 避免光标停在代理对中间，保证表情等字符作为一个完整单位编辑。
-        if (normalized > 0 && normalized < length) {
-            const previous = this.input_text.charCodeAt(normalized - 1)
-            const current = this.input_text.charCodeAt(normalized)
-            if (previous >= 0xD800 && previous <= 0xDBFF && current >= 0xDC00 && current <= 0xDFFF) {
-                normalized++
-            }
-        }
-        return normalized
-    },
-    RefreshInputDisplay(){
-        this.cursorIndex = this.NormalizeCursor(this.cursorIndex)
-        this.input_display = this.input_text.slice(0, this.cursorIndex) + "│" + this.input_text.slice(this.cursorIndex)
-    },
-    InsertAtCursor(content){
-        if (!content) {
-            return
-        }
-        this.cursorIndex = this.NormalizeCursor(this.cursorIndex)
-        this.input_text = this.input_text.slice(0, this.cursorIndex) + content + this.input_text.slice(this.cursorIndex)
-        this.cursorIndex += content.length
-        this.RefreshInputDisplay()
-    },
     InputEvent(evt){
-        this.InsertAtCursor(evt.detail.content)
+        this.input_text += evt.detail.content
     },
     InputDelete(){
-        this.cursorIndex = this.NormalizeCursor(this.cursorIndex)
-        if (this.cursorIndex <= 0) {
-            return
-        }
-        let removeStart = this.cursorIndex - 1
-        const previous = this.input_text.charCodeAt(removeStart)
-        if (previous >= 0xDC00 && previous <= 0xDFFF && removeStart > 0) {
-            const high = this.input_text.charCodeAt(removeStart - 1)
-            if (high >= 0xD800 && high <= 0xDBFF) {
-                removeStart--
-            }
-        }
-        this.input_text = this.input_text.slice(0, removeStart) + this.input_text.slice(this.cursorIndex)
-        this.cursorIndex = removeStart
-        this.RefreshInputDisplay()
-    },
-    InputCursor(evt){
-        const action = evt && evt.detail ? evt.detail.action : ""
-        this.cursorIndex = this.NormalizeCursor(this.cursorIndex)
-        if (action === "enter") {
-            this.InsertAtCursor("\n")
-            return
-        }
-        if (action === "left") {
-            let target = this.cursorIndex - 1
-            if (target > 0) {
-                const low = this.input_text.charCodeAt(target)
-                const high = this.input_text.charCodeAt(target - 1)
-                if (low >= 0xDC00 && low <= 0xDFFF && high >= 0xD800 && high <= 0xDBFF) {
-                    target--
-                }
-            }
-            this.cursorIndex = target
-        } else if (action === "right") {
-            let target = this.cursorIndex + 1
-            if (this.cursorIndex < this.input_text.length) {
-                const high = this.input_text.charCodeAt(this.cursorIndex)
-                const low = this.input_text.charCodeAt(this.cursorIndex + 1)
-                if (high >= 0xD800 && high <= 0xDBFF && low >= 0xDC00 && low <= 0xDFFF) {
-                    target++
-                }
-            }
-            this.cursorIndex = target
-        } else if (action === "up") {
-            this.MoveCursorVertically(-1)
-        } else if (action === "down") {
-            this.MoveCursorVertically(1)
-        }
-        this.RefreshInputDisplay()
-    },
-    MoveCursorVertically(direction){
-        const currentLineStart = this.input_text.lastIndexOf("\n", this.cursorIndex - 1) + 1
-        const currentColumn = this.cursorIndex - currentLineStart
-        if (direction < 0) {
-            if (currentLineStart === 0) {
-                return
-            }
-            const previousLineEnd = currentLineStart - 1
-            const previousLineStart = this.input_text.lastIndexOf("\n", previousLineEnd - 1) + 1
-            this.cursorIndex = Math.min(previousLineStart + currentColumn, previousLineEnd)
-            return
-        }
-        const currentLineEnd = this.input_text.indexOf("\n", this.cursorIndex)
-        if (currentLineEnd < 0) {
-            return
-        }
-        const nextLineStart = currentLineEnd + 1
-        const nextLineEndIndex = this.input_text.indexOf("\n", nextLineStart)
-        const nextLineEnd = nextLineEndIndex < 0 ? this.input_text.length : nextLineEndIndex
-        this.cursorIndex = Math.min(nextLineStart + currentColumn, nextLineEnd)
+        this.input_text = this.input_text.slice(0, -1)
     },
     ExitInput(){
         this.$emit("exit")
@@ -164,14 +65,12 @@ export default {
     // 选择表情后追加到输入文本
     AppendEmoji(evt){
         this.emojimode = false
-        this.InsertAtCursor(evt.detail.content)
+        this.input_text += evt.detail.content
     },
     async InitScreenType(){
         this.screentype = global.DEVICE_INFO.screenShape
         // 用传入的初始文本初始化输入框
         this.input_text = this.initialText || ""
-        this.cursorIndex = this.input_text.length
-        this.RefreshInputDisplay()
         this.global_show = true
     },
     onInit(){
@@ -215,9 +114,6 @@ export default {
 
 .inputshow_text {
   font-size: 24px;
-  line-height: 30px;
-  lines: 4;
-  color: #ffffff;
 }
 
 .emojibtn {
