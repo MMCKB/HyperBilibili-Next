@@ -29,14 +29,6 @@
           </div>
           <text class="toolbox-card-arrow">›</text>
         </div>
-        <div class="toolbox-card toolbox-card-next" onclick="OpenAIChat">
-          <div class="toolbox-card-icon toolbox-ai-icon"><text class="toolbox-card-ai-icon-text">AI</text></div>
-          <div class="toolbox-card-copy">
-            <text class="toolbox-card-title">{{ $t("toolbox.aiChat") }}</text>
-            <text class="toolbox-card-subtitle">{{ $t("toolbox.aiChatDescription") }}</text>
-          </div>
-          <text class="toolbox-card-arrow">›</text>
-        </div>
       </div>
       <text style="height: 30px"></text>
     </scroll>
@@ -63,11 +55,6 @@ export default {
   OpenGame2048() {
     router.push({
       uri: "pages/app/features/toolbox/game2048"
-    })
-  },
-  OpenAIChat() {
-    router.push({
-      uri: "pages/app/features/toolbox/ai"
     })
   }
 }
