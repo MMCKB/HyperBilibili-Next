@@ -9,6 +9,7 @@
   "scripts": {
     "start": "aiot server --watch --open-nuttx",
     "build": "aiot build --enable-jsc --enable-protobuf",
+    "build:variants": "node scripts/build-rpk-variants.js",
     "release": "aiot release --enable-jsc --enable-protobuf",
     "watch": "aiot watch --open-nuttx",
     "lint": "eslint --format codeframe --fix --ext .ux,.js src/",
