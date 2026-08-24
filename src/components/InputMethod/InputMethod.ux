@@ -184,12 +184,12 @@
         </div>
         <!-- 方屏候选栏上方的紧凑五键显示栏；不改变原候选栏和原键盘位置。 -->
         <div class="rect-five-key-bar" style="width:{{screenWidth - 12}}px;" if="{{downFlag==='' && rectPanel==='' }}">
-          <text class="rect-five-key-enter">回车</text>
+          <text class="rect-five-key-enter" @click="onBtnClick('cursorEnter')">回车</text>
           <div class="rect-five-key-directions">
-            <text class="rect-five-key-direction">↑</text>
-            <text class="rect-five-key-direction">↓</text>
-            <text class="rect-five-key-direction">←</text>
-            <text class="rect-five-key-direction">→</text>
+            <text class="rect-five-key-direction" @click="onBtnClick('cursorUp')">↑</text>
+            <text class="rect-five-key-direction" @click="onBtnClick('cursorDown')">↓</text>
+            <text class="rect-five-key-direction" @click="onBtnClick('cursorLeft')">←</text>
+            <text class="rect-five-key-direction" @click="onBtnClick('cursorRight')">→</text>
           </div>
         </div>
         <div style="width: 100%; flex-direction: row; justify-content: center; top:6px; padding:0 6px;">
@@ -595,6 +595,14 @@ export default {
       this.setT9SelectedCandidates([]);
     }
   },
+  emitCursorAction(action) {
+    // 光标操作先取消尚未确认的拼音组合，避免候选字插入到移动前的位置。
+    this.cval = "";
+    this.clearT9Input();
+    this.clearWaiting();
+    this.resetReslutList();
+    this.$emit("cursor", { action: action });
+  },
   onBtnClick(sign) {
     this.onVibrate();
     switch (sign) {
@@ -638,6 +646,21 @@ export default {
         break;
       case "down":
         this.downFlag = this.downFlag === "down" ? "" : "down";
+        break;
+      case "cursorEnter":
+        this.emitCursorAction("enter");
+        break;
+      case "cursorUp":
+        this.emitCursorAction("up");
+        break;
+      case "cursorDown":
+        this.emitCursorAction("down");
+        break;
+      case "cursorLeft":
+        this.emitCursorAction("left");
+        break;
+      case "cursorRight":
+        this.emitCursorAction("right");
         break;
       case "select":
         if (this.lastWaitingStr != sign && this.lastWaitingStr) {
