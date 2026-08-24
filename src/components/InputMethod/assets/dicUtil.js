@@ -47,94 +47,6 @@ function normalizePinyin(pinyin) {
     return (pinyin || '').toLowerCase().replace(/'/g, '');
 }
 
-// 常用普通话模糊音。每次仅生成一层变体，避免组合爆炸和手表端额外内存压力。
-function getFuzzyPinyinVariants(pinyin) {
-    const variants = [pinyin];
-    function addVariant(value) {
-        if (value && variants.indexOf(value) < 0 && variants.length < 12) {
-            variants.push(value);
-        }
-    }
-    function swapInitial(longInitial, shortInitial) {
-        if (pinyin.substr(0, longInitial.length) === longInitial) {
-            addVariant(shortInitial + pinyin.substr(longInitial.length));
-        } else if (pinyin.substr(0, shortInitial.length) === shortInitial) {
-            addVariant(longInitial + pinyin.substr(shortInitial.length));
-        }
-    }
-    // 平翘舌与常见声母混淆。
-    swapInitial('zh', 'z');
-    swapInitial('ch', 'c');
-    swapInitial('sh', 's');
-    swapInitial('n', 'l');
-    swapInitial('f', 'h');
-    swapInitial('r', 'l');
-
-    // 前后鼻音及常见韵母混淆；只作用于拼音末尾。
-    const finals = [
-        ['iang', 'ian'], ['uang', 'uan'], ['ang', 'an'],
-        ['eng', 'en'], ['ing', 'in'], ['ong', 'on']
-    ];
-    for (let i = 0; i < finals.length; i++) {
-        const longFinal = finals[i][0];
-        const shortFinal = finals[i][1];
-        if (pinyin.length > longFinal.length && pinyin.substr(pinyin.length - longFinal.length) === longFinal) {
-            addVariant(pinyin.substr(0, pinyin.length - longFinal.length) + shortFinal);
-        } else if (pinyin.length > shortFinal.length && pinyin.substr(pinyin.length - shortFinal.length) === shortFinal) {
-            addVariant(pinyin.substr(0, pinyin.length - shortFinal.length) + longFinal);
-        }
-    }
-    return variants;
-}
-
-const FUZZY_T9_CACHE_LIMIT = 24;
-
-function createFuzzyT9Cache() {
-    return { matches: {}, order: [] };
-}
-
-function mergePinyinLists() {
-    const result = [];
-    for (let i = 0; i < arguments.length; i++) {
-        const list = arguments[i] || [];
-        for (let j = 0; j < list.length; j++) {
-            if (result.indexOf(list[j]) < 0) {
-                result.push(list[j]);
-            }
-        }
-    }
-    return result;
-}
-
-function getFuzzyT9Pinyin(digits, activeDict) {
-    const cache = activeDict.fuzzyT9Cache;
-    if (cache.matches[digits]) {
-        const cachedIndex = cache.order.indexOf(digits);
-        if (cachedIndex >= 0) {
-            cache.order.splice(cachedIndex, 1);
-        }
-        cache.order.push(digits);
-        return cache.matches[digits];
-    }
-    const matches = [];
-    for (let pinyin in activeDict.py2hz) {
-        const variants = getFuzzyPinyinVariants(pinyin);
-        for (let i = 0; i < variants.length; i++) {
-            if (pinyinToT9(variants[i]) === digits) {
-                matches.push(pinyin);
-                break;
-            }
-        }
-    }
-    cache.matches[digits] = matches;
-    cache.order.push(digits);
-    while (cache.order.length > FUZZY_T9_CACHE_LIMIT) {
-        const expired = cache.order.shift();
-        delete cache.matches[expired];
-    }
-    return matches;
-}
-
 // 多拼词组按首字母保存在惰性函数中。只缓存最近查询的少数分片，
 // 避免键盘唤起时同时创建全部简繁和九键索引。
 const T9_INITIALS = {
@@ -365,7 +277,7 @@ function splitT9Syllables(digits, activeDict) {
         const maxLength = Math.min(6, digits.length - start);
         for (let length = maxLength; length >= 1; length--) {
             const part = digits.substr(start, length);
-            const candidates = mergePinyinLists(t9ToPinyin[part] || [], getFuzzyT9Pinyin(part, activeDict));
+            const candidates = t9ToPinyin[part] || [];
             if (!candidates.length) {
                 continue;
             }
@@ -430,13 +342,11 @@ SimpleInputMethod.initDict = function() {
     this.dict.py2hz = dict;
     this.dict.py2hz2 = buildInitialIndex(dict);
     this.dict.t9Syllables = buildT9SyllableIndex(dict);
-    this.dict.fuzzyT9Cache = createFuzzyT9Cache();
     this.dict.phraseCache = createPhraseCache();
 
     this.traditionalDict.py2hz = dictTraditional;
     this.traditionalDict.py2hz2 = buildInitialIndex(dictTraditional);
     this.traditionalDict.t9Syllables = buildT9SyllableIndex(dictTraditional);
-    this.traditionalDict.fuzzyT9Cache = createFuzzyT9Cache();
     this.traditionalDict.phraseCache = createPhraseCache();
 };
 
@@ -449,32 +359,20 @@ SimpleInputMethod.getSingleHanzi = function(pinyin, traditional) {
 SimpleInputMethod.getHanziCandidates = function(pinyin, traditional = false) {
     const normalizedPinyin = normalizePinyin(pinyin);
     const activeDict = traditional ? this.traditionalDict : this.dict;
-    const variants = getFuzzyPinyinVariants(normalizedPinyin);
-    let phraseEntriesForPinyin = [];
-    let syllableEntries = [];
-    let exactSingleEntries = [];
-
-    // 原拼音始终排在第一位；模糊音只作为追加候选，避免改变精确输入的首选顺序。
-    for (let i = 0; i < variants.length; i++) {
-        const variant = variants[i];
-        phraseEntriesForPinyin = phraseEntriesForPinyin.concat(createEntries(getPhraseWords(variant, activeDict, traditional)));
-        syllableEntries = syllableEntries.concat(buildSyllableEntries(variant, activeDict));
-        exactSingleEntries = exactSingleEntries.concat(buildSingleEntries(variant, activeDict));
-    }
+    const phraseEntriesForPinyin = createEntries(getPhraseWords(normalizedPinyin, activeDict, traditional));
+    const syllableEntries = buildSyllableEntries(normalizedPinyin, activeDict);
+    const exactSingleEntries = buildSingleEntries(normalizedPinyin, activeDict);
     const candidates = mergeEntries(phraseEntriesForPinyin, syllableEntries, exactSingleEntries);
     if (candidates.length) {
         return [candidates, normalizedPinyin];
     }
 
-    // 保留原有未完成拼音的回退行为，并依次尝试其模糊音变体。
+    // 保留原有未完成拼音的回退行为。
     let start = Math.min(normalizedPinyin.length, 6);
     for (let i = start; i >= 1; i--) {
-        const str = normalizedPinyin.substr(0, i);
-        const fallbackVariants = getFuzzyPinyinVariants(str);
-        for (let j = 0; j < fallbackVariants.length; j++) {
-            const rs = this.getSingleHanzi(fallbackVariants[j], traditional);
-            if (rs) return [createEntries(rs.split('')), str];
-        }
+        let str = normalizedPinyin.substr(0, i);
+        let rs = this.getSingleHanzi(str, traditional);
+        if (rs) return [createEntries(rs.split('')), str];
     }
     return [[], ''];
 };
@@ -500,7 +398,7 @@ SimpleInputMethod.getT9Candidates = function(digits, traditional = false) {
     }
     const genericSyllableEntries = buildT9SyllableEntries(digits, activeDict);
 
-    const matchedPinyin = mergePinyinLists(activeDict.t9Syllables[digits] || [], getFuzzyT9Pinyin(digits, activeDict));
+    const matchedPinyin = activeDict.t9Syllables[digits] || [];
     const singleEntries = buildT9GroupEntries(matchedPinyin, activeDict, '');
     return [mergeEntries(createEntries(phraseWords), phraseSyllableEntries, genericSyllableEntries, singleEntries), matchedPinyin];
 };
@@ -528,7 +426,7 @@ SimpleInputMethod.getT9PinyinGroups = function(digits, traditional = false) {
         addGroup(pinyin, createEntries(getPhraseWords(pinyin, activeDict, traditional)));
     }
 
-    const exactPinyin = mergePinyinLists(activeDict.t9Syllables[digits] || [], getFuzzyT9Pinyin(digits, activeDict));
+    const exactPinyin = activeDict.t9Syllables[digits] || [];
     for (let i = 0; i < exactPinyin.length; i++) {
         addGroup(exactPinyin[i], buildT9GroupEntries([exactPinyin[i]], activeDict, ''));
     }
