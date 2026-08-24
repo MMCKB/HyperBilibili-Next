@@ -137,10 +137,10 @@
         </div>
       </div>
       <!-- 方屏67 -->
-      <div if="{{screentype==='rect'}}" style="width: 100%;height: 321px;flex-direction: column">
+      <div if="{{screentype==='rect'}}" style="width: 100%;height: 255px;flex-direction: column">
         <!-- 九键中文 -->
-        <div if="{{rectKeyboardtype=='T9' && !numFlag}}" style="position:absolute;top:-11px;width:100%;height:342px;justify-content: center;">
-          <div style="top:119px;height:189px;width:100%;align-items: stretch;justify-content: space-between;flex-direction: column;padding:6px 3px">
+        <div if="{{rectKeyboardtype=='T9' && !numFlag}}" style="position:absolute;top:-11px;width:100%;height:276px;justify-content: center;">
+          <div style="top:77px;height:189px;width:100%;align-items: stretch;justify-content: space-between;flex-direction: column;padding:6px 3px">
             <div class="keyboard-rows-rect-t9">
               <!-- 手机式九键左上角空格键；中文候选仍通过顶部候选栏直接点按确认。 -->
               <text class="calbtnt9 calbtnt9-rect" @click="onBtnClick('space')">空格</text>
@@ -154,8 +154,8 @@
             </div>
           </div>
         </div>
-        <div else style="position:absolute;top:-11px;width:100%;height:342px;justify-content: center">
-          <progress percent="{{percent67}}" style="position:absolute;bottom: 78px;width:80px;color:#ffffff;stroke-width:6px;layer-color:#262626;"></progress>
+        <div else style="position:absolute;top:-11px;width:100%;height:276px;justify-content: center">
+          <progress percent="{{percent67}}" style="position:absolute;bottom: 12px;width:80px;color:#ffffff;stroke-width:6px;layer-color:#262626;"></progress>
           <scroll id="keyboard67" scroll-x="{{true}}" onscroll="handelScroll">
             <div if="{{!numFlag}}" style="left: 6px; flex-direction: column;">
               <div static style="margin-left: 0px;margin-top: 0px;height: 60px;">
@@ -181,16 +181,6 @@
               </div>
             </div>
           </scroll>
-        </div>
-        <!-- 方屏键盘上方的紧凑编辑栏：总宽度受屏幕宽度约束，右侧四个方向键等宽。 -->
-        <div class="rect-edit-row-top" style="width:{{screenWidth - 24}}px;" if="{{downFlag==='' && rectPanel==='' }}">
-          <text class="rect-edit-enter" @click="onBtnClick('cursorEnter')">回车</text>
-          <div class="rect-edit-directions">
-            <text class="rect-edit-direction" @click="onBtnClick('cursorUp')">↑</text>
-            <text class="rect-edit-direction" @click="onBtnClick('cursorDown')">↓</text>
-            <text class="rect-edit-direction" @click="onBtnClick('cursorLeft')">←</text>
-            <text class="rect-edit-direction" @click="onBtnClick('cursorRight')">→</text>
-          </div>
         </div>
         <div style="width: 100%; flex-direction: row; justify-content: center; top:6px; padding:0 6px;">
           <text class="rect-switch-trigger" @click="openRectPanel('switch')" if="{{downFlag==='' && !numFlag}}">切换</text>
@@ -236,7 +226,7 @@
           <img static style="margin-top:5px" src="./assets/horizontal/up2.png" @click="onBtnClick('down')" />
         </div>
         <!-- 其他布局继续使用原候选展开列表。 -->
-        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: {{screentype==='rect' ? 321 : 252}}px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down' && (screentype!=='rect' || lang!=='cn' || numFlag || rectKeyboardtype!=='T9')}}">
+        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: 252px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down' && (screentype!=='rect' || lang!=='cn' || numFlag || rectKeyboardtype!=='T9')}}">
           <div static class="list67">
             <list static style="width:100%;height:100%;">
               <list-item type="waitingRows67" class="item67" for="{{itemArray in resultList2}}">
@@ -595,14 +585,6 @@ export default {
       this.setT9SelectedCandidates([]);
     }
   },
-  emitCursorAction(action) {
-    // 移动前取消尚未确认的拼音组合，避免候选字插入到移动前的位置。
-    this.cval = "";
-    this.clearT9Input();
-    this.clearWaiting();
-    this.resetReslutList();
-    this.$emit("cursor", { action: action });
-  },
   onBtnClick(sign) {
     this.onVibrate();
     switch (sign) {
@@ -646,21 +628,6 @@ export default {
         break;
       case "down":
         this.downFlag = this.downFlag === "down" ? "" : "down";
-        break;
-      case "cursorEnter":
-        this.emitCursorAction("enter");
-        break;
-      case "cursorUp":
-        this.emitCursorAction("up");
-        break;
-      case "cursorDown":
-        this.emitCursorAction("down");
-        break;
-      case "cursorLeft":
-        this.emitCursorAction("left");
-        break;
-      case "cursorRight":
-        this.emitCursorAction("right");
         break;
       case "select":
         if (this.lastWaitingStr != sign && this.lastWaitingStr) {
@@ -1018,12 +985,13 @@ export default {
     text-align:center;
     border:3px solid rgba(255,255,255,0.12);
   }
-	.rect-overlay {
-	  position:absolute;
-	  left:0px;
-	  top:0px;
-	  width:100%;
-	  height:321px;
+  .rect-overlay {
+
+  position:absolute;
+  left:0px;
+  top:0px;
+  width:100%;
+  height:252px;
   background-color:black;
   justify-content:center;
   align-items:center;
@@ -1054,44 +1022,6 @@ export default {
   text-align:center;
   border:3px solid rgba(255,255,255,0.14);
 }
-.rect-edit-row-top {
-  position:absolute;
-  top:70px;
-  left:12px;
-  height:48px;
-  flex-direction:row;
-  align-items:center;
-}
-.rect-edit-enter {
-  color:rgb(13,132,255);
-  font-size:22px;
-  font-weight:bold;
-  width:112px;
-  height:48px;
-  margin-right:6px;
-  background-color:rgb(38,38,38);
-  border-radius:24px;
-  text-align:center;
-  border:3px solid rgba(255,255,255,0.12);
-}
-.rect-edit-directions {
-  flex:1;
-  height:48px;
-  flex-direction:row;
-  align-items:center;
-}
-.rect-edit-direction {
-  color:rgb(255,255,255);
-  font-size:27px;
-  font-weight:bold;
-  flex:1;
-  height:48px;
-  margin-left:3px;
-  background-color:rgb(38,38,38);
-  border-radius:24px;
-  text-align:center;
-  border:3px solid rgba(255,255,255,0.10);
-}
 .calbtn67 {
 	color:rgb(255,255,255);
 	font-size:32px;
@@ -1104,10 +1034,10 @@ export default {
 	text-align:center;
 	border:3px solid rgba(255,255,255,0.06);
 }
-	#keyboard67 {
-		position:absolute;
-		left:0px;
-		top:124px;
+#keyboard67 {
+	position:absolute;
+	left:0px;
+	top:82px;
 	width:100%;
 	height:170px;
 }
@@ -1127,12 +1057,12 @@ export default {
 	border:3px solid rgba(255,255,255,0.06);
 	padding:0px 10px;
 }
-	.rect-t9-expand-overlay {
-	  position:absolute;
-	  left:0px;
-	  top:0px;
-	  width:100%;
-	  height:321px;
+.rect-t9-expand-overlay {
+  position:absolute;
+  left:0px;
+  top:0px;
+  width:100%;
+  height:252px;
   background-color:black;
   justify-content:center;
   flex-direction:column;
