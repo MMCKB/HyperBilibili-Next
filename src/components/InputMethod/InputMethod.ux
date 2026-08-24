@@ -137,10 +137,10 @@
         </div>
       </div>
       <!-- 方屏67 -->
-      <div if="{{screentype==='rect'}}" style="width: 100%;height: 321px;flex-direction: column">
+      <div if="{{screentype==='rect'}}" style="width: 100%;height: 286px;flex-direction: column">
         <!-- 九键中文 -->
-        <div if="{{rectKeyboardtype=='T9' && !numFlag}}" style="position:absolute;top:-11px;width:100%;height:342px;justify-content: center;">
-          <div style="top:120px;height:189px;width:100%;align-items: stretch;justify-content: space-between;flex-direction: column;padding:6px 3px">
+        <div if="{{rectKeyboardtype=='T9' && !numFlag}}" style="position:absolute;top:-11px;width:100%;height:310px;justify-content: center;">
+          <div style="top:110px;height:189px;width:100%;align-items: stretch;justify-content: space-between;flex-direction: column;padding:6px 3px">
             <div class="keyboard-rows-rect-t9">
               <!-- 手机式九键左上角空格键；中文候选仍通过顶部候选栏直接点按确认。 -->
               <text class="calbtnt9 calbtnt9-rect" @click="onBtnClick('space')">空格</text>
@@ -154,8 +154,8 @@
             </div>
           </div>
         </div>
-        <div else style="position:absolute;top:-11px;width:100%;height:342px;justify-content: center">
-          <progress percent="{{percent67}}" style="position:absolute;bottom: 78px;width:80px;color:#ffffff;stroke-width:6px;layer-color:#262626;"></progress>
+        <div else style="position:absolute;top:-11px;width:100%;height:310px;justify-content: center">
+          <progress percent="{{percent67}}" style="position:absolute;bottom: 18px;width:80px;color:#ffffff;stroke-width:6px;layer-color:#262626;"></progress>
           <scroll id="keyboard67" scroll-x="{{true}}" onscroll="handelScroll">
             <div if="{{!numFlag}}" style="left: 6px; flex-direction: column;">
               <div static style="margin-left: 0px;margin-top: 0px;height: 60px;">
@@ -236,7 +236,7 @@
           <img static style="margin-top:5px" src="./assets/horizontal/up2.png" @click="onBtnClick('down')" />
         </div>
         <!-- 其他布局继续使用原候选展开列表。 -->
-        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: {{screentype==='rect' ? 321 : 252}}px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down' && (screentype!=='rect' || lang!=='cn' || numFlag || rectKeyboardtype!=='T9')}}">
+        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: {{screentype==='rect' ? 286 : 252}}px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down' && (screentype!=='rect' || lang!=='cn' || numFlag || rectKeyboardtype!=='T9')}}">
           <div static class="list67">
             <list static style="width:100%;height:100%;">
               <list-item type="waitingRows67" class="item67" for="{{itemArray in resultList2}}">
@@ -1024,7 +1024,7 @@ export default {
   left:0px;
   top:0px;
   width:100%;
-  height:321px;
+  height:286px;
   background-color:black;
   justify-content:center;
   align-items:center;
@@ -1108,7 +1108,7 @@ export default {
 	#keyboard67 {
 		position:absolute;
 		left:0px;
-		top:120px;
+		top:110px;
 	width:100%;
 	height:170px;
 }
@@ -1133,11 +1133,11 @@ export default {
   left:0px;
   top:0px;
 	  width:100%;
-	  height:321px;
+	  height:286px;
 	  background-color:black;
-	  justify-content:center;
-	  flex-direction:column;
-	  align-items:center;
+  justify-content:center;
+  flex-direction:column;
+  align-items:center;
 }
 .rect-t9-expand-content {
   width:96.4%;
