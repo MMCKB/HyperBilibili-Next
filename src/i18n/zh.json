@@ -202,7 +202,8 @@
         "undo": "撤销",
         "restart": "重开",
         "swipeHint": "在棋盘上向任意方向滑动",
-        "gameOver": "游戏结束，点击重开"
+        "gameOverTitle": "本局结束",
+        "gameOver": "已经没有可移动的方块"
     },
     "search": {
         "title": "搜索",

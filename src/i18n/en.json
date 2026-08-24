@@ -201,7 +201,8 @@
         "undo": "Undo",
         "restart": "Restart",
         "swipeHint": "Swipe anywhere on the board",
-        "gameOver": "Game over. Tap Restart to play again."
+        "gameOverTitle": "Game over",
+        "gameOver": "There are no moves left."
     },
     "search": {
         "title": "Search",

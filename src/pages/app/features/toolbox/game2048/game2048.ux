@@ -11,8 +11,16 @@
         <div if="{{!canUndo}}" class="game2048-undo game2048-undo-disabled"><text class="game2048-undo-text game2048-undo-text-disabled">{{ $t("game2048.undo") }}</text></div>
         <div class="game2048-restart" onclick="RestartGame"><text class="game2048-restart-text">{{ $t("game2048.restart") }}</text></div>
       </div>
-      <div class="game2048-board" ontouchstart="HandleBoardTouchStart" ontouchend="HandleBoardTouchEnd"><div class="game2048-tile {{ $item.tileClass }}" for="{{gameTiles}}"><text class="game2048-tile-value">{{ $item.label }}</text></div></div>
-      <text if="{{gameMessage}}" class="game2048-message">{{ gameMessage }}</text>
+      <div class="game2048-board-area">
+        <div class="game2048-board" ontouchstart="HandleBoardTouchStart" ontouchend="HandleBoardTouchEnd"><div class="game2048-tile {{ $item.tileClass }}" for="{{gameTiles}}"><text class="game2048-tile-value">{{ $item.label }}</text></div></div>
+        <div if="{{gameMessage}}" class="game2048-gameover-mask">
+          <div class="game2048-gameover-card">
+            <text class="game2048-gameover-title">{{ $t("game2048.gameOverTitle") }}</text>
+            <text class="game2048-gameover-copy">{{ gameMessage }}</text>
+            <div class="game2048-gameover-restart" onclick="RestartGame"><text class="game2048-gameover-restart-text">{{ $t("game2048.restart") }}</text></div>
+          </div>
+        </div>
+      </div>
       <text if="{{!gameMessage}}" class="game2048-hint">{{ $t("game2048.swipeHint") }}</text>
     </div>
   </div>
