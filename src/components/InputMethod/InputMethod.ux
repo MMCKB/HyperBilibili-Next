@@ -182,6 +182,16 @@
             </div>
           </scroll>
         </div>
+        <!-- 方屏候选栏上方的紧凑五键显示栏；不改变原候选栏和原键盘位置。 -->
+        <div class="rect-five-key-bar" style="width:{{screenWidth - 12}}px;" if="{{downFlag==='' && rectPanel==='' }}">
+          <text class="rect-five-key-enter">回车</text>
+          <div class="rect-five-key-directions">
+            <text class="rect-five-key-direction">↑</text>
+            <text class="rect-five-key-direction">↓</text>
+            <text class="rect-five-key-direction">←</text>
+            <text class="rect-five-key-direction">→</text>
+          </div>
+        </div>
         <div style="width: 100%; flex-direction: row; justify-content: center; top:6px; padding:0 6px;">
           <text class="rect-switch-trigger" @click="openRectPanel('switch')" if="{{downFlag==='' && !numFlag}}">切换</text>
           <!-- 简繁快捷切换：仅中文全键和中文九键显示，文字同时标识当前候选字形。 -->
@@ -1022,6 +1032,44 @@ export default {
   text-align:center;
   border:3px solid rgba(255,255,255,0.14);
 }
+.rect-five-key-bar {
+  position:absolute;
+  top:-40px;
+  left:6px;
+  height:36px;
+  flex-direction:row;
+  align-items:center;
+}
+.rect-five-key-enter {
+  color:rgb(13,132,255);
+  font-size:18px;
+  font-weight:bold;
+  width:64px;
+  height:36px;
+  margin-right:4px;
+  background-color:rgb(65,65,78);
+  border-radius:18px;
+  text-align:center;
+  border:2px solid rgba(255,255,255,0.12);
+}
+.rect-five-key-directions {
+  flex:1;
+  height:36px;
+  flex-direction:row;
+  align-items:center;
+}
+.rect-five-key-direction {
+  color:rgb(255,255,255);
+  font-size:21px;
+  font-weight:bold;
+  flex:1;
+  height:36px;
+  margin-left:3px;
+  background-color:rgb(65,65,78);
+  border-radius:18px;
+  text-align:center;
+  border:2px solid rgba(255,255,255,0.12);
+}
 .calbtn67 {
 	color:rgb(255,255,255);
 	font-size:32px;
@@ -1034,10 +1082,10 @@ export default {
 	text-align:center;
 	border:3px solid rgba(255,255,255,0.06);
 }
-#keyboard67 {
-	position:absolute;
-	left:0px;
-	top:82px;
+	#keyboard67 {
+		position:absolute;
+		left:0px;
+		top:82px;
 	width:100%;
 	height:170px;
 }
