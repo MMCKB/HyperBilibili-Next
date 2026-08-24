@@ -24,11 +24,13 @@
           <text class="ai-chat-empty-title">{{ $t("aiChat.readyTitle") }}</text>
           <text class="ai-chat-empty-copy">{{ $t("aiChat.readyHint") }}</text>
         </div>
-        <div class="ai-chat-message-row ai-chat-user-row" if="{{ $item.role == 'user' }}" for="{{messages}}">
-          <div class="ai-chat-bubble ai-chat-user-bubble"><text class="ai-chat-bubble-text ai-chat-user-text">{{ $item.content }}</text></div>
-        </div>
-        <div class="ai-chat-message-row ai-chat-assistant-row" if="{{ $item.role == 'assistant' }}" for="{{messages}}">
-          <div class="ai-chat-bubble ai-chat-assistant-bubble"><text class="ai-chat-bubble-text">{{ $item.content }}</text></div>
+        <div for="{{messages}}">
+          <div class="ai-chat-message-row ai-chat-user-row" if="{{ $item.role == 'user' }}">
+            <div class="ai-chat-bubble ai-chat-user-bubble"><text class="ai-chat-bubble-text ai-chat-user-text">{{ $item.content }}</text></div>
+          </div>
+          <div class="ai-chat-message-row ai-chat-assistant-row" if="{{ $item.role == 'assistant' }}">
+            <div class="ai-chat-bubble ai-chat-assistant-bubble"><text class="ai-chat-bubble-text">{{ $item.content }}</text></div>
+          </div>
         </div>
         <div if="{{isSending}}" class="ai-chat-thinking"><text class="ai-chat-thinking-text">{{ $t("aiChat.thinking") }}</text></div>
         <div if="{{statusText}}" class="ai-chat-status"><text class="ai-chat-status-text">{{ statusText }}</text></div>
@@ -96,17 +98,15 @@ export default {
     if (!this.isConfigured || this.isSending) return
     this.statusText = ""
     this.inputPreview = ""
-    this.messages.push({ role: "user", content })
-    this.hasMessages = true
-    this.RefreshMessages()
+    this.AddMessage({ role: "user", content })
     this.isSending = true
     try {
       const answer = await sendAIChat(this.messages)
-      this.messages.push({ role: "assistant", content: answer })
+      this.AddMessage({ role: "assistant", content: answer })
     } catch (error) {
       const reason = error && error.message ? error.message : "request-failed"
       const failureText = this.$t("aiChat.requestFailed") + " (" + reason + ")"
-      this.messages.push({ role: "assistant", content: failureText, failed: true })
+      this.AddMessage({ role: "assistant", content: failureText, failed: true })
       this.statusText = failureText
       prompt.showToast({ message: this.$t("aiChat.requestFailed"), duration: 2200 })
     } finally {
@@ -123,9 +123,13 @@ export default {
     this.inputPreview = ""
     prompt.showToast({ message: this.$t("aiChat.cleared"), duration: 1600 })
   },
+  AddMessage(message) {
+    this.messages = this.messages.concat([message])
+    this.hasMessages = this.messages.length > 0
+    this.RefreshMessages()
+  },
   RefreshMessages() {
-    this.messages.push({})
-    this.messages.pop()
+    this.messages = this.messages.slice()
     setTimeout(() => this.ScrollToEnd(), 140)
   },
   ScrollToEnd() {
