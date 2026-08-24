@@ -1,7 +1,7 @@
 <import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page game2048-fixed-page" @swipe="LockPageSwipe" ontouchmove="LockPageTouch">
     <title-bar title="game2048.title"></title-bar>
     <div class="game2048-shell">
       <div class="game2048-score-card">
@@ -12,7 +12,7 @@
         <div class="game2048-restart" onclick="RestartGame"><text class="game2048-restart-text">{{ $t("game2048.restart") }}</text></div>
       </div>
       <div class="game2048-board-area">
-        <div class="game2048-board" ontouchstart="HandleBoardTouchStart" ontouchend="HandleBoardTouchEnd"><div class="game2048-tile {{ $item.tileClass }}" for="{{gameTiles}}"><text class="game2048-tile-value">{{ $item.label }}</text></div></div>
+        <div class="game2048-board" @swipe="LockPageSwipe" ontouchstart="HandleBoardTouchStart" ontouchend="HandleBoardTouchEnd"><div class="game2048-tile {{ $item.tileClass }}" for="{{gameTiles}}"><text class="game2048-tile-value">{{ $item.label }}</text></div></div>
         <div if="{{gameMessage}}" class="game2048-gameover-mask">
           <div class="game2048-gameover-card">
             <text class="game2048-gameover-title">{{ $t("game2048.gameOverTitle") }}</text>
@@ -73,6 +73,10 @@ export default {
     if (!result.moved) return
     this.ApplyGameState(result.state, result.spawnedIndex)
     await saveGame2048State(result.state)
+  },
+  LockPageSwipe() {},
+  LockPageTouch(event) {
+    if (event && event.preventDefault) event.preventDefault()
   },
   GetTouchPoint(event) {
     const list = event && (event.changedTouches || event.touches)
