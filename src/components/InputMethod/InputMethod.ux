@@ -137,9 +137,9 @@
         </div>
       </div>
       <!-- 方屏67 -->
-      <div if="{{screentype==='rect'}}" style="width: 100%;height: 255px;flex-direction: column">
+      <div if="{{screentype==='rect'}}" style="width: 100%;height: 321px;flex-direction: column">
         <!-- 九键中文 -->
-        <div if="{{rectKeyboardtype=='T9' && !numFlag}}" style="position:absolute;top:-11px;width:100%;height:276px;justify-content: center;">
+        <div if="{{rectKeyboardtype=='T9' && !numFlag}}" style="position:absolute;top:-11px;width:100%;height:342px;justify-content: center;">
           <div style="top:77px;height:189px;width:100%;align-items: stretch;justify-content: space-between;flex-direction: column;padding:6px 3px">
             <div class="keyboard-rows-rect-t9">
               <!-- 手机式九键左上角空格键；中文候选仍通过顶部候选栏直接点按确认。 -->
@@ -154,8 +154,8 @@
             </div>
           </div>
         </div>
-        <div else style="position:absolute;top:-11px;width:100%;height:276px;justify-content: center">
-          <progress percent="{{percent67}}" style="position:absolute;bottom: 12px;width:80px;color:#ffffff;stroke-width:6px;layer-color:#262626;"></progress>
+        <div else style="position:absolute;top:-11px;width:100%;height:342px;justify-content: center">
+          <progress percent="{{percent67}}" style="position:absolute;bottom: 78px;width:80px;color:#ffffff;stroke-width:6px;layer-color:#262626;"></progress>
           <scroll id="keyboard67" scroll-x="{{true}}" onscroll="handelScroll">
             <div if="{{!numFlag}}" style="left: 6px; flex-direction: column;">
               <div static style="margin-left: 0px;margin-top: 0px;height: 60px;">
@@ -181,6 +181,14 @@
               </div>
             </div>
           </scroll>
+        </div>
+        <!-- 方屏键盘扩展编辑行：直接位于键盘底部，提供换行和四向光标移动。 -->
+        <div class="rect-edit-row" if="{{downFlag==='' && rectPanel==='' }}">
+          <text class="rect-edit-button rect-edit-enter" @click="onBtnClick('cursorEnter')">↵</text>
+          <text class="rect-edit-button" @click="onBtnClick('cursorUp')">↑</text>
+          <text class="rect-edit-button" @click="onBtnClick('cursorDown')">↓</text>
+          <text class="rect-edit-button" @click="onBtnClick('cursorLeft')">←</text>
+          <text class="rect-edit-button" @click="onBtnClick('cursorRight')">→</text>
         </div>
         <div style="width: 100%; flex-direction: row; justify-content: center; top:6px; padding:0 6px;">
           <text class="rect-switch-trigger" @click="openRectPanel('switch')" if="{{downFlag==='' && !numFlag}}">切换</text>
@@ -585,6 +593,14 @@ export default {
       this.setT9SelectedCandidates([]);
     }
   },
+  emitCursorAction(action) {
+    // 光标操作先取消尚未确认的拼音组合，避免候选字随后插入到移动前的位置。
+    this.cval = "";
+    this.clearT9Input();
+    this.clearWaiting();
+    this.resetReslutList();
+    this.$emit("cursor", { action: action });
+  },
   onBtnClick(sign) {
     this.onVibrate();
     switch (sign) {
@@ -628,6 +644,21 @@ export default {
         break;
       case "down":
         this.downFlag = this.downFlag === "down" ? "" : "down";
+        break;
+      case "cursorEnter":
+        this.emitCursorAction("enter");
+        break;
+      case "cursorUp":
+        this.emitCursorAction("up");
+        break;
+      case "cursorDown":
+        this.emitCursorAction("down");
+        break;
+      case "cursorLeft":
+        this.emitCursorAction("left");
+        break;
+      case "cursorRight":
+        this.emitCursorAction("right");
         break;
       case "select":
         if (this.lastWaitingStr != sign && this.lastWaitingStr) {
@@ -1021,6 +1052,31 @@ export default {
   border-radius:42px;
   text-align:center;
   border:3px solid rgba(255,255,255,0.14);
+}
+.rect-edit-row {
+  position:absolute;
+  top:264px;
+  left:0px;
+  width:100%;
+  height:54px;
+  padding:0 6px;
+  flex-direction:row;
+  justify-content:space-between;
+  align-items:center;
+}
+.rect-edit-button {
+  color:rgb(255,255,255);
+  font-size:29px;
+  font-weight:bold;
+  width:58px;
+  height:52px;
+  background-color:rgb(38,38,38);
+  border-radius:26px;
+  text-align:center;
+  border:3px solid rgba(255,255,255,0.10);
+}
+.rect-edit-enter {
+  color:rgb(13,132,255);
 }
 .calbtn67 {
 	color:rgb(255,255,255);
