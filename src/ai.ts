@@ -10,6 +10,7 @@ export interface AISettings {
 export interface AIChatMessage {
   role: "user" | "assistant";
   content: string;
+  failed?: boolean;
 }
 
 const AI_STORAGE_KEY = "toolbox_ai_settings";
@@ -61,13 +62,41 @@ function unwrapFetchResponse(response: any): any {
   return body;
 }
 
-function responseText(body: any): string {
-  const choice = body && Array.isArray(body.choices) ? body.choices[0] : null;
-  const content = choice && choice.message ? choice.message.content : "";
-  if (Array.isArray(content)) {
-    return content.map((item: any) => String(item && (item.text || item.content) ? (item.text || item.content) : "")).join("");
+function normalizeContent(value: any): string {
+  if (typeof value === "string" || typeof value === "number") return String(value).trim();
+  if (Array.isArray(value)) {
+    return value.map((item: any) => normalizeContent(item && (item.text || item.content || item.value))).join("").trim();
   }
-  return String(content || "").trim();
+  if (value && typeof value === "object") {
+    return normalizeContent(value.text || value.content || value.value || value.output_text);
+  }
+  return "";
+}
+
+function responseText(body: any): string {
+  const source = body && body.data && typeof body.data === "object" ? body.data : body;
+  const choice = source && Array.isArray(source.choices) ? source.choices[0] : null;
+  const message = choice && choice.message ? choice.message : null;
+  const candidates = [
+    message && message.content,
+    message && message.reasoning_content,
+    choice && choice.text,
+    choice && choice.delta && choice.delta.content,
+    source && source.output_text,
+    source && source.content,
+    source && source.text,
+    source && source.response
+  ];
+  for (let index = 0; index < candidates.length; index += 1) {
+    const text = normalizeContent(candidates[index]);
+    if (text) return text;
+  }
+  return "";
+}
+
+function responseDetail(body: any): string {
+  const source = body && body.data && typeof body.data === "object" ? body.data : body;
+  return normalizeContent(source && (source.message || source.detail || source.msg || source.error));
 }
 
 export function loadAISettings(): Promise<AISettings> {
@@ -122,7 +151,7 @@ export async function sendAIChat(messages: AIChatMessage[], settings: AISettings
   if (!isAIReady({ ...settings, apiHost })) throw createAiError("missing-settings");
 
   const history = (Array.isArray(messages) ? messages : [])
-    .filter((message) => message && (message.role === "user" || message.role === "assistant") && String(message.content || "").trim())
+    .filter((message) => message && !message.failed && (message.role === "user" || message.role === "assistant") && String(message.content || "").trim())
     .slice(-10)
     .map((message) => ({ role: message.role, content: String(message.content).trim() }));
 
@@ -142,6 +171,7 @@ export async function sendAIChat(messages: AIChatMessage[], settings: AISettings
       data: JSON.stringify({
         model: String(settings.model).trim(),
         messages: history,
+        max_tokens: 256,
         stream: false
       })
     });
@@ -150,7 +180,11 @@ export async function sendAIChat(messages: AIChatMessage[], settings: AISettings
     throw createAiError("fetch-" + code);
   }
 
-  const text = responseText(unwrapFetchResponse(response));
-  if (!text) throw createAiError("empty-response");
+  const body = unwrapFetchResponse(response);
+  const text = responseText(body);
+  if (!text) {
+    const detail = responseDetail(body);
+    throw createAiError(detail ? "empty-response:" + detail : "empty-response");
+  }
   return text;
 }
