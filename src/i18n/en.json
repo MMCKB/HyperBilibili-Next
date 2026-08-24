@@ -111,7 +111,9 @@
         "calculator": "Calculator",
         "calculatorDescription": "Calculations and unit conversions",
         "game2048": "2048",
-        "game2048Description": "Merge tiles and beat your best score"
+        "game2048Description": "Merge tiles and beat your best score",
+        "aiChat": "AI Chat",
+        "aiChatDescription": "Chat with your own model service"
     },
     "weather": {
         "title": "Weather",
@@ -203,6 +205,33 @@
         "swipeHint": "Swipe anywhere on the board",
         "gameOverTitle": "Game over",
         "gameOver": "There are no moves left."
+    },
+    "aiChat": {
+        "title": "AI Chat",
+        "settings": "Settings",
+        "clear": "Clear",
+        "settingsTitle": "AI Settings",
+        "settingsSubtitle": "Model service and credentials",
+        "settingsHint": "Enter your provider, HTTPS API endpoint, API key, and model name.",
+        "provider": "Provider",
+        "apiHost": "API endpoint",
+        "apiKey": "API Key",
+        "model": "Model",
+        "notConfigured": "Not configured",
+        "saveConfiguration": "Save settings",
+        "configurationSaved": "Settings saved",
+        "localOnly": "The API key is stored only on this device and is never written to app code or the repository.",
+        "compatibilityHint": "OpenAI Chat Completions compatible APIs are currently supported.",
+        "customProvider": "Custom provider",
+        "notReadyTitle": "Configure AI first",
+        "notReadyHint": "Enter a provider, API endpoint, API key, and model name to begin.",
+        "goToSettings": "Open AI settings",
+        "readyTitle": "AI is ready",
+        "readyHint": "Tap the input bar below to start a new conversation.",
+        "configureFirst": "Complete AI settings first",
+        "thinking": "Generating a reply…",
+        "requestFailed": "AI request failed",
+        "cleared": "Conversation cleared"
     },
     "search": {
         "title": "Search",

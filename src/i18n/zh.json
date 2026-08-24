@@ -112,7 +112,9 @@
         "calculator": "计算器",
         "calculatorDescription": "基础计算与单位换算",
         "game2048": "2048",
-        "game2048Description": "合并数字并挑战最高分"
+        "game2048Description": "合并数字并挑战最高分",
+        "aiChat": "AI 对话",
+        "aiChatDescription": "使用自己的模型服务对话"
     },
     "weather": {
         "title": "天气",
@@ -204,6 +206,33 @@
         "swipeHint": "在棋盘上向任意方向滑动",
         "gameOverTitle": "本局结束",
         "gameOver": "已经没有可移动的方块"
+    },
+    "aiChat": {
+        "title": "AI 对话",
+        "settings": "配置",
+        "clear": "清空",
+        "settingsTitle": "AI 配置",
+        "settingsSubtitle": "模型服务与凭据",
+        "settingsHint": "填写你的供应商、HTTPS API 地址、API Key 与模型名称",
+        "provider": "模型供应商",
+        "apiHost": "API 地址",
+        "apiKey": "API Key",
+        "model": "模型名称",
+        "notConfigured": "未配置",
+        "saveConfiguration": "保存配置",
+        "configurationSaved": "配置已保存",
+        "localOnly": "API Key 仅保存在本机，不会写入应用代码或仓库。",
+        "compatibilityHint": "目前支持 OpenAI Chat Completions 兼容接口。",
+        "customProvider": "自定义供应商",
+        "notReadyTitle": "请先配置 AI 服务",
+        "notReadyHint": "填写供应商、API 地址、API Key 和模型名称后即可开始对话。",
+        "goToSettings": "打开 AI 配置",
+        "readyTitle": "AI 服务已就绪",
+        "readyHint": "点击底部输入框，开始一段新对话。",
+        "configureFirst": "请先完成 AI 配置",
+        "thinking": "正在生成回复…",
+        "requestFailed": "AI 请求失败",
+        "cleared": "对话已清空"
     },
     "search": {
         "title": "搜索",
