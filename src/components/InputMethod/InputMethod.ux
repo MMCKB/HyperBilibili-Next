@@ -192,7 +192,7 @@
             <text class="rect-five-key-direction" @click="onBtnClick('cursorRight')">→</text>
           </div>
         </div>
-        <div style="width: 100%; flex-direction: row; justify-content: center; top:6px; padding:0 6px;">
+        <div style="width: 100%; flex-direction: row; justify-content: center; top:0px; padding:0 6px;">
           <text class="rect-switch-trigger" @click="openRectPanel('switch')" if="{{downFlag==='' && !numFlag}}">切换</text>
           <!-- 简繁快捷切换：仅中文全键和中文九键显示，文字同时标识当前候选字形。 -->
           <text class="rect-traditional-trigger" if="{{lang==='cn' && !numFlag}}" style="background-color:{{rectTraditionalInput ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="toggleRectTraditionalInput">{{rectTraditionalInput ? '繁' : '简'}}</text>
@@ -1057,23 +1057,23 @@ export default {
 }
 .rect-five-key-bar {
   position:absolute;
-  top:70px;
+  top:64px;
   left:6px;
   height:36px;
   flex-direction:row;
   align-items:center;
 }
 .rect-five-key-enter {
-  color:rgb(13,132,255);
-  font-size:18px;
+  color:rgb(255,255,255);
+  font-size:20px;
   font-weight:bold;
   width:64px;
   height:36px;
   margin-right:4px;
-  background-color:rgb(65,65,78);
+  background-color:rgb(38,38,38);
   border-radius:18px;
   text-align:center;
-  border:2px solid rgba(255,255,255,0.12);
+  border:3px solid rgba(255,255,255,0.06);
 }
 .rect-five-key-directions {
   flex:1;
@@ -1088,10 +1088,10 @@ export default {
   flex:1;
   height:36px;
   margin-left:3px;
-  background-color:rgb(65,65,78);
+  background-color:rgb(38,38,38);
   border-radius:18px;
   text-align:center;
-  border:2px solid rgba(255,255,255,0.12);
+  border:3px solid rgba(255,255,255,0.06);
 }
 .calbtn67 {
 	color:rgb(255,255,255);
