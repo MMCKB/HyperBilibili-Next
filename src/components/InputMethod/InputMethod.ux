@@ -240,9 +240,10 @@
         <div class="rect-overlay" if="{{rectPanel==='switch'}}">
           <scroll id="rectModeScroll" class="rect-mode-scroll" scroll-x="{{true}}" style="width:{{screenWidth - 24}}px;">
             <div class="rect-mode-menu">
-              <text class="rect-mode-button" style="background-color:{{lang==='cn' && rectKeyboardtype!=='T9' ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('cn')">中</text>
-              <text class="rect-mode-button" style="background-color:{{lang==='en' && rectKeyboardtype!=='T9' ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('en')">英</text>
-              <text class="rect-mode-button" style="background-color:{{rectKeyboardtype==='T9' ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('t9')">九</text>
+              <text class="rect-mode-button" style="background-color:{{lang==='cn' && rectKeyboardtype!=='T9' && !numFlag ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('cn')">中</text>
+              <text class="rect-mode-button" style="background-color:{{lang==='en' && rectKeyboardtype!=='T9' && !numFlag ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('en')">英</text>
+              <text class="rect-mode-button" style="background-color:{{rectKeyboardtype==='T9' && !numFlag ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('t9')">九</text>
+              <text class="rect-mode-button" style="background-color:{{numFlag ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('num')">数</text>
             </div>
           </scroll>
         </div>
@@ -473,7 +474,7 @@ export default {
   selectRectKeyboard(mode) {
     this.onVibrate();
     this.rectPanel = "";
-    this.numFlag = false;
+    this.numFlag = mode === "num";
     this.cval = "";
     this.clearT9Input();
     this.clearWaiting();
@@ -483,7 +484,7 @@ export default {
     } else if (mode === "en") {
       this.lang = "en";
       this.rectKeyboardtype = "QWERTY";
-    } else {
+    } else if (mode === "t9") {
       this.lang = "cn";
       this.rectKeyboardtype = "T9";
     }
@@ -992,8 +993,8 @@ export default {
   /* 仅该局部滚动容器处理横向滑动；外层不绑定滑动事件。 */
 }
 .rect-mode-menu {
-  /* 三个大圆形菜单项保留完整内容宽度，由内部 scroll 横向查看。 */
-  min-width:324px;
+  /* 四个大圆形菜单项保留完整内容宽度，由内部 scroll 横向查看。 */
+  min-width:432px;
   height:100%;
   padding-left:18px;
   padding-right:18px;
