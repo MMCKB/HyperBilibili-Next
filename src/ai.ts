@@ -427,6 +427,55 @@ export async function selectNextAIProfile(): Promise<AISettings> {
   return base;
 }
 
+export function getAIProfileOptions(settings: AISettings = AI_SETTINGS): any[] {
+  const options: any[] = [];
+  const providers = Array.isArray(settings.providers) ? settings.providers : [];
+  providers.forEach((rawProvider: any, providerIndex: number) => {
+    const provider = normalizeProvider(rawProvider);
+    provider.models.forEach((model: string, modelIndex: number) => {
+      options.push({
+        providerIndex,
+        modelIndex,
+        providerName: provider.name || "AI",
+        modelName: model,
+        active: providerIndex === settings.activeProviderIndex && modelIndex === provider.activeModelIndex
+      });
+    });
+  });
+  return options;
+}
+
+export async function selectAIProfile(providerIndex: number, modelIndex: number): Promise<AISettings> {
+  const base = syncActiveSettings(AI_SETTINGS);
+  const providers = base.providers.slice();
+  const targetProvider = providers[providerIndex] && normalizeProvider(providers[providerIndex]);
+  if (!targetProvider || !targetProvider.models[modelIndex]) throw createAiError("unknown-profile");
+  targetProvider.activeModelIndex = modelIndex;
+  providers[providerIndex] = targetProvider;
+  return saveCurrentSettings(syncActiveSettings({ providers, activeProviderIndex: providerIndex }));
+}
+
+export async function deleteActiveAIModel(): Promise<AISettings> {
+  const base = syncActiveSettings(AI_SETTINGS);
+  const providers = base.providers.slice();
+  const providerIndex = base.activeProviderIndex;
+  const current = providers[providerIndex] && normalizeProvider(providers[providerIndex]);
+  if (!current || !current.models.length) throw createAiError("no-model");
+  current.models.splice(current.activeModelIndex, 1);
+  current.activeModelIndex = Math.max(0, Math.min(current.activeModelIndex, current.models.length - 1));
+  providers[providerIndex] = current;
+  return saveCurrentSettings(syncActiveSettings({ providers, activeProviderIndex: providerIndex }));
+}
+
+export async function deleteActiveAIProvider(): Promise<AISettings> {
+  const base = syncActiveSettings(AI_SETTINGS);
+  const providers = base.providers.slice();
+  if (!providers.length) throw createAiError("no-provider");
+  providers.splice(base.activeProviderIndex, 1);
+  const activeProviderIndex = Math.max(0, Math.min(base.activeProviderIndex, providers.length - 1));
+  return saveCurrentSettings(syncActiveSettings({ providers, activeProviderIndex }));
+}
+
 export function isAIReady(settings: AISettings = AI_SETTINGS): boolean {
   return isSafeApiHost(normalizeApiHost(settings.apiHost)) && !!String(settings.apiKey || "").trim() && !!String(settings.model || "").trim();
 }

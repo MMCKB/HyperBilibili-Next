@@ -6,11 +6,11 @@
   <div class="page ai-chat-page {{scrclass}}" ontouchstart="HandlePageTouchStart" ontouchend="HandlePageTouchEnd">
     <title-bar title="aiChat.title"></title-bar>
     <div class="ai-chat-meta">
-      <div class="ai-chat-provider" onclick="OpenSettings">
+      <div class="ai-chat-provider">
         <text class="ai-chat-provider-model">{{ modelText }}</text>
         <text class="ai-chat-provider-label">{{ providerText }}</text>
       </div>
-      <div class="ai-chat-meta-button ai-chat-switch" onclick="SwitchProfile"><text class="ai-chat-meta-button-text">{{ $t("aiChat.switch") }}</text></div>
+      <div class="ai-chat-meta-button ai-chat-switch" onclick="OpenProfilePicker"><text class="ai-chat-meta-button-text">{{ $t("aiChat.switch") }}</text></div>
       <div class="ai-chat-meta-button" onclick="OpenSettings"><text class="ai-chat-meta-button-text">{{ $t("aiChat.settings") }}</text></div>
       <div class="ai-chat-meta-button ai-chat-clear" onclick="ClearMessages"><text class="ai-chat-meta-button-text">{{ $t("aiChat.clear") }}</text></div>
     </div>
@@ -39,6 +39,22 @@
       </div>
     </scroll>
     <sendbox input_text="{{inputPreview}}" @clickinput="OpenInput" @clicksend="OpenInput" style="position: absolute"></sendbox>
+    <div class="ai-profile-picker-mask" if="{{showProfilePicker}}">
+      <div class="ai-profile-picker">
+        <text class="ai-profile-picker-title">{{ $t("aiChat.profilePickerTitle") }}</text>
+        <scroll class="ai-profile-picker-list" scroll-y="true" bounces="false">
+          <div class="ai-profile-picker-option" for="{{profileOptions}}" onclick="PickProfile($item.providerIndex, $item.modelIndex)">
+            <div class="ai-profile-picker-copy">
+              <text class="ai-profile-picker-model">{{ $item.modelName }}</text>
+              <text class="ai-profile-picker-provider">{{ $item.providerName }}</text>
+            </div>
+            <text class="ai-profile-picker-active" if="{{ $item.active }}">✓</text>
+          </div>
+          <text class="ai-profile-picker-empty" if="{{!profileOptions.length}}">{{ $t("aiChat.noSavedModels") }}</text>
+        </scroll>
+        <div class="ai-profile-picker-close" onclick="CloseProfilePicker"><text class="ai-profile-picker-close-text">{{ $t("aiChat.close") }}</text></div>
+      </div>
+    </div>
     <full-screen-input style="position: absolute" if="{{showInput}}" initial-text="{{inputSeed}}" @send="FinishInput" @exit="ExitInput"></full-screen-input>
   </div>
 </template>
@@ -46,7 +62,7 @@
 <script>
 import router from "@system.router"
 import prompt from "@system.prompt"
-import { AI_SETTINGS, isAIReady, loadAISettings, selectNextAIProfile, sendAIChat } from "@src/ai.ts"
+import { AI_SETTINGS, getAIProfileOptions, isAIReady, loadAISettings, selectAIProfile, sendAIChat } from "@src/ai.ts"
 
 export default {
   private: {
@@ -63,7 +79,9 @@ export default {
     inputSeed: "",
     showInput: false,
     pageTouchStartX: -1,
-    pageTouchStartY: -1
+    pageTouchStartY: -1,
+    showProfilePicker: false,
+    profileOptions: []
   },
   async onInit() {
     await this.RefreshSettings()
@@ -101,14 +119,24 @@ export default {
     this.pageTouchStartY = -1
     if (deltaX > 56 && Math.abs(deltaX) > Math.abs(deltaY)) global.ui.OnBackPressTriggered()
   },
-  async SwitchProfile() {
+  async OpenProfilePicker() {
     if (this.isSending) return
-    const settings = await selectNextAIProfile()
+    const settings = await loadAISettings()
+    this.profileOptions = getAIProfileOptions(settings)
+    this.showProfilePicker = true
+  },
+  CloseProfilePicker() {
+    this.showProfilePicker = false
+  },
+  async PickProfile(providerIndex, modelIndex) {
+    if (this.isSending) return
+    await selectAIProfile(Number(providerIndex), Number(modelIndex))
+    this.showProfilePicker = false
     await this.RefreshSettings()
     this.messages = []
     this.visibleMessages = []
     this.hasMessages = false
-    if (settings.model) prompt.showToast({ message: this.$t("aiChat.switched"), duration: 1500 })
+    prompt.showToast({ message: this.$t("aiChat.switched"), duration: 1500 })
   },
   OpenInput() {
     if (!this.isConfigured) {

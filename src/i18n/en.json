@@ -244,7 +244,16 @@
         "addModel": "Add model",
         "providerLimit": "You can add up to 3 providers.",
         "modelLimit": "Each provider can have up to 5 models.",
-        "saveFailed": "Could not save settings. Check the configuration."
+        "saveFailed": "Could not save settings. Check the configuration.",
+        "profilePickerTitle": "Choose model",
+        "noSavedModels": "No saved models",
+        "close": "Close",
+        "deleteProvider": "Delete current provider",
+        "deleteModel": "Delete current model",
+        "providerDeleted": "Current provider deleted",
+        "modelDeleted": "Current model deleted",
+        "noProviderToDelete": "No provider to delete",
+        "noModelToDelete": "No model to delete"
     },
     "search": {
         "title": "Search",

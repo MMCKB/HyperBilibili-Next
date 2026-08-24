@@ -245,7 +245,16 @@
         "addModel": "添加模型",
         "providerLimit": "最多只能添加 3 个供应商",
         "modelLimit": "每个供应商最多只能添加 5 个模型",
-        "saveFailed": "保存失败，请检查配置"
+        "saveFailed": "保存失败，请检查配置",
+        "profilePickerTitle": "选择模型",
+        "noSavedModels": "暂无已保存的模型",
+        "close": "关闭",
+        "deleteProvider": "删除当前供应商",
+        "deleteModel": "删除当前模型",
+        "providerDeleted": "已删除当前供应商",
+        "modelDeleted": "已删除当前模型",
+        "noProviderToDelete": "没有可删除的供应商",
+        "noModelToDelete": "没有可删除的模型"
     },
     "search": {
         "title": "搜索",

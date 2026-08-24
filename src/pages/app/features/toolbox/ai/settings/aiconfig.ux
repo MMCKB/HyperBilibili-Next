@@ -15,6 +15,7 @@
           <text class="ai-config-arrow">›</text>
         </div>
         <div class="ai-config-action" onclick="AddProvider"><text class="ai-config-action-text">{{ $t("aiChat.addProvider") }}</text></div>
+        <div class="ai-config-action ai-config-delete" onclick="DeleteProvider"><text class="ai-config-action-text ai-config-delete-text">{{ $t("aiChat.deleteProvider") }}</text></div>
         <div class="ai-config-card" onclick="EditProvider">
           <text class="ai-config-label">{{ $t("aiChat.providerName") }}</text>
           <text class="ai-config-value">{{ providerDisplay }}</text>
@@ -29,6 +30,7 @@
           <text class="ai-config-arrow">›</text>
         </div>
         <div class="ai-config-action" onclick="StartAddModel"><text class="ai-config-action-text">{{ $t("aiChat.addModel") }}</text></div>
+        <div class="ai-config-action ai-config-delete" onclick="DeleteModel"><text class="ai-config-action-text ai-config-delete-text">{{ $t("aiChat.deleteModel") }}</text></div>
         <div class="ai-config-card" onclick="EditHost">
           <text class="ai-config-label">{{ $t("aiChat.apiHost") }}</text>
           <text class="ai-config-value">{{ apiHostDisplay }}</text>
@@ -65,7 +67,7 @@
 
 <script>
 import prompt from "@system.prompt"
-import { AI_SETTINGS, addAIModel, addAIProvider, getAIModelCount, getAIProviderCount, loadAISettings, saveAISettings, selectNextAIModel, selectNextAIProvider, updateActiveAIProvider } from "@src/ai.ts"
+import { AI_SETTINGS, addAIModel, addAIProvider, deleteActiveAIModel, deleteActiveAIProvider, getAIModelCount, getAIProviderCount, loadAISettings, saveAISettings, selectNextAIModel, selectNextAIProvider, updateActiveAIProvider } from "@src/ai.ts"
 
 export default {
   private: {
@@ -134,6 +136,24 @@ export default {
       await this.RefreshSettings()
     } catch (error) {
       this.statusText = this.$t("aiChat.providerLimit")
+    }
+  },
+  async DeleteProvider() {
+    try {
+      await deleteActiveAIProvider()
+      this.statusText = this.$t("aiChat.providerDeleted")
+      await this.RefreshSettings()
+    } catch (error) {
+      this.statusText = this.$t("aiChat.noProviderToDelete")
+    }
+  },
+  async DeleteModel() {
+    try {
+      await deleteActiveAIModel()
+      this.statusText = this.$t("aiChat.modelDeleted")
+      await this.RefreshSettings()
+    } catch (error) {
+      this.statusText = this.$t("aiChat.noModelToDelete")
     }
   },
   ExitInput() {
