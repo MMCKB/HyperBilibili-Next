@@ -199,7 +199,9 @@
           <img src="./assets/horizontal/bigA.png" style="padding: 6px;margin-left: 6px;width:94px;height:60px;" @click="onBtnClick('switchLow')" if="{{downFlag==='' && upperFlag && lang==='en'&& !numFlag}}" />
           <img src="./assets/horizontal/a.png" style="padding: 6px;margin-left: 6px;width:94px;height:60px;" @click="onBtnClick('switchUpper')" if="{{downFlag==='' && !upperFlag && lang==='en'&& !numFlag}}" />
           <img src="./assets/horizontal/123.png" style="margin-left: 6px;padding: 6px;margin-left: 6px;width: 94px;height: 60px;" @click="onBtnClick('switchNum')" if="{{downFlag==='' && !numFlag && lang==='en'}}" />
-          <img src="./assets/horizontal/back2.png" style="margin-left: 6px;padding: 6px;width: 159px;height: 60px;" @click="onBtnClick('switchCn')" if="{{numFlag}}" />
+          <!-- 从方屏切换页进入数字键盘时，原返回键位置改为切换键；英文数字入口仍保留原返回键。 -->
+          <text class="rect-switch-trigger" @click="openRectPanel('switch')" if="{{numFlag && rectNumFromSwitch}}">切换</text>
+          <img src="./assets/horizontal/back2.png" style="margin-left: 6px;padding: 6px;width: 159px;height: 60px;" @click="onBtnClick('switchCn')" if="{{numFlag && !rectNumFromSwitch}}" />
           <img if="{{!numFlag}}" src="./assets/horizontal/del.png" style="margin-left: 6px;padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('D')" />
           <img else src="./assets/horizontal/del2.png" style="margin-left: 6px;padding: 6px;" @click="onBtnClick('D')" />
         </div>
@@ -399,6 +401,8 @@ export default {
     percent66: 0,
     // 方屏专用状态；不修改外部 keyboardtype/vibratemode 属性，避免破坏组件的单向数据流。
     rectPanel: "",
+    // 仅用于方屏：区分切换页数字模式与英文 123 数字模式的返回键显示。
+    rectNumFromSwitch: false,
     rectKeyboardtype: "QWERTY",
     rectVibrateMode: "",
     rectCandidateCount: 5,
@@ -475,6 +479,7 @@ export default {
     this.onVibrate();
     this.rectPanel = "";
     this.numFlag = mode === "num";
+    this.rectNumFromSwitch = mode === "num";
     this.cval = "";
     this.clearT9Input();
     this.clearWaiting();
@@ -640,6 +645,8 @@ export default {
         }
         break;
       case "switchNum":
+        // 英文键盘的 123 入口继续使用原返回键。
+        this.rectNumFromSwitch = false;
         this.numFlag = true;
         this.cval = "";
         this.clearT9Input();
@@ -648,6 +655,7 @@ export default {
         break;
       case "switchCn":
         this.numFlag = false;
+        this.rectNumFromSwitch = false;
         break;
       case "switchUpper":
         this.upperFlag = true;
