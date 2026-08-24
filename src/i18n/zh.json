@@ -215,6 +215,7 @@
         "settingsSubtitle": "OpenAI 兼容纯文本对话",
         "settingsHint": "填写供应商、HTTPS API 地址、接口路径、API Key 与模型名称。不会设置输出 Token 上限。",
         "provider": "模型供应商",
+        "providerName": "供应商名称",
         "apiHost": "API 地址",
         "apiPath": "接口路径",
         "apiKey": "API Key",
@@ -237,7 +238,14 @@
         "configureFirst": "请先完成 AI 配置",
         "thinking": "正在思考…",
         "requestFailed": "AI 请求失败",
-        "cleared": "对话已清空"
+        "cleared": "对话已清空",
+        "switch": "切换",
+        "switched": "已切换模型",
+        "addProvider": "添加供应商",
+        "addModel": "添加模型",
+        "providerLimit": "最多只能添加 3 个供应商",
+        "modelLimit": "每个供应商最多只能添加 5 个模型",
+        "saveFailed": "保存失败，请检查配置"
     },
     "search": {
         "title": "搜索",

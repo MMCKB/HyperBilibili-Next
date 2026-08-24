@@ -3,19 +3,32 @@
 
 <template>
   <div class="page">
-    <scroll class="ai-config-scroll" scroll-y="true" bounces="false">
+    <scroll class="ai-config-scroll {{scrclass}}" scroll-y="true" bounces="false">
       <title-bar title="aiChat.settingsTitle"></title-bar>
       <div class="ai-config-content">
-        <div class="ai-config-hero">
-          <text class="ai-config-hero-icon">AI</text>
-          <text class="ai-config-hero-title">{{ $t("aiChat.settingsSubtitle") }}</text>
-          <text class="ai-config-hero-copy">{{ $t("aiChat.settingsHint") }}</text>
-        </div>
-        <div class="ai-config-card" onclick="EditProvider">
+        <div class="ai-config-selector" onclick="CycleProvider">
           <text class="ai-config-label">{{ $t("aiChat.provider") }}</text>
+          <div class="ai-config-selector-copy">
+            <text class="ai-config-selector-value">{{ providerDisplay }}</text>
+            <text class="ai-config-selector-count">{{ providerCountText }}</text>
+          </div>
+          <text class="ai-config-arrow">›</text>
+        </div>
+        <div class="ai-config-action" onclick="AddProvider"><text class="ai-config-action-text">{{ $t("aiChat.addProvider") }}</text></div>
+        <div class="ai-config-card" onclick="EditProvider">
+          <text class="ai-config-label">{{ $t("aiChat.providerName") }}</text>
           <text class="ai-config-value">{{ providerDisplay }}</text>
           <text class="ai-config-arrow">›</text>
         </div>
+        <div class="ai-config-selector" onclick="CycleModel">
+          <text class="ai-config-label">{{ $t("aiChat.model") }}</text>
+          <div class="ai-config-selector-copy">
+            <text class="ai-config-selector-value">{{ modelDisplay }}</text>
+            <text class="ai-config-selector-count">{{ modelCountText }}</text>
+          </div>
+          <text class="ai-config-arrow">›</text>
+        </div>
+        <div class="ai-config-action" onclick="StartAddModel"><text class="ai-config-action-text">{{ $t("aiChat.addModel") }}</text></div>
         <div class="ai-config-card" onclick="EditHost">
           <text class="ai-config-label">{{ $t("aiChat.apiHost") }}</text>
           <text class="ai-config-value">{{ apiHostDisplay }}</text>
@@ -31,11 +44,6 @@
           <text class="ai-config-value">{{ apiKeyDisplay }}</text>
           <text class="ai-config-arrow">›</text>
         </div>
-        <div class="ai-config-card" onclick="EditModel">
-          <text class="ai-config-label">{{ $t("aiChat.model") }}</text>
-          <text class="ai-config-value">{{ modelDisplay }}</text>
-          <text class="ai-config-arrow">›</text>
-        </div>
         <div class="ai-config-card" onclick="EditHeaders">
           <text class="ai-config-label">{{ $t("aiChat.extraHeaders") }}</text>
           <text class="ai-config-value">{{ headersDisplay }}</text>
@@ -48,8 +56,6 @@
         </div>
         <div class="ai-config-status" if="{{statusText}}"><text class="ai-config-status-text">{{ statusText }}</text></div>
         <div class="ai-config-save" onclick="SaveAndBack"><text class="ai-config-save-text">{{ $t("aiChat.saveConfiguration") }}</text></div>
-        <text class="ai-config-security">{{ $t("aiChat.localOnly") }}</text>
-        <text class="ai-config-compatibility">{{ $t("aiChat.compatibilityHint") }}</text>
       </div>
       <text class="ai-config-bottom-spacer"></text>
     </scroll>
@@ -58,17 +64,19 @@
 </template>
 
 <script>
-import router from "@system.router"
 import prompt from "@system.prompt"
-import { AI_SETTINGS, loadAISettings, saveAISettings } from "@src/ai.ts"
+import { AI_SETTINGS, addAIModel, addAIProvider, getAIModelCount, getAIProviderCount, loadAISettings, saveAISettings, selectNextAIModel, selectNextAIProvider, updateActiveAIProvider } from "@src/ai.ts"
 
 export default {
   private: {
+    scrclass: "",
     providerDisplay: "--",
+    providerCountText: "0/3",
     apiHostDisplay: "--",
     apiPathDisplay: "--",
     apiKeyDisplay: "--",
     modelDisplay: "--",
+    modelCountText: "0/5",
     headersDisplay: "--",
     bodyDisplay: "--",
     statusText: "",
@@ -85,10 +93,12 @@ export default {
   async RefreshSettings() {
     const settings = await loadAISettings()
     this.providerDisplay = settings.provider || this.$t("aiChat.notConfigured")
+    this.providerCountText = String(getAIProviderCount(settings)) + "/3"
     this.apiHostDisplay = settings.apiHost || this.$t("aiChat.notConfigured")
     this.apiPathDisplay = settings.apiPath || "/chat/completions"
     this.apiKeyDisplay = settings.apiKey ? this.MaskApiKey(settings.apiKey) : this.$t("aiChat.notConfigured")
     this.modelDisplay = settings.model || this.$t("aiChat.notConfigured")
+    this.modelCountText = String(getAIModelCount(settings)) + "/5"
     this.headersDisplay = settings.extraHeaders ? this.$t("aiChat.configured") : this.$t("aiChat.optional")
     this.bodyDisplay = settings.extraBody ? this.$t("aiChat.configured") : this.$t("aiChat.optional")
   },
@@ -106,9 +116,26 @@ export default {
   EditHost() { this.StartEdit("host", AI_SETTINGS.apiHost) },
   EditPath() { this.StartEdit("path", AI_SETTINGS.apiPath) },
   EditApiKey() { this.StartEdit("key", AI_SETTINGS.apiKey) },
-  EditModel() { this.StartEdit("model", AI_SETTINGS.model) },
   EditHeaders() { this.StartEdit("headers", AI_SETTINGS.extraHeaders) },
   EditBody() { this.StartEdit("body", AI_SETTINGS.extraBody) },
+  StartAddModel() { this.StartEdit("addModel", "") },
+  async CycleProvider() {
+    await selectNextAIProvider()
+    await this.RefreshSettings()
+  },
+  async CycleModel() {
+    await selectNextAIModel()
+    await this.RefreshSettings()
+  },
+  async AddProvider() {
+    try {
+      await addAIProvider()
+      this.statusText = ""
+      await this.RefreshSettings()
+    } catch (error) {
+      this.statusText = this.$t("aiChat.providerLimit")
+    }
+  },
   ExitInput() {
     this.showInput = false
     this.inputTarget = ""
@@ -120,21 +147,25 @@ export default {
       this.ExitInput()
       return
     }
-    if (this.inputTarget === "provider") await saveAISettings({ provider: value })
-    if (this.inputTarget === "host") await saveAISettings({ apiHost: value })
-    if (this.inputTarget === "path") await saveAISettings({ apiPath: value })
-    if (this.inputTarget === "key") await saveAISettings({ apiKey: value })
-    if (this.inputTarget === "model") await saveAISettings({ model: value })
-    if (this.inputTarget === "headers") await saveAISettings({ extraHeaders: value })
-    if (this.inputTarget === "body") await saveAISettings({ extraBody: value })
+    try {
+      if (this.inputTarget === "provider") await updateActiveAIProvider({ name: value })
+      if (this.inputTarget === "host") await updateActiveAIProvider({ apiHost: value })
+      if (this.inputTarget === "path") await updateActiveAIProvider({ apiPath: value })
+      if (this.inputTarget === "key") await updateActiveAIProvider({ apiKey: value })
+      if (this.inputTarget === "headers") await updateActiveAIProvider({ extraHeaders: value })
+      if (this.inputTarget === "body") await updateActiveAIProvider({ extraBody: value })
+      if (this.inputTarget === "addModel") await addAIModel(value)
+      this.statusText = ""
+    } catch (error) {
+      this.statusText = this.inputTarget === "addModel" ? this.$t("aiChat.modelLimit") : this.$t("aiChat.saveFailed")
+    }
     this.ExitInput()
     await this.RefreshSettings()
   },
   async SaveAndBack() {
     await saveAISettings({})
-    this.statusText = this.$t("aiChat.configurationSaved")
-    prompt.showToast({ message: this.$t("aiChat.configurationSaved"), duration: 1800 })
-    setTimeout(() => router.back(), 300)
+    prompt.showToast({ message: this.$t("aiChat.configurationSaved"), duration: 1600 })
+    global.ui.OnBackPressTriggered()
   }
 }
 </script>

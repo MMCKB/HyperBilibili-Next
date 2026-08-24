@@ -1,17 +1,19 @@
-.ai-config-scroll { width: 432px; height: 514px; flex-direction: column; }
-.ai-config-content { width: 340px; align-self: center; flex-direction: column; }
-.ai-config-hero { width: 340px; min-height: 98px; border-radius: 20px; background-color: #202124; flex-direction: column; justify-content: center; padding-left: 17px; margin-top: 8px; }
-.ai-config-hero-icon { color: #FF9CBE; font-size: 20px; font-weight: 800; }
-.ai-config-hero-title { color: #FFFFFF; font-size: 19px; font-weight: 700; margin-top: 2px; }
-.ai-config-hero-copy { width: 302px; color: #B7B7BD; font-size: 13px; margin-top: 4px; }
-.ai-config-card { width: 340px; height: 54px; border-radius: 16px; background-color: #202124; flex-direction: row; align-items: center; margin-top: 8px; padding-left: 14px; padding-right: 13px; }
-.ai-config-label { width: 104px; color: #D7D7DB; font-size: 15px; }
-.ai-config-value { width: 178px; color: #FFFFFF; font-size: 14px; text-align: right; lines: 1; }
-.ai-config-arrow { width: 18px; color: #FF9CBE; font-size: 25px; margin-left: auto; text-align: right; }
-.ai-config-status { width: 340px; min-height: 42px; border-radius: 15px; background-color: #382C34; align-items: center; justify-content: center; margin-top: 9px; }
-.ai-config-status-text { width: 300px; color: #FFB7CF; font-size: 13px; text-align: center; }
-.ai-config-save { width: 340px; height: 48px; border-radius: 16px; background-color: #FF7DA8; align-items: center; justify-content: center; margin-top: 10px; }
-.ai-config-save-text { color: #33212A; font-size: 17px; font-weight: 700; }
-.ai-config-security { width: 326px; color: #A4A4A7; font-size: 12px; text-align: center; align-self: center; margin-top: 12px; }
-.ai-config-compatibility { width: 326px; color: #85858A; font-size: 12px; text-align: center; align-self: center; margin-top: 5px; }
-.ai-config-bottom-spacer { height: 30px; }
+.ai-config-scroll { width: 432px; height: 514px; flex-direction: column; animation-name: openpage-scroll; animation-timing-function: ease; animation-duration: 500ms; animation-direction: reverse; }
+.ai-config-scroll.scroll-backanim { animation-name: backpage-scroll; animation-timing-function: ease; animation-duration: 500ms; animation-direction: normal; }
+.ai-config-scroll.scroll-frombackanim { animation-name: fromback-scroll; animation-timing-function: ease; animation-duration: 500ms; animation-direction: reverse; }
+.ai-config-content { width: 392px; align-self: center; flex-direction: column; padding-top: 8px; }
+.ai-config-selector { width: 392px; height: 72px; border-radius: 20px; background-color: #2C2630; flex-direction: row; align-items: center; padding-left: 17px; padding-right: 15px; margin-top: 8px; }
+.ai-config-card { width: 392px; height: 68px; border-radius: 20px; background-color: #202124; flex-direction: row; align-items: center; padding-left: 17px; padding-right: 15px; margin-top: 8px; }
+.ai-config-label { width: 118px; color: #D7D7DB; font-size: 19px; font-weight: 600; }
+.ai-config-value { width: 214px; color: #FFFFFF; font-size: 17px; text-align: right; lines: 1; }
+.ai-config-selector-copy { width: 214px; flex-direction: column; align-items: flex-end; }
+.ai-config-selector-value { width: 214px; color: #FFFFFF; font-size: 20px; font-weight: 700; text-align: right; lines: 1; }
+.ai-config-selector-count { color: #FFB0CC; font-size: 13px; margin-top: 2px; }
+.ai-config-arrow { width: 18px; color: #FF9CBE; font-size: 31px; margin-left: auto; text-align: right; }
+.ai-config-action { width: 392px; height: 48px; border-radius: 17px; background-color: #332C34; align-items: center; justify-content: center; margin-top: 7px; }
+.ai-config-action-text { color: #FFACC9; font-size: 18px; font-weight: 700; }
+.ai-config-status { width: 392px; min-height: 48px; border-radius: 17px; background-color: #382C34; align-items: center; justify-content: center; margin-top: 10px; }
+.ai-config-status-text { width: 352px; color: #FFB7CF; font-size: 16px; text-align: center; }
+.ai-config-save { width: 392px; height: 58px; border-radius: 19px; background-color: #FF7DA8; align-items: center; justify-content: center; margin-top: 12px; }
+.ai-config-save-text { color: #33212A; font-size: 20px; font-weight: 700; }
+.ai-config-bottom-spacer { height: 38px; }

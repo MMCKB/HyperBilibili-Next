@@ -1,5 +1,19 @@
 import { fetch, storage } from "./tsimports"
 
+export const MAX_AI_PROVIDERS = 3;
+export const MAX_AI_MODELS_PER_PROVIDER = 5;
+
+export interface AIProviderProfile {
+  name: string;
+  apiHost: string;
+  apiPath: string;
+  apiKey: string;
+  models: string[];
+  activeModelIndex: number;
+  extraHeaders: string;
+  extraBody: string;
+}
+
 export interface AISettings {
   provider: string;
   apiHost: string;
@@ -8,6 +22,8 @@ export interface AISettings {
   model: string;
   extraHeaders: string;
   extraBody: string;
+  providers: AIProviderProfile[];
+  activeProviderIndex: number;
 }
 
 export interface AIChatMessage {
@@ -27,7 +43,9 @@ export let AI_SETTINGS: AISettings = {
   apiKey: "",
   model: "",
   extraHeaders: "",
-  extraBody: ""
+  extraBody: "",
+  providers: [],
+  activeProviderIndex: 0
 };
 
 function createAiError(message: string): Error {
@@ -49,6 +67,105 @@ function normalizeApiPath(value: string): string {
 
 function isSafeApiHost(value: string): boolean {
   return /^https:\/\/[a-zA-Z0-9.-]+(?::\d+)?(?:\/[a-zA-Z0-9._~!$&'()*+,;=:@%/-]*)?$/.test(value);
+}
+
+function createBlankProvider(): AIProviderProfile {
+  return {
+    name: "",
+    apiHost: "",
+    apiPath: "/chat/completions",
+    apiKey: "",
+    models: [],
+    activeModelIndex: 0,
+    extraHeaders: "",
+    extraBody: ""
+  };
+}
+
+function normalizeModels(values: any, legacyModel: any = ""): string[] {
+  const source = Array.isArray(values) ? values.slice() : [];
+  if (legacyModel) source.push(legacyModel);
+  const models: string[] = [];
+  source.forEach((value: any) => {
+    const model = String(value || "").trim();
+    if (model && models.indexOf(model) === -1 && models.length < MAX_AI_MODELS_PER_PROVIDER) models.push(model);
+  });
+  return models;
+}
+
+function normalizeProvider(value: any): AIProviderProfile {
+  const source = value || {};
+  const models = normalizeModels(source.models, source.model);
+  let activeModelIndex = Number(source.activeModelIndex);
+  if (!isFinite(activeModelIndex) || activeModelIndex < 0 || activeModelIndex >= models.length) activeModelIndex = 0;
+  return {
+    name: String(source.name === undefined ? source.provider || "" : source.name || "").trim(),
+    apiHost: normalizeApiHost(source.apiHost || ""),
+    apiPath: normalizeApiPath(source.apiPath || "/chat/completions"),
+    apiKey: String(source.apiKey || "").trim(),
+    models,
+    activeModelIndex,
+    extraHeaders: String(source.extraHeaders || "").trim(),
+    extraBody: String(source.extraBody || "").trim()
+  };
+}
+
+function hasLegacyValues(value: any): boolean {
+  return !!(value && (value.provider || value.apiHost || value.apiKey || value.model || value.extraHeaders || value.extraBody));
+}
+
+function normalizeProviders(values: any, legacy: any): AIProviderProfile[] {
+  const source = Array.isArray(values) ? values : [];
+  const providers = source.map((item: any) => normalizeProvider(item)).slice(0, MAX_AI_PROVIDERS);
+  if (!providers.length && hasLegacyValues(legacy)) {
+    providers.push(normalizeProvider({
+      name: legacy.provider,
+      apiHost: legacy.apiHost,
+      apiPath: legacy.apiPath,
+      apiKey: legacy.apiKey,
+      model: legacy.model,
+      extraHeaders: legacy.extraHeaders,
+      extraBody: legacy.extraBody
+    }));
+  }
+  return providers;
+}
+
+function syncActiveSettings(value: any): AISettings {
+  const providers = normalizeProviders(value && value.providers, value);
+  let activeProviderIndex = Number(value && value.activeProviderIndex);
+  if (!isFinite(activeProviderIndex) || activeProviderIndex < 0 || activeProviderIndex >= providers.length) activeProviderIndex = 0;
+  const active = providers[activeProviderIndex] || createBlankProvider();
+  const model = active.models[active.activeModelIndex] || "";
+  return {
+    provider: active.name,
+    apiHost: active.apiHost,
+    apiPath: active.apiPath,
+    apiKey: active.apiKey,
+    model,
+    extraHeaders: active.extraHeaders,
+    extraBody: active.extraBody,
+    providers,
+    activeProviderIndex
+  };
+}
+
+function ensureActiveProvider(settings: AISettings): AIProviderProfile[] {
+  const providers = settings.providers.slice();
+  if (!providers.length) providers.push(createBlankProvider());
+  return providers;
+}
+
+function saveCurrentSettings(next: AISettings): Promise<AISettings> {
+  AI_SETTINGS = syncActiveSettings(next);
+  return new Promise((resolve) => {
+    storage.set({
+      key: AI_STORAGE_KEY,
+      value: JSON.stringify(AI_SETTINGS),
+      success: () => resolve(AI_SETTINGS),
+      fail: () => resolve(AI_SETTINGS)
+    });
+  });
 }
 
 function chatUrl(settings: AISettings): string {
@@ -161,6 +278,15 @@ function responseDetail(body: any): string {
   return shortError(source && (source.message || source.detail || source.msg || source.error));
 }
 
+export function getAIProviderCount(settings: AISettings = AI_SETTINGS): number {
+  return Array.isArray(settings.providers) ? settings.providers.length : 0;
+}
+
+export function getAIModelCount(settings: AISettings = AI_SETTINGS): number {
+  const profile = settings.providers && settings.providers[settings.activeProviderIndex];
+  return profile && Array.isArray(profile.models) ? profile.models.length : 0;
+}
+
 export function loadAISettings(): Promise<AISettings> {
   return new Promise((resolve) => {
     storage.get({
@@ -168,16 +294,12 @@ export function loadAISettings(): Promise<AISettings> {
       success: (data: any) => {
         if (data) {
           try {
-            const stored = JSON.parse(data);
-            AI_SETTINGS = {
-              ...AI_SETTINGS,
-              ...stored,
-              apiHost: normalizeApiHost(stored.apiHost || AI_SETTINGS.apiHost),
-              apiPath: normalizeApiPath(stored.apiPath || AI_SETTINGS.apiPath)
-            };
+            AI_SETTINGS = syncActiveSettings(JSON.parse(data));
           } catch (error) {
             global.logger.log("Failed to parse AI settings");
           }
+        } else {
+          AI_SETTINGS = syncActiveSettings(AI_SETTINGS);
         }
         resolve(AI_SETTINGS);
       },
@@ -187,25 +309,122 @@ export function loadAISettings(): Promise<AISettings> {
 }
 
 export function saveAISettings(params: Partial<AISettings>): Promise<AISettings> {
-  AI_SETTINGS = {
-    ...AI_SETTINGS,
-    ...params,
-    provider: String(params.provider === undefined ? AI_SETTINGS.provider : params.provider).trim(),
-    apiHost: normalizeApiHost(params.apiHost === undefined ? AI_SETTINGS.apiHost : params.apiHost),
-    apiPath: normalizeApiPath(params.apiPath === undefined ? AI_SETTINGS.apiPath : params.apiPath),
-    apiKey: String(params.apiKey === undefined ? AI_SETTINGS.apiKey : params.apiKey).trim(),
-    model: String(params.model === undefined ? AI_SETTINGS.model : params.model).trim(),
-    extraHeaders: String(params.extraHeaders === undefined ? AI_SETTINGS.extraHeaders : params.extraHeaders).trim(),
-    extraBody: String(params.extraBody === undefined ? AI_SETTINGS.extraBody : params.extraBody).trim()
-  };
-  return new Promise((resolve) => {
-    storage.set({
-      key: AI_STORAGE_KEY,
-      value: JSON.stringify(AI_SETTINGS),
-      success: () => resolve(AI_SETTINGS),
-      fail: () => resolve(AI_SETTINGS)
+  const base = syncActiveSettings(AI_SETTINGS);
+  let providers = params.providers === undefined ? base.providers.slice() : normalizeProviders(params.providers, params);
+  let activeProviderIndex = params.activeProviderIndex === undefined ? base.activeProviderIndex : Number(params.activeProviderIndex);
+  const hasLegacyUpdate = params.provider !== undefined || params.apiHost !== undefined || params.apiPath !== undefined || params.apiKey !== undefined || params.model !== undefined || params.extraHeaders !== undefined || params.extraBody !== undefined;
+
+  if (hasLegacyUpdate) {
+    providers = ensureActiveProvider({ ...base, providers });
+    if (activeProviderIndex < 0 || activeProviderIndex >= providers.length) activeProviderIndex = 0;
+    const current = normalizeProvider(providers[activeProviderIndex]);
+    let models = current.models.slice();
+    let activeModelIndex = current.activeModelIndex;
+    if (params.model !== undefined) {
+      const model = String(params.model || "").trim();
+      if (model) {
+        const existingIndex = models.indexOf(model);
+        if (existingIndex >= 0) activeModelIndex = existingIndex;
+        else if (models.length < MAX_AI_MODELS_PER_PROVIDER) {
+          models.push(model);
+          activeModelIndex = models.length - 1;
+        } else {
+          models[activeModelIndex] = model;
+        }
+      }
+    }
+    providers[activeProviderIndex] = normalizeProvider({
+      ...current,
+      name: params.provider === undefined ? current.name : params.provider,
+      apiHost: params.apiHost === undefined ? current.apiHost : params.apiHost,
+      apiPath: params.apiPath === undefined ? current.apiPath : params.apiPath,
+      apiKey: params.apiKey === undefined ? current.apiKey : params.apiKey,
+      models,
+      activeModelIndex,
+      extraHeaders: params.extraHeaders === undefined ? current.extraHeaders : params.extraHeaders,
+      extraBody: params.extraBody === undefined ? current.extraBody : params.extraBody
     });
-  });
+  }
+
+  return saveCurrentSettings(syncActiveSettings({ providers, activeProviderIndex }));
+}
+
+export async function addAIProvider(): Promise<AISettings> {
+  const base = syncActiveSettings(AI_SETTINGS);
+  if (base.providers.length >= MAX_AI_PROVIDERS) throw createAiError("provider-limit");
+  const providers = base.providers.concat([createBlankProvider()]);
+  return saveCurrentSettings(syncActiveSettings({ providers, activeProviderIndex: providers.length - 1 }));
+}
+
+export async function updateActiveAIProvider(params: any): Promise<AISettings> {
+  const base = syncActiveSettings(AI_SETTINGS);
+  const providers = ensureActiveProvider(base);
+  const index = Math.min(Math.max(0, base.activeProviderIndex), providers.length - 1);
+  const current = normalizeProvider(providers[index]);
+  providers[index] = normalizeProvider({ ...current, ...params, models: current.models, activeModelIndex: current.activeModelIndex });
+  return saveCurrentSettings(syncActiveSettings({ providers, activeProviderIndex: index }));
+}
+
+export async function addAIModel(value: string): Promise<AISettings> {
+  const model = String(value || "").trim();
+  if (!model) throw createAiError("empty-model");
+  const base = syncActiveSettings(AI_SETTINGS);
+  const providers = ensureActiveProvider(base);
+  const index = Math.min(Math.max(0, base.activeProviderIndex), providers.length - 1);
+  const current = normalizeProvider(providers[index]);
+  if (current.models.indexOf(model) >= 0) {
+    current.activeModelIndex = current.models.indexOf(model);
+  } else {
+    if (current.models.length >= MAX_AI_MODELS_PER_PROVIDER) throw createAiError("model-limit");
+    current.models.push(model);
+    current.activeModelIndex = current.models.length - 1;
+  }
+  providers[index] = current;
+  return saveCurrentSettings(syncActiveSettings({ providers, activeProviderIndex: index }));
+}
+
+export async function selectNextAIProvider(): Promise<AISettings> {
+  const base = syncActiveSettings(AI_SETTINGS);
+  if (!base.providers.length) return base;
+  return saveCurrentSettings(syncActiveSettings({
+    providers: base.providers,
+    activeProviderIndex: (base.activeProviderIndex + 1) % base.providers.length
+  }));
+}
+
+export async function selectNextAIModel(): Promise<AISettings> {
+  const base = syncActiveSettings(AI_SETTINGS);
+  const providers = base.providers.slice();
+  const index = base.activeProviderIndex;
+  const current = providers[index] && normalizeProvider(providers[index]);
+  if (!current || !current.models.length) return base;
+  current.activeModelIndex = (current.activeModelIndex + 1) % current.models.length;
+  providers[index] = current;
+  return saveCurrentSettings(syncActiveSettings({ providers, activeProviderIndex: index }));
+}
+
+export async function selectNextAIProfile(): Promise<AISettings> {
+  const base = syncActiveSettings(AI_SETTINGS);
+  if (!base.providers.length) return base;
+  const providers = base.providers.slice();
+  let providerIndex = base.activeProviderIndex;
+  let profile = normalizeProvider(providers[providerIndex]);
+  if (profile.models.length && profile.activeModelIndex < profile.models.length - 1) {
+    profile.activeModelIndex += 1;
+    providers[providerIndex] = profile;
+    return saveCurrentSettings(syncActiveSettings({ providers, activeProviderIndex: providerIndex }));
+  }
+  for (let step = 1; step <= providers.length; step += 1) {
+    const candidateIndex = (base.activeProviderIndex + step) % providers.length;
+    const candidate = normalizeProvider(providers[candidateIndex]);
+    if (candidate.models.length) {
+      candidate.activeModelIndex = 0;
+      providers[candidateIndex] = candidate;
+      providerIndex = candidateIndex;
+      return saveCurrentSettings(syncActiveSettings({ providers, activeProviderIndex: providerIndex }));
+    }
+  }
+  return base;
 }
 
 export function isAIReady(settings: AISettings = AI_SETTINGS): boolean {

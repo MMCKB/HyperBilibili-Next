@@ -3,13 +3,14 @@
 <import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
 
 <template>
-  <div class="page ai-chat-page" ontouchstart="HandlePageTouchStart" ontouchend="HandlePageTouchEnd">
+  <div class="page ai-chat-page {{scrclass}}" ontouchstart="HandlePageTouchStart" ontouchend="HandlePageTouchEnd">
     <title-bar title="aiChat.title"></title-bar>
     <div class="ai-chat-meta">
       <div class="ai-chat-provider" onclick="OpenSettings">
-        <text class="ai-chat-provider-label">{{ providerText }}</text>
         <text class="ai-chat-provider-model">{{ modelText }}</text>
+        <text class="ai-chat-provider-label">{{ providerText }}</text>
       </div>
+      <div class="ai-chat-meta-button ai-chat-switch" onclick="SwitchProfile"><text class="ai-chat-meta-button-text">{{ $t("aiChat.switch") }}</text></div>
       <div class="ai-chat-meta-button" onclick="OpenSettings"><text class="ai-chat-meta-button-text">{{ $t("aiChat.settings") }}</text></div>
       <div class="ai-chat-meta-button ai-chat-clear" onclick="ClearMessages"><text class="ai-chat-meta-button-text">{{ $t("aiChat.clear") }}</text></div>
     </div>
@@ -45,10 +46,11 @@
 <script>
 import router from "@system.router"
 import prompt from "@system.prompt"
-import { AI_SETTINGS, isAIReady, loadAISettings, sendAIChat } from "@src/ai.ts"
+import { AI_SETTINGS, isAIReady, loadAISettings, selectNextAIProfile, sendAIChat } from "@src/ai.ts"
 
 export default {
   private: {
+    scrclass: "",
     messages: [],
     visibleMessages: [],
     hasMessages: false,
@@ -97,7 +99,16 @@ export default {
     const deltaY = Number(point.clientY) - this.pageTouchStartY
     this.pageTouchStartX = -1
     this.pageTouchStartY = -1
-    if (deltaX > 56 && Math.abs(deltaX) > Math.abs(deltaY)) router.back()
+    if (deltaX > 56 && Math.abs(deltaX) > Math.abs(deltaY)) global.ui.OnBackPressTriggered()
+  },
+  async SwitchProfile() {
+    if (this.isSending) return
+    const settings = await selectNextAIProfile()
+    await this.RefreshSettings()
+    this.messages = []
+    this.visibleMessages = []
+    this.hasMessages = false
+    if (settings.model) prompt.showToast({ message: this.$t("aiChat.switched"), duration: 1500 })
   },
   OpenInput() {
     if (!this.isConfigured) {

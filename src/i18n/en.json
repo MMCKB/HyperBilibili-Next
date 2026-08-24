@@ -214,6 +214,7 @@
         "settingsSubtitle": "OpenAI-compatible text-only chat",
         "settingsHint": "Enter a provider, HTTPS API address, path, API key, and model name. The app does not set an output token limit.",
         "provider": "Provider",
+        "providerName": "Provider name",
         "apiHost": "API address",
         "apiPath": "API path",
         "apiKey": "API Key",
@@ -236,7 +237,14 @@
         "configureFirst": "Complete AI settings first",
         "thinking": "Thinking…",
         "requestFailed": "AI request failed",
-        "cleared": "Conversation cleared"
+        "cleared": "Conversation cleared",
+        "switch": "Switch",
+        "switched": "Model switched",
+        "addProvider": "Add provider",
+        "addModel": "Add model",
+        "providerLimit": "You can add up to 3 providers.",
+        "modelLimit": "Each provider can have up to 5 models.",
+        "saveFailed": "Could not save settings. Check the configuration."
     },
     "search": {
         "title": "Search",
