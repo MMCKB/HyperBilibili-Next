@@ -2,18 +2,169 @@
 
 <template>
   <div class="page">
-    <title-bar title="keyboardSettings.title"></title-bar>
+    <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="true">
+      <title-bar title="keyboardSettings.title"></title-bar>
+
+      <text class="keyboard-settings-tip">{{ $t("keyboardSettings.tip") }}</text>
+
+      <div class="keyboard-setting-card" onclick="OpenPicker('layout')">
+        <div class="keyboard-setting-copy">
+          <text class="keyboard-setting-title">{{ $t("keyboardSettings.layout") }}</text>
+          <text class="keyboard-setting-description">{{ $t("keyboardSettings.layoutDescription") }}</text>
+        </div>
+        <div class="keyboard-setting-value-wrap">
+          <text class="keyboard-setting-value">{{ layoutLabel }}</text>
+          <image class="keyboard-setting-arrow" src="/common/arrow_right.png"></image>
+        </div>
+      </div>
+
+      <div class="keyboard-setting-card" onclick="OpenPicker('traditional')">
+        <div class="keyboard-setting-copy">
+          <text class="keyboard-setting-title">{{ $t("keyboardSettings.traditional") }}</text>
+          <text class="keyboard-setting-description">{{ $t("keyboardSettings.traditionalDescription") }}</text>
+        </div>
+        <div class="keyboard-setting-value-wrap">
+          <text class="keyboard-setting-value">{{ traditionalLabel }}</text>
+          <image class="keyboard-setting-arrow" src="/common/arrow_right.png"></image>
+        </div>
+      </div>
+
+      <div class="keyboard-setting-card" onclick="OpenPicker('vibration')">
+        <div class="keyboard-setting-copy">
+          <text class="keyboard-setting-title">{{ $t("keyboardSettings.vibration") }}</text>
+          <text class="keyboard-setting-description">{{ $t("keyboardSettings.vibrationDescription") }}</text>
+        </div>
+        <div class="keyboard-setting-value-wrap">
+          <text class="keyboard-setting-value">{{ vibrationLabel }}</text>
+          <image class="keyboard-setting-arrow" src="/common/arrow_right.png"></image>
+        </div>
+      </div>
+
+      <div class="keyboard-setting-card" onclick="OpenPicker('candidates')">
+        <div class="keyboard-setting-copy">
+          <text class="keyboard-setting-title">{{ $t("keyboardSettings.candidates") }}</text>
+          <text class="keyboard-setting-description">{{ $t("keyboardSettings.candidatesDescription") }}</text>
+        </div>
+        <div class="keyboard-setting-value-wrap">
+          <text class="keyboard-setting-value">{{ candidatesLabel }}</text>
+          <image class="keyboard-setting-arrow" src="/common/arrow_right.png"></image>
+        </div>
+      </div>
+
+      <text class="keyboard-settings-bottom-spacer"></text>
+    </scroll>
+
+    <div if="{{pickerVisible}}" class="keyboard-picker-mask">
+      <div class="keyboard-picker">
+        <div class="keyboard-picker-heading">
+          <text class="keyboard-picker-title">{{ pickerTitle }}</text>
+          <div class="keyboard-picker-close" onclick="ClosePicker"><text class="keyboard-picker-close-text">×</text></div>
+        </div>
+        <div class="keyboard-picker-option" for="{{pickerOptions}}" onclick="SelectPickerOption($idx)">
+          <text class="keyboard-picker-option-text">{{ $item }}</text>
+          <text if="{{ $idx == pickerSelectedIndex }}" class="keyboard-picker-check">✓</text>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script>
 export default {
   private: {
-    scrclass: ""
+    scrclass: "",
+    keyboardtype: "QWERTY",
+    traditional: false,
+    vibratemode: "short",
+    maxlength: 5,
+    layoutLabel: "",
+    traditionalLabel: "",
+    vibrationLabel: "",
+    candidatesLabel: "",
+    pickerVisible: false,
+    pickerType: "",
+    pickerTitle: "",
+    pickerOptions: [],
+    pickerSelectedIndex: 0
+  },
+  NormalizePreferences(rawPreferences) {
+    const preferences = rawPreferences || {};
+    this.keyboardtype = preferences.keyboardtype === "T9" ? "T9" : "QWERTY";
+    this.traditional = preferences.traditional === true;
+    this.vibratemode = preferences.vibratemode === "long" ? "long" : (preferences.vibratemode === "short" ? "short" : "");
+    this.maxlength = Number(preferences.maxlength) === 3 ? 3 : 5;
+  },
+  RefreshLabels() {
+    this.layoutLabel = this.keyboardtype === "T9" ? this.$t("keyboardSettings.layoutT9") : this.$t("keyboardSettings.layoutQwerty");
+    this.traditionalLabel = this.traditional ? this.$t("keyboardSettings.traditionalOn") : this.$t("keyboardSettings.traditionalOff");
+    if (this.vibratemode === "long") {
+      this.vibrationLabel = this.$t("keyboardSettings.vibrationLong");
+    } else if (this.vibratemode === "short") {
+      this.vibrationLabel = this.$t("keyboardSettings.vibrationShort");
+    } else {
+      this.vibrationLabel = this.$t("keyboardSettings.vibrationOff");
+    }
+    this.candidatesLabel = this.maxlength === 3 ? this.$t("keyboardSettings.candidatesThree") : this.$t("keyboardSettings.candidatesFive");
+  },
+  OpenPicker(type) {
+    this.pickerType = type;
+    this.pickerVisible = true;
+    if (type === "layout") {
+      this.pickerTitle = this.$t("keyboardSettings.layout");
+      this.pickerOptions = [this.$t("keyboardSettings.layoutQwerty"), this.$t("keyboardSettings.layoutT9")];
+      this.pickerSelectedIndex = this.keyboardtype === "T9" ? 1 : 0;
+    } else if (type === "traditional") {
+      this.pickerTitle = this.$t("keyboardSettings.traditional");
+      this.pickerOptions = [this.$t("keyboardSettings.traditionalOff"), this.$t("keyboardSettings.traditionalOn")];
+      this.pickerSelectedIndex = this.traditional ? 1 : 0;
+    } else if (type === "vibration") {
+      this.pickerTitle = this.$t("keyboardSettings.vibration");
+      this.pickerOptions = [this.$t("keyboardSettings.vibrationOff"), this.$t("keyboardSettings.vibrationShort"), this.$t("keyboardSettings.vibrationLong")];
+      this.pickerSelectedIndex = this.vibratemode === "long" ? 2 : (this.vibratemode === "short" ? 1 : 0);
+    } else {
+      this.pickerTitle = this.$t("keyboardSettings.candidates");
+      this.pickerOptions = [this.$t("keyboardSettings.candidatesThree"), this.$t("keyboardSettings.candidatesFive")];
+      this.pickerSelectedIndex = this.maxlength === 3 ? 0 : 1;
+    }
+  },
+  ClosePicker() {
+    this.pickerVisible = false;
+    this.pickerType = "";
+  },
+  SelectPickerOption(index) {
+    if (this.pickerType === "layout") {
+      this.keyboardtype = index === 1 ? "T9" : "QWERTY";
+    } else if (this.pickerType === "traditional") {
+      this.traditional = index === 1;
+    } else if (this.pickerType === "vibration") {
+      this.vibratemode = index === 2 ? "long" : (index === 1 ? "short" : "");
+    } else if (this.pickerType === "candidates") {
+      this.maxlength = index === 0 ? 3 : 5;
+    }
+    this.SavePreferences();
+    this.RefreshLabels();
+    this.ClosePicker();
+  },
+  SavePreferences() {
+    const existing = global.settings.SETTINGS.inputMethodSettings || {};
+    global.settings.saveSettings({
+      inputMethodSettings: {
+        keyboardtype: this.keyboardtype,
+        lang: existing.lang || "cn",
+        vibratemode: this.vibratemode,
+        maxlength: this.maxlength,
+        traditional: this.traditional
+      }
+    });
+  },
+  onInit() {
+    this.NormalizePreferences(global.settings.SETTINGS.inputMethodSettings);
+    this.RefreshLabels();
   }
 }
 </script>
 
 <style lang="less">
 @import '@less/global.less';
+@import './keyboardsettings.less';
 </style>

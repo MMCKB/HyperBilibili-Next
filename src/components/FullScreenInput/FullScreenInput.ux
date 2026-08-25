@@ -3,7 +3,7 @@
 
 <template>
     <div class="inputpanel">
-        <input-method if="{{global_show && !emojimode}}" style="position: absolute" hide={{keyboardHide}} @complete="InputEvent" @delete="InputDelete" @cursor="InputCursor" screentype="{{screentype}}" vibratemode="short"></input-method>
+        <input-method if="{{global_show && !emojimode}}" style="position: absolute" hide={{keyboardHide}} @complete="InputEvent" @delete="InputDelete" @cursor="InputCursor" screentype="{{screentype}}" keyboardtype="{{keyboardtype}}" traditional="{{traditional}}" vibratemode="{{vibratemode}}" maxlength="{{maxlength}}"></input-method>
         <div class="inputactions">
             <div style="margin-left: 35px" @click="ExitInput">
                 <image class="inputaction_img" src="/common/textinput_back.png"></image>
@@ -42,6 +42,10 @@ export default {
         cursorIndex: 0,
         input_display: "│",
         screentype: "",
+        keyboardtype: "QWERTY",
+        traditional: false,
+        vibratemode: "short",
+        maxlength: 5,
         emojimode: false
     },
     NormalizeCursor(index){
@@ -167,6 +171,11 @@ export default {
     },
     async InitScreenType(){
         this.screentype = global.DEVICE_INFO.screenShape
+        const preferences = (global.settings && global.settings.SETTINGS && global.settings.SETTINGS.inputMethodSettings) || {}
+        this.keyboardtype = preferences.keyboardtype === "T9" ? "T9" : "QWERTY"
+        this.traditional = preferences.traditional === true
+        this.vibratemode = preferences.vibratemode === "long" ? "long" : (preferences.vibratemode === "short" ? "short" : "")
+        this.maxlength = Number(preferences.maxlength) === 3 ? 3 : 5
         // 用传入的初始文本初始化输入框
         this.input_text = this.initialText || ""
         this.cursorIndex = this.input_text.length

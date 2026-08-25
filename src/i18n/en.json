@@ -382,7 +382,25 @@
         "keyboardSettings": "Keyboard Settings"
     },
     "keyboardSettings": {
-        "title": "Keyboard Settings"
+        "title": "Keyboard Settings",
+        "tip": "Your choices apply the next time the input keyboard opens.",
+        "layout": "Default layout",
+        "layoutDescription": "Default keyboard for Chinese input on square screens",
+        "layoutQwerty": "Full keyboard",
+        "layoutT9": "T9 keypad",
+        "traditional": "Default candidate script",
+        "traditionalDescription": "Only affects Chinese candidates on square screens",
+        "traditionalOff": "Simplified",
+        "traditionalOn": "Traditional",
+        "vibration": "Key vibration",
+        "vibrationDescription": "Haptic feedback when tapping input keys",
+        "vibrationOff": "Off",
+        "vibrationShort": "Short vibration",
+        "vibrationLong": "Long vibration",
+        "candidates": "Candidate count",
+        "candidatesDescription": "Candidates shown per default row",
+        "candidatesThree": "3 candidates",
+        "candidatesFive": "5 candidates"
     },
     "playerAppearance": {
         "title": "Player Appearance",

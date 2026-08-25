@@ -383,7 +383,25 @@
         "keyboardSettings": "键盘设置"
     },
     "keyboardSettings": {
-        "title": "键盘设置"
+        "title": "键盘设置",
+        "tip": "选择后的偏好会在下次打开输入键盘时生效。",
+        "layout": "默认输入布局",
+        "layoutDescription": "方屏中文输入的默认键盘样式",
+        "layoutQwerty": "全键盘",
+        "layoutT9": "九键",
+        "traditional": "默认候选字形",
+        "traditionalDescription": "仅影响方屏中文候选词",
+        "traditionalOff": "简体",
+        "traditionalOn": "繁体",
+        "vibration": "按键振动长度",
+        "vibrationDescription": "点按输入键时的触觉反馈",
+        "vibrationOff": "关闭",
+        "vibrationShort": "短振动",
+        "vibrationLong": "长振动",
+        "candidates": "候选词数量",
+        "candidatesDescription": "默认候选栏每行显示的候选词数量",
+        "candidatesThree": "3 个",
+        "candidatesFive": "5 个"
     },
     "playerAppearance": {
         "title": "播放器外观",
