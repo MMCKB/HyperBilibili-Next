@@ -137,70 +137,70 @@
         </div>
       </div>
       <!-- 方屏67 -->
-      <div if="{{screentype==='rect'}}" style="width: 100%;height: 286px;flex-direction: column">
+      <div if="{{screentype==='rect'}}" style="width: 100%;height: 286px;flex-direction: column;background-color:{{rectThemeBackground}}">
         <!-- 九键中文 -->
         <div if="{{rectKeyboardtype=='T9' && !numFlag}}" style="position:absolute;top:-11px;width:100%;height:310px;justify-content: center;">
           <div style="top:110px;height:189px;width:100%;align-items: stretch;justify-content: space-between;flex-direction: column;padding:6px 3px">
             <div class="keyboard-rows-rect-t9">
               <!-- 手机式九键左上角空格键；中文候选仍通过顶部候选栏直接点按确认。 -->
-              <text class="calbtnt9 calbtnt9-rect" @click="onBtnClick('space')">空格</text>
-              <text class="calbtnt9 calbtnt9-rect" for="{{item in keys['t9'][0]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
+              <text class="calbtnt9 calbtnt9-rect" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('space')">空格</text>
+              <text class="calbtnt9 calbtnt9-rect" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" for="{{item in keys['t9'][0]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
             </div>
             <div class="keyboard-rows-rect-t9">
-              <text class="calbtnt9 calbtnt9-rect" for="{{item in keys['t9'][1]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
+              <text class="calbtnt9 calbtnt9-rect" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" for="{{item in keys['t9'][1]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
             </div>
             <div class="keyboard-rows-rect-t9">
-              <text class="calbtnt9 calbtnt9-rect" for="{{item in keys['t9'][2]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
+              <text class="calbtnt9 calbtnt9-rect" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" for="{{item in keys['t9'][2]}}" @click="onSelect(item)">{{item.toUpperCase()}}</text>
             </div>
           </div>
         </div>
         <div else style="position:absolute;top:-11px;width:100%;height:310px;justify-content: center">
-          <progress percent="{{percent67}}" style="position:absolute;bottom: 18px;width:80px;color:#ffffff;stroke-width:6px;layer-color:#262626;"></progress>
+          <progress percent="{{percent67}}" style="position:absolute;bottom: 18px;width:80px;color:{{rectThemeText}};stroke-width:6px;layer-color:{{rectThemeProgress}};"></progress>
           <scroll id="keyboard67" scroll-x="{{true}}" onscroll="handelScroll">
             <div if="{{!numFlag}}" style="left: 6px; flex-direction: column;">
               <div static style="margin-left: 0px;margin-top: 0px;height: 60px;">
-                <text class="calbtn67" for="{{item in keys['full'][0]}}" @click="onSelect(item)">{{item}}</text>
+                <text class="calbtn67" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" for="{{item in keys['full'][0]}}" @click="onSelect(item)">{{item}}</text>
               </div>
               <div static style="margin-left: 32px;margin-top: -5px;height: 60px;">
-                <text class="calbtn67" for="{{item in keys['full'][1]}}" @click="onSelect(item)">{{item}}</text>
+                <text class="calbtn67" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" for="{{item in keys['full'][1]}}" @click="onSelect(item)">{{item}}</text>
               </div>
               <div static style="margin-left: 64px;margin-top: -5px;height: 60px;">
-                <text class="calbtn67" for="{{item in keys['full'][2]}}" @click="onSelect(item)">{{item}}</text>
+                <text class="calbtn67" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" for="{{item in keys['full'][2]}}" @click="onSelect(item)">{{item}}</text>
                 <img static src="./assets/horizontal/space.png" style="width: 60px;height: 60px;" @click="onBtnClick('space')" />
               </div>
             </div>
             <div else style="left: 6px; flex-direction: column;">
               <div static style="margin-left: 0px;margin-top: 0px;height: 60px;">
-                <text class="calbtn67" for="{{item in keys['sign'][0]}}" @click="onSelect(item)">{{item}}</text>
+                <text class="calbtn67" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" for="{{item in keys['sign'][0]}}" @click="onSelect(item)">{{item}}</text>
               </div>
               <div static style="margin-left: 32px;margin-top: -5px;height: 60px;">
-                <text class="calbtn67" for="{{item in keys['sign'][1]}}" @click="onSelect(item)">{{item}}</text>
+                <text class="calbtn67" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" for="{{item in keys['sign'][1]}}" @click="onSelect(item)">{{item}}</text>
               </div>
               <div static style="margin-left: 64px;margin-top: -5px;height: 60px;">
-                <text class="calbtn67" for="{{item in keys['sign'][2]}}" @click="onSelect(item)">{{item}}</text>
+                <text class="calbtn67" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" for="{{item in keys['sign'][2]}}" @click="onSelect(item)">{{item}}</text>
               </div>
             </div>
           </scroll>
         </div>
         <!-- 方屏候选栏下方的紧凑五键栏；候选栏保持原位，仅为本栏预留键盘空间。 -->
         <div class="rect-five-key-bar" style="width:{{screenWidth - 12}}px;" if="{{downFlag==='' && rectPanel==='' }}">
-          <text class="rect-five-key-enter" @click="onBtnClick('cursorEnter')">回车</text>
+          <text class="rect-five-key-enter" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('cursorEnter')">回车</text>
           <div class="rect-five-key-directions">
-            <text class="rect-five-key-direction" @click="onBtnClick('cursorUp')">↑</text>
-            <text class="rect-five-key-direction" @click="onBtnClick('cursorDown')">↓</text>
-            <text class="rect-five-key-direction" @click="onBtnClick('cursorLeft')">←</text>
-            <text class="rect-five-key-direction" @click="onBtnClick('cursorRight')">→</text>
+            <text class="rect-five-key-direction" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('cursorUp')">↑</text>
+            <text class="rect-five-key-direction" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('cursorDown')">↓</text>
+            <text class="rect-five-key-direction" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('cursorLeft')">←</text>
+            <text class="rect-five-key-direction" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('cursorRight')">→</text>
           </div>
         </div>
         <div style="width: 100%; flex-direction: row; justify-content: center; top:0px; padding:0 6px;">
-          <text class="rect-switch-trigger" @click="openRectPanel('switch')" if="{{downFlag==='' && !numFlag}}">切换</text>
+          <text class="rect-switch-trigger" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="openRectPanel('switch')" if="{{downFlag==='' && !numFlag}}">切换</text>
           <!-- 简繁快捷切换：仅中文全键和中文九键显示，文字同时标识当前候选字形。 -->
-          <text class="rect-traditional-trigger" if="{{lang==='cn' && !numFlag}}" style="background-color:{{rectTraditionalInput ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="toggleRectTraditionalInput">{{rectTraditionalInput ? '繁' : '简'}}</text>
-          <div if="{{lang === 'cn' && !numFlag}}" style="margin-left: 6px;flex: 1;height: 56px;background-color:#262626;border-color: #333333; border-width: 3px; border-radius: 100px;flex-direction: row;align-items:center">
+          <text class="rect-traditional-trigger" if="{{lang==='cn' && !numFlag}}" style="background-color:{{rectTraditionalInput ? rectThemeAccent : rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="toggleRectTraditionalInput">{{rectTraditionalInput ? '繁' : '简'}}</text>
+          <div if="{{lang === 'cn' && !numFlag}}" style="margin-left: 6px;flex: 1;height: 56px;background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}}; border-width: 3px; border-radius: 100px;flex-direction: row;align-items:center">
             <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;width: 85%;height: 42px;">
               <div static style="position: absolute;left: 0px;height: 42px;padding-left:20px;padding-right:20px">
-                <text class="calbtn02" style="padding-right:10px" @click="pushCval">{{rectKeyboardtype==='T9' ? t9Digits : cval}}</text>
-                <text for="{{cvalList}}" show="{{resultList.length > $idx}}" class="calbtn02" style="padding-right:10px" @click="onRsSelect(resultList[$idx], $idx)">{{resultList[$idx]}}</text>
+                <text class="calbtn02" style="padding-right:10px;color:{{rectThemeText}}" @click="pushCval">{{rectKeyboardtype==='T9' ? t9Digits : cval}}</text>
+                <text for="{{cvalList}}" show="{{resultList.length > $idx}}" class="calbtn02" style="padding-right:10px;color:{{rectThemeText}}" @click="onRsSelect(resultList[$idx], $idx)">{{resultList[$idx]}}</text>
               </div>
             </scroll>
             <img if="{{resultList.length > 0}}" style="position:absolute;right: 8px; width: 60px;height: 40px;" src="./assets/horizontal/down2.png" @click="onBtnClick('down')" />
@@ -210,24 +210,24 @@
           <img src="./assets/horizontal/a.png" style="padding: 6px;margin-left: 6px;width:94px;height:56px;" @click="onBtnClick('switchUpper')" if="{{downFlag==='' && !upperFlag && lang==='en'&& !numFlag}}" />
           <img src="./assets/horizontal/123.png" style="margin-left: 6px;padding: 6px;margin-left: 6px;width: 94px;height: 56px;" @click="onBtnClick('switchNum')" if="{{downFlag==='' && !numFlag && lang==='en'}}" />
           <!-- 从方屏切换页进入数字键盘时，原返回键位置改为切换键；英文数字入口仍保留原返回键。 -->
-          <text class="rect-switch-trigger" @click="openRectPanel('switch')" if="{{numFlag && rectNumFromSwitch}}">切换</text>
+          <text class="rect-switch-trigger" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="openRectPanel('switch')" if="{{numFlag && rectNumFromSwitch}}">切换</text>
           <img src="./assets/horizontal/back2.png" style="margin-left: 6px;padding: 6px;width: 159px;height: 56px;" @click="onBtnClick('switchCn')" if="{{numFlag && !rectNumFromSwitch}}" />
           <img if="{{!numFlag}}" src="./assets/horizontal/del.png" style="margin-left: 6px;padding: 6px;width: 60px;height: 56px;" @click="onBtnClick('D')" />
           <img else src="./assets/horizontal/del2.png" style="margin-left: 6px;padding: 6px;width:60px;height:56px;" @click="onBtnClick('D')" />
         </div>
         <!-- 方屏中文九键展开：左侧选择拼音，右侧仅显示所选拼音对应的候选。 -->
-        <div class="rect-t9-expand-overlay" if="{{downFlag==='down' && screentype==='rect' && lang==='cn' && !numFlag && rectKeyboardtype==='T9'}}">
+        <div class="rect-t9-expand-overlay" style="background-color:{{rectThemeBackground}}" if="{{downFlag==='down' && screentype==='rect' && lang==='cn' && !numFlag && rectKeyboardtype==='T9'}}">
           <div static class="rect-t9-expand-content">
-            <scroll class="rect-t9-pinyin-pane" scroll-y="{{true}}">
+            <scroll class="rect-t9-pinyin-pane" style="background-color:{{rectThemeMutedSurface}};border-color:{{rectThemeBorder}}" scroll-y="{{true}}">
               <div style="width:100%;flex-direction:column;">
-                <text for="{{t9PinyinGroups}}" class="rect-t9-pinyin-item" style="background-color:{{$idx===t9SelectedPinyinIndex ? 'rgb(13,132,255)' : 'transparent'}}" @click="selectT9Pinyin($idx)">{{t9PinyinGroups[$idx].pinyin}}</text>
+                <text for="{{t9PinyinGroups}}" class="rect-t9-pinyin-item" style="background-color:{{$idx===t9SelectedPinyinIndex ? rectThemeAccent : 'transparent'}};color:{{rectThemeText}}" @click="selectT9Pinyin($idx)">{{t9PinyinGroups[$idx].pinyin}}</text>
               </div>
             </scroll>
-            <div class="rect-t9-hanzi-pane">
+            <div class="rect-t9-hanzi-pane" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}}">
               <list static style="width:100%;height:100%;">
                 <list-item type="t9PinyinRows67" class="item67" for="{{itemArray in t9SelectedRows}}">
                   <div class="item column center" for="{{item in itemArray}}">
-                    <input class="calbtn02" type="button" value="{{item.text}}" @click="onT9PinyinHanziSelect(item)" />
+                    <input class="calbtn02" style="color:{{rectThemeText}}" type="button" value="{{item.text}}" @click="onT9PinyinHanziSelect(item)" />
                   </div>
                 </list-item>
               </list>
@@ -236,12 +236,12 @@
           <img static style="margin-top:5px" src="./assets/horizontal/up2.png" @click="onBtnClick('down')" />
         </div>
         <!-- 其他布局继续使用原候选展开列表。 -->
-        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: {{screentype==='rect' ? 286 : 252}}px;background-color: black; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down' && (screentype!=='rect' || lang!=='cn' || numFlag || rectKeyboardtype!=='T9')}}">
-          <div static class="list67">
+        <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: {{screentype==='rect' ? 286 : 252}}px;background-color:{{screentype==='rect' ? rectThemeBackground : 'black'}}; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down' && (screentype!=='rect' || lang!=='cn' || numFlag || rectKeyboardtype!=='T9')}}">
+          <div static class="list67" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}}">
             <list static style="width:100%;height:100%;">
               <list-item type="waitingRows67" class="item67" for="{{itemArray in resultList2}}">
                 <div class="item column center" for="{{item in itemArray}}">
-                  <input class="calbtn02" type="button" value="{{item}}" @click="onRsSelect(item)" />
+                  <input class="calbtn02" style="color:{{rectThemeText}}" type="button" value="{{item}}" @click="onRsSelect(item)" />
                 </div>
               </list-item>
             </list>
@@ -249,13 +249,13 @@
           <img static style="margin-top:5px" src="./assets/horizontal/up2.png" @click="onBtnClick('down')" />
         </div>
         <!-- 方屏键盘切换面板：仅中部的 scroll 响应横向滚动，左右各留 12px 边缘让出系统右滑返回手势。 -->
-        <div class="rect-overlay" if="{{rectPanel==='switch'}}">
+        <div class="rect-overlay" style="background-color:{{rectThemeBackground}}" if="{{rectPanel==='switch'}}">
           <scroll id="rectModeScroll" class="rect-mode-scroll" scroll-x="{{true}}" style="width:{{screenWidth - 24}}px;">
             <div class="rect-mode-menu">
-              <text class="rect-mode-button" style="background-color:{{lang==='cn' && rectKeyboardtype!=='T9' && !numFlag ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('cn')">中</text>
-              <text class="rect-mode-button" style="background-color:{{lang==='en' && rectKeyboardtype!=='T9' && !numFlag ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('en')">英</text>
-              <text class="rect-mode-button" style="background-color:{{rectKeyboardtype==='T9' && !numFlag ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('t9')">九</text>
-              <text class="rect-mode-button" style="background-color:{{numFlag ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="selectRectKeyboard('num')">数</text>
+              <text class="rect-mode-button" style="background-color:{{lang==='cn' && rectKeyboardtype!=='T9' && !numFlag ? rectThemeAccent : rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="selectRectKeyboard('cn')">中</text>
+              <text class="rect-mode-button" style="background-color:{{lang==='en' && rectKeyboardtype!=='T9' && !numFlag ? rectThemeAccent : rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="selectRectKeyboard('en')">英</text>
+              <text class="rect-mode-button" style="background-color:{{rectKeyboardtype==='T9' && !numFlag ? rectThemeAccent : rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="selectRectKeyboard('t9')">九</text>
+              <text class="rect-mode-button" style="background-color:{{numFlag ? rectThemeAccent : rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="selectRectKeyboard('num')">数</text>
             </div>
           </scroll>
         </div>
@@ -379,6 +379,49 @@ function normalizeCandidateCount(value, fallback) {
   const count = parseInt(value);
   return count > 0 ? count : fallback;
 }
+function normalizeKeyboardTheme(value) {
+  if (value === "white" || value === "blue-gray") {
+    return value;
+  }
+  return "dark";
+}
+function getRectTheme(value) {
+  const theme = normalizeKeyboardTheme(value);
+  if (theme === "white") {
+    return {
+      name: theme,
+      background: "#ffffff",
+      surface: "#f1f1f1",
+      mutedSurface: "#f7f7f7",
+      border: "#c9c9c9",
+      text: "#1a1a1a",
+      progress: "#d7d7d7",
+      accent: "rgb(13,132,255)",
+    };
+  }
+  if (theme === "blue-gray") {
+    return {
+      name: theme,
+      background: "#0d1b2a",
+      surface: "#1c3248",
+      mutedSurface: "#162a3d",
+      border: "#415d75",
+      text: "#f5f8fc",
+      progress: "#243b53",
+      accent: "#2a9dff",
+    };
+  }
+  return {
+    name: theme,
+    background: "#000000",
+    surface: "rgb(38,38,38)",
+    mutedSurface: "#1f1f1f",
+    border: "#333333",
+    text: "rgb(255,255,255)",
+    progress: "#262626",
+    accent: "rgb(13,132,255)",
+  };
+}
 export default {
   props: {
     hide: {
@@ -398,6 +441,10 @@ export default {
     },
     traditional: {
       default: false,
+    },
+    // 方屏主题由快应用设置页传入；支持 dark、white、blue-gray。
+    keyboardtheme: {
+      default: "dark",
     },
   },
   data: {
@@ -432,6 +479,15 @@ export default {
     rectCandidateCount: 5,
     // 方屏繁体输入默认关闭；宿主可通过 traditional 属性恢复已保存偏好。
     rectTraditionalInput: false,
+    // 方屏主题只读取快应用属性，不在组件内保存或回写。
+    rectKeyboardTheme: "dark",
+    rectThemeBackground: "#000000",
+    rectThemeSurface: "rgb(38,38,38)",
+    rectThemeMutedSurface: "#1f1f1f",
+    rectThemeBorder: "#333333",
+    rectThemeText: "rgb(255,255,255)",
+    rectThemeProgress: "#262626",
+    rectThemeAccent: "rgb(13,132,255)",
     // 针对screenShape为rect的设备，会自动获取screenWidth并绑定到根div
     // 这样便能同时适配n67和o65甚至是后续设备，但实际效果可能受designWidth影响
     screenWidth: 336,
@@ -478,11 +534,13 @@ export default {
     this.rectVibrateMode = normalizeVibrateMode(this.vibratemode);
     this.rectCandidateCount = initialCandidateCount;
     this.rectTraditionalInput = normalizeTraditional(this.traditional);
+    this.applyRectTheme(this.keyboardtheme);
     this.$watch("hide", "watchHidePropsChange");
     this.$watch("maxlength", "watchMaxLengthPropsChange");
     this.$watch("keyboardtype", "watchKeyboardtypePropsChange");
     this.$watch("vibratemode", "watchVibratemodePropsChange");
     this.$watch("traditional", "watchTraditionalPropsChange");
+    this.$watch("keyboardtheme", "watchKeyboardthemePropsChange");
   },
   addAllTxt(txt) {
     this.$emit("complete", { content: txt });
@@ -896,6 +954,20 @@ export default {
       this.rectTraditionalInput = normalizeTraditional(newV);
       this.resetReslutList();
     }
+  },
+  applyRectTheme(theme) {
+    const nextTheme = getRectTheme(theme);
+    this.rectKeyboardTheme = nextTheme.name;
+    this.rectThemeBackground = nextTheme.background;
+    this.rectThemeSurface = nextTheme.surface;
+    this.rectThemeMutedSurface = nextTheme.mutedSurface;
+    this.rectThemeBorder = nextTheme.border;
+    this.rectThemeText = nextTheme.text;
+    this.rectThemeProgress = nextTheme.progress;
+    this.rectThemeAccent = nextTheme.accent;
+  },
+  watchKeyboardthemePropsChange(newV, oldV) {
+    this.applyRectTheme(newV);
   },
   onVibrate() {
     const currentMode = this.screentype === "rect" ? this.rectVibrateMode : this.vibratemode;
