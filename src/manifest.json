@@ -199,12 +199,6 @@
             "pages/app/features/toolbox/notes/settings": {
                 "component": "settings"
             },
-            "pages/app/features/toolbox/gallery": {
-                "component": "gallery"
-            },
-            "pages/app/features/toolbox/gallery/viewer": {
-                "component": "viewer"
-            },
             "pages/app/features/toolbox/weather": {
                 "component": "weather"
             },
