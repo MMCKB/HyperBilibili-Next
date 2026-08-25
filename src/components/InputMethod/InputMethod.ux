@@ -196,7 +196,7 @@
           <text class="rect-switch-trigger" @click="openRectPanel('switch')" if="{{downFlag==='' && !numFlag}}">切换</text>
           <!-- 简繁快捷切换：仅中文全键和中文九键显示，文字同时标识当前候选字形。 -->
           <text class="rect-traditional-trigger" if="{{lang==='cn' && !numFlag}}" style="background-color:{{rectTraditionalInput ? 'rgb(13,132,255)' : 'rgb(38,38,38)'}}" @click="toggleRectTraditionalInput">{{rectTraditionalInput ? '繁' : '简'}}</text>
-          <div if="{{lang === 'cn' && !numFlag}}" style="margin-left: 6px;flex: 1;height: 60px;background-color:#262626;border-color: #333333; border-width: 3px; border-radius: 100px;flex-direction: row;align-items:center">
+          <div if="{{lang === 'cn' && !numFlag}}" style="margin-left: 6px;flex: 1;height: 56px;background-color:#262626;border-color: #333333; border-width: 3px; border-radius: 100px;flex-direction: row;align-items:center">
             <scroll id="cvalWaiting" scroll-x="{{true}}" style="position:absolute;width: 85%;height: 42px;">
               <div static style="position: absolute;left: 0px;height: 42px;padding-left:20px;padding-right:20px">
                 <text class="calbtn02" style="padding-right:10px" @click="pushCval">{{rectKeyboardtype==='T9' ? t9Digits : cval}}</text>
@@ -206,14 +206,14 @@
             <img if="{{resultList.length > 0}}" style="position:absolute;right: 8px; width: 60px;height: 40px;" src="./assets/horizontal/down2.png" @click="onBtnClick('down')" />
           </div>
         
-          <img src="./assets/horizontal/bigA.png" style="padding: 6px;margin-left: 6px;width:94px;height:60px;" @click="onBtnClick('switchLow')" if="{{downFlag==='' && upperFlag && lang==='en'&& !numFlag}}" />
-          <img src="./assets/horizontal/a.png" style="padding: 6px;margin-left: 6px;width:94px;height:60px;" @click="onBtnClick('switchUpper')" if="{{downFlag==='' && !upperFlag && lang==='en'&& !numFlag}}" />
-          <img src="./assets/horizontal/123.png" style="margin-left: 6px;padding: 6px;margin-left: 6px;width: 94px;height: 60px;" @click="onBtnClick('switchNum')" if="{{downFlag==='' && !numFlag && lang==='en'}}" />
+          <img src="./assets/horizontal/bigA.png" style="padding: 6px;margin-left: 6px;width:94px;height:56px;" @click="onBtnClick('switchLow')" if="{{downFlag==='' && upperFlag && lang==='en'&& !numFlag}}" />
+          <img src="./assets/horizontal/a.png" style="padding: 6px;margin-left: 6px;width:94px;height:56px;" @click="onBtnClick('switchUpper')" if="{{downFlag==='' && !upperFlag && lang==='en'&& !numFlag}}" />
+          <img src="./assets/horizontal/123.png" style="margin-left: 6px;padding: 6px;margin-left: 6px;width: 94px;height: 56px;" @click="onBtnClick('switchNum')" if="{{downFlag==='' && !numFlag && lang==='en'}}" />
           <!-- 从方屏切换页进入数字键盘时，原返回键位置改为切换键；英文数字入口仍保留原返回键。 -->
           <text class="rect-switch-trigger" @click="openRectPanel('switch')" if="{{numFlag && rectNumFromSwitch}}">切换</text>
-          <img src="./assets/horizontal/back2.png" style="margin-left: 6px;padding: 6px;width: 159px;height: 60px;" @click="onBtnClick('switchCn')" if="{{numFlag && !rectNumFromSwitch}}" />
-          <img if="{{!numFlag}}" src="./assets/horizontal/del.png" style="margin-left: 6px;padding: 6px;width: 60px;height: 60px;" @click="onBtnClick('D')" />
-          <img else src="./assets/horizontal/del2.png" style="margin-left: 6px;padding: 6px;" @click="onBtnClick('D')" />
+          <img src="./assets/horizontal/back2.png" style="margin-left: 6px;padding: 6px;width: 159px;height: 56px;" @click="onBtnClick('switchCn')" if="{{numFlag && !rectNumFromSwitch}}" />
+          <img if="{{!numFlag}}" src="./assets/horizontal/del.png" style="margin-left: 6px;padding: 6px;width: 60px;height: 56px;" @click="onBtnClick('D')" />
+          <img else src="./assets/horizontal/del2.png" style="margin-left: 6px;padding: 6px;width:60px;height:56px;" @click="onBtnClick('D')" />
         </div>
         <!-- 方屏中文九键展开：左侧选择拼音，右侧仅显示所选拼音对应的候选。 -->
         <div class="rect-t9-expand-overlay" if="{{downFlag==='down' && screentype==='rect' && lang==='cn' && !numFlag && rectKeyboardtype==='T9'}}">
@@ -1016,8 +1016,8 @@ export default {
   font-weight:bold;
   background-color:rgb(38,38,38);
   width:60px;
-  height:60px;
-  border-radius:30px;
+  height:56px;
+  border-radius:28px;
   text-align:center;
   border:3px solid rgba(255,255,255,0.12);
 }
@@ -1026,9 +1026,9 @@ export default {
     font-size:22px;
     font-weight:bold;
     width:54px;
-    height:60px;
+    height:56px;
     margin-left:6px;
-    border-radius:30px;
+    border-radius:28px;
     text-align:center;
     border:3px solid rgba(255,255,255,0.12);
   }
