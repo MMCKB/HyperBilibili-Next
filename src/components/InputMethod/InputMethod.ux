@@ -166,7 +166,7 @@
               </div>
               <div static style="margin-left: 64px;margin-top: -5px;height: 60px;">
                 <text class="calbtn67" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" for="{{item in keys['full'][2]}}" @click="onSelect(item)">{{item}}</text>
-                <img static src="./assets/horizontal/space.png" style="width: 60px;height: 60px;" @click="onBtnClick('space')" />
+                <text class="rect-theme-space-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('space')">空格</text>
               </div>
             </div>
             <div else style="left: 6px; flex-direction: column;">
@@ -203,17 +203,17 @@
                 <text for="{{cvalList}}" show="{{resultList.length > $idx}}" class="calbtn02" style="padding-right:10px;color:{{rectThemeText}}" @click="onRsSelect(resultList[$idx], $idx)">{{resultList[$idx]}}</text>
               </div>
             </scroll>
-            <img if="{{resultList.length > 0}}" style="position:absolute;right: 8px; width: 60px;height: 40px;" src="./assets/horizontal/down2.png" @click="onBtnClick('down')" />
+            <text if="{{resultList.length > 0}}" class="rect-theme-candidate-toggle" style="position:absolute;right: 8px;background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('down')">⌄</text>
           </div>
         
-          <img src="./assets/horizontal/bigA.png" style="padding: 6px;margin-left: 6px;width:94px;height:56px;" @click="onBtnClick('switchLow')" if="{{downFlag==='' && upperFlag && lang==='en'&& !numFlag}}" />
-          <img src="./assets/horizontal/a.png" style="padding: 6px;margin-left: 6px;width:94px;height:56px;" @click="onBtnClick('switchUpper')" if="{{downFlag==='' && !upperFlag && lang==='en'&& !numFlag}}" />
-          <img src="./assets/horizontal/123.png" style="margin-left: 6px;padding: 6px;margin-left: 6px;width: 94px;height: 56px;" @click="onBtnClick('switchNum')" if="{{downFlag==='' && !numFlag && lang==='en'}}" />
+          <text class="rect-theme-control-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('switchLow')" if="{{downFlag==='' && upperFlag && lang==='en'&& !numFlag}}">A</text>
+          <text class="rect-theme-control-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('switchUpper')" if="{{downFlag==='' && !upperFlag && lang==='en'&& !numFlag}}">a</text>
+          <text class="rect-theme-control-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('switchNum')" if="{{downFlag==='' && !numFlag && lang==='en'}}">123</text>
           <!-- 从方屏切换页进入数字键盘时，原返回键位置改为切换键；英文数字入口仍保留原返回键。 -->
           <text class="rect-switch-trigger" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="openRectPanel('switch')" if="{{numFlag && rectNumFromSwitch}}">切换</text>
-          <img src="./assets/horizontal/back2.png" style="margin-left: 6px;padding: 6px;width: 159px;height: 56px;" @click="onBtnClick('switchCn')" if="{{numFlag && !rectNumFromSwitch}}" />
-          <img if="{{!numFlag}}" src="./assets/horizontal/del.png" style="margin-left: 6px;padding: 6px;width: 60px;height: 56px;" @click="onBtnClick('D')" />
-          <img else src="./assets/horizontal/del2.png" style="margin-left: 6px;padding: 6px;width:60px;height:56px;" @click="onBtnClick('D')" />
+          <text class="rect-theme-back-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('switchCn')" if="{{numFlag && !rectNumFromSwitch}}">返回</text>
+          <text if="{{!numFlag}}" class="rect-theme-delete-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('D')">⌫</text>
+          <text else class="rect-theme-delete-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('D')">⌫</text>
         </div>
         <!-- 方屏中文九键展开：左侧选择拼音，右侧仅显示所选拼音对应的候选。 -->
         <div class="rect-t9-expand-overlay" style="background-color:{{rectThemeBackground}}" if="{{downFlag==='down' && screentype==='rect' && lang==='cn' && !numFlag && rectKeyboardtype==='T9'}}">
@@ -233,11 +233,11 @@
               </list>
             </div>
           </div>
-          <img static style="margin-top:5px" src="./assets/horizontal/up2.png" @click="onBtnClick('down')" />
+          <text class="rect-theme-expand-toggle" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('down')">⌃</text>
         </div>
         <!-- 其他布局继续使用原候选展开列表。 -->
         <div style="position: absolute;left: 0px;top: 0px;width: 100%;height: {{screentype==='rect' ? 286 : 252}}px;background-color:{{screentype==='rect' ? rectThemeBackground : 'black'}}; justify-content:center; flex-direction:column; align-items:center" if="{{downFlag==='down' && (screentype!=='rect' || lang!=='cn' || numFlag || rectKeyboardtype!=='T9')}}">
-          <div static class="list67" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}}">
+          <div class="list67" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}}">
             <list static style="width:100%;height:100%;">
               <list-item type="waitingRows67" class="item67" for="{{itemArray in resultList2}}">
                 <div class="item column center" for="{{item in itemArray}}">
@@ -246,7 +246,7 @@
               </list-item>
             </list>
           </div>
-          <img static style="margin-top:5px" src="./assets/horizontal/up2.png" @click="onBtnClick('down')" />
+          <text class="rect-theme-expand-toggle" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('down')">⌃</text>
         </div>
         <!-- 方屏键盘切换面板：仅中部的 scroll 响应横向滚动，左右各留 12px 边缘让出系统右滑返回手势。 -->
         <div class="rect-overlay" style="background-color:{{rectThemeBackground}}" if="{{rectPanel==='switch'}}">
@@ -1178,6 +1178,76 @@ export default {
   border-radius:18px;
   text-align:center;
   border:3px solid rgba(255,255,255,0.06);
+}
+.rect-theme-space-key {
+	color:rgb(255,255,255);
+	font-size:18px;
+	font-weight:bold;
+	width:60px;
+	height:60px;
+	border-radius:30px;
+	text-align:center;
+	line-height:60px;
+	border:3px solid rgba(255,255,255,0.06);
+}
+.rect-theme-control-key {
+	color:rgb(255,255,255);
+	font-size:26px;
+	font-weight:bold;
+	width:94px;
+	height:56px;
+	margin-left:6px;
+	border-radius:28px;
+	text-align:center;
+	line-height:56px;
+	border:3px solid rgba(255,255,255,0.06);
+}
+.rect-theme-back-key {
+	color:rgb(255,255,255);
+	font-size:22px;
+	font-weight:bold;
+	width:159px;
+	height:56px;
+	margin-left:6px;
+	border-radius:28px;
+	text-align:center;
+	line-height:56px;
+	border:3px solid rgba(255,255,255,0.06);
+}
+.rect-theme-delete-key {
+	color:rgb(255,255,255);
+	font-size:29px;
+	font-weight:bold;
+	width:60px;
+	height:56px;
+	margin-left:6px;
+	border-radius:28px;
+	text-align:center;
+	line-height:56px;
+	border:3px solid rgba(255,255,255,0.06);
+}
+.rect-theme-candidate-toggle {
+	color:rgb(255,255,255);
+	font-size:30px;
+	font-weight:bold;
+	width:60px;
+	height:40px;
+	border-radius:20px;
+	text-align:center;
+	line-height:40px;
+	border:3px solid rgba(255,255,255,0.06);
+}
+.rect-theme-expand-toggle {
+	color:rgb(255,255,255);
+	font-size:30px;
+	font-weight:bold;
+	width:60px;
+	height:40px;
+	margin-top:5px;
+	border-radius:20px;
+	text-align:center;
+	line-height:40px;
+	border:3px solid rgba(255,255,255,0.06);
 }
 .calbtn67 {
 	color:rgb(255,255,255);
