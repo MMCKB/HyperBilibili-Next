@@ -1,0 +1,86 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll {{scrclass}}" scroll-y="false" bounces="false">
+      <title-bar title="notes.passwordSettings"></title-bar>
+      <div class="notes-settings-content">
+        <div class="notes-settings-card">
+          <text class="notes-settings-card-title">{{ $t("notes.changePassword") }}</text>
+          <text class="notes-settings-card-description">{{ $t("notes.changePasswordDescription") }}</text>
+          <div class="notes-settings-action" onclick="StartPasswordChange"><text class="notes-settings-action-text">{{ $t("notes.changePassword") }}</text></div>
+        </div>
+        <text class="notes-settings-status" if="{{statusText}}">{{ statusText }}</text>
+      </div>
+    </scroll>
+    <full-screen-input if="{{showInput}}" style="position: absolute" initial-text="{{inputSeed}}" @send="FinishInput" @exit="CloseInput"></full-screen-input>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import prompt from "@system.prompt"
+import { changeNotesPassword, isNotesSessionUnlocked, isValidNotesPin, verifyNotesPassword } from "@src/notes.ts"
+
+export default {
+  private: {
+    scrclass: "",
+    showInput: false,
+    inputSeed: "",
+    step: "",
+    oldPin: "",
+    statusText: ""
+  },
+  StartPasswordChange() {
+    this.statusText = ""
+    this.step = "old"
+    this.inputSeed = ""
+    this.showInput = true
+  },
+  CloseInput() {
+    this.showInput = false
+    this.step = ""
+    this.oldPin = ""
+  },
+  async FinishInput(evt) {
+    this.showInput = false
+    const pin = String(evt && evt.detail ? evt.detail.content : "").trim()
+    if (!isValidNotesPin(pin)) {
+      this.statusText = this.$t("notes.passwordRule")
+      prompt.showToast({ message: this.statusText, duration: 2000 })
+      return
+    }
+    if (this.step === "old") {
+      const passed = await verifyNotesPassword(pin)
+      if (!passed) {
+        this.statusText = this.$t("notes.oldPasswordWrong")
+        prompt.showToast({ message: this.statusText, duration: 2000 })
+        this.step = ""
+        return
+      }
+      this.oldPin = pin
+      this.step = "new"
+      this.inputSeed = ""
+      this.showInput = true
+      return
+    }
+    if (this.step === "new") {
+      const changed = await changeNotesPassword(this.oldPin, pin)
+      this.oldPin = ""
+      this.step = ""
+      this.statusText = changed ? this.$t("notes.passwordChanged") : this.$t("notes.oldPasswordWrong")
+      prompt.showToast({ message: this.statusText, duration: 2000 })
+    }
+  },
+  onInit() {
+    global.ui.InitPage(this)
+    if (!isNotesSessionUnlocked()) router.replace({ uri: "pages/app/features/toolbox/notes" })
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./settings.less";
+</style>

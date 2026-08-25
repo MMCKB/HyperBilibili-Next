@@ -37,6 +37,14 @@
           </div>
           <text class="toolbox-card-arrow">›</text>
         </div>
+        <div class="toolbox-card toolbox-card-next" onclick="OpenNotes">
+          <div class="toolbox-card-icon toolbox-notes-icon"><text class="toolbox-card-notes-icon-text">▤</text></div>
+          <div class="toolbox-card-copy">
+            <text class="toolbox-card-title">{{ $t("toolbox.notes") }}</text>
+            <text class="toolbox-card-subtitle">{{ $t("toolbox.notesDescription") }}</text>
+          </div>
+          <text class="toolbox-card-arrow">›</text>
+        </div>
       </div>
       <text style="height: 30px"></text>
     </scroll>
@@ -45,6 +53,7 @@
 
 <script>
 import router from "@system.router"
+import { lockNotesSession } from "@src/notes.ts"
 
 export default {
   private: {
@@ -68,6 +77,12 @@ export default {
   OpenAIChat() {
     router.push({
       uri: "pages/app/features/toolbox/ai"
+    })
+  },
+  OpenNotes() {
+    lockNotesSession()
+    router.push({
+      uri: "pages/app/features/toolbox/notes"
     })
   }
 }

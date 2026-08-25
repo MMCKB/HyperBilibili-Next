@@ -187,6 +187,18 @@
             "pages/app/features/toolbox/ai/settings": {
                 "component": "aiconfig"
             },
+            "pages/app/features/toolbox/notes": {
+                "component": "notes"
+            },
+            "pages/app/features/toolbox/notes/list": {
+                "component": "list"
+            },
+            "pages/app/features/toolbox/notes/detail": {
+                "component": "detail"
+            },
+            "pages/app/features/toolbox/notes/settings": {
+                "component": "settings"
+            },
             "pages/app/features/toolbox/weather": {
                 "component": "weather"
             },
