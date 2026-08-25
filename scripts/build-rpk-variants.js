@@ -81,6 +81,19 @@ function removeToolboxEntry(workspace) {
     "\n"
   )
   writeText(lessPath, less)
+
+  const networkPagePath = path.join(workspace, "src", "pages", "error", "networkerror", "networkerror.ux")
+  let networkPage = readText(networkPagePath)
+  const offlineToolboxBlock = `    <default-button margin-top="15px" text="networkerror.toolbox" @click="GoToolbox"></default-button>\n`
+  if (!networkPage.includes(offlineToolboxBlock)) throw new Error("未找到离线工具箱入口，已停止生成精简包。")
+  networkPage = networkPage.replace(offlineToolboxBlock, "")
+  networkPage = networkPage.replace(
+    /\n  GoToolbox\(\)\{[\s\S]*?\n  \},\n  GoSavedContent\(\)/,
+    "\n  GoSavedContent()"
+  )
+  if (networkPage.includes("GoToolbox") || networkPage.includes("networkerror.toolbox"))
+    throw new Error("离线工具箱入口清理不完整，已停止生成精简包。")
+  writeText(networkPagePath, networkPage)
 }
 
 function removeToolboxFeatureFiles(workspace) {

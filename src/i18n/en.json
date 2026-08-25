@@ -84,6 +84,7 @@
         "title": "Hmm... You seem to be offline!",
         "sectitle": "Please check if your device is connected to Wi-Fi or mobile data.",
         "retry": "Retry",
+        "toolbox": "Toolbox >",
         "downloads": "My Downloads >",
         "exit": "Exit"
     },

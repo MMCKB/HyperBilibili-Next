@@ -6,6 +6,7 @@
     <text style="font-weight: 600; font-size: 28px; margin-top: 15px;">{{ $t("networkerror.title") }}</text>
     <text style="font-weight: 600; font-size: 28px; margin-top: 18px; width: 75%">{{ $t("networkerror.sectitle") }}</text>
     <default-button primary="true" margin-top="35px" text="networkerror.retry" @click="Retry"></default-button>
+    <default-button margin-top="15px" text="networkerror.toolbox" @click="GoToolbox"></default-button>
     <default-button margin-top="15px" text="networkerror.downloads" @click="GoSavedContent"></default-button>
     <default-button margin-top="15px" text="networkerror.exit" @click="Exit"></default-button>
     <text style="margin-top: 25px;"></text>
@@ -15,10 +16,18 @@
 <script>
 import router from "@system.router"
 export default {
+  onInit(){
+    global.ui.InitPage(this)
+  },
   Retry(){
     router.clear()
     router.replace({
       uri: "pages/app/entry/splash"
+    })
+  },
+  GoToolbox(){
+    router.push({
+      uri: "pages/app/features/toolbox"
     })
   },
   GoSavedContent(){
