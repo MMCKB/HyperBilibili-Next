@@ -10,6 +10,7 @@ pub mod logger;
 
 const TARGET_PACKAGE: &str = "com.mmckb.hyperbilibili";
 const PICK_IMAGE_EVENT: &str = "pick-and-send";
+const REFRESH_DEVICE_EVENT: &str = "refresh-device";
 const CHUNK_BYTES: usize = 2048;
 const MAX_IMAGE_BYTES: usize = 2 * 1024 * 1024;
 
@@ -86,6 +87,10 @@ fn build_ui() -> ui::Element {
     let status_line = ui::Element::new(ui::ElementType::P, Some(snapshot.status.as_str()))
         .size(16)
         .text_color("#FFB1CA");
+    let refresh_button = ui::Element::new(ui::ElementType::Button, Some("刷新设备"))
+        .bg("#35415B")
+        .text_color("#D9E6FF")
+        .on(ui::Event::Click, REFRESH_DEVICE_EVENT);
     let pick_button = ui::Element::new(ui::ElementType::Button, Some("选择图片并传输"))
         .bg("#F471A2")
         .text_color("#FFFFFF")
@@ -100,6 +105,7 @@ fn build_ui() -> ui::Element {
         .child(explanation)
         .child(device_line)
         .child(status_line)
+        .child(refresh_button)
         .child(pick_button)
 }
 
@@ -109,6 +115,8 @@ fn render_main_ui(element_id: &str) {
         current.root_element_id = Some(element_id.to_string());
     }
     ui::render(element_id, build_ui());
+    // 插件 on_load 可能早于 ABox 建立设备实例；页面首次显示时再刷新一次。
+    astrobox_ng_wit::spawn(async { let _ = refresh_device().await; });
 }
 
 fn immediate_string() -> FutureReader<String> {
@@ -132,19 +140,36 @@ fn mime_for_name(name: &str) -> &'static str {
 }
 
 async fn refresh_device() -> Option<String> {
-    let devices = device::get_connected_device_list().into_future().await;
-    let Some(target) = devices.into_iter().next() else {
-        set_device("未连接");
-        set_status("未发现已连接的手表");
+    set_status("正在刷新设备…");
+    // ABox 的实时连接列表在插件 on_load 时可能尚未初始化，因此优先读实时列表，
+    // 再回退到已记录设备，避免界面永久停留在“查找设备”。
+    let connected = device::get_connected_device_list().into_future().await;
+    let (target, is_live) = if let Some(item) = connected.into_iter().next() {
+        (Some(item), true)
+    } else {
+        (device::get_device_list().into_future().await.into_iter().next(), false)
+    };
+    let Some(target) = target else {
+        set_device("未发现设备");
+        set_status("未发现设备；请确认 ABox 已授权“设备”权限后点“刷新设备”");
         return None;
     };
     let addr = target.addr.clone();
     set_device(target.name);
     match register::register_interconnect_recv(&addr, TARGET_PACKAGE).into_future().await {
-        Ok(()) => set_status("已连接，请在手表图库页面保持接收状态"),
-        Err(()) => set_status("无法注册手表图库消息通道"),
+        Ok(()) => {
+            if is_live {
+                set_status("已连接，请在手表图库页面保持接收状态");
+            } else {
+                set_status("已发现 ABox 设备记录；选择图片时将尝试发送");
+            }
+            Some(addr)
+        }
+        Err(()) => {
+            set_status("无法注册图库消息通道，请检查插件 Interconnect 权限");
+            None
+        }
     }
-    Some(addr)
 }
 
 async fn send_message(addr: &str, body: Value) -> Result<(), ()> {
@@ -280,6 +305,9 @@ impl event::Guest for GalleryTransferPlugin {
     }
 
     fn on_ui_event_v3(event_id: String, event_type: event::Event, _event_payload: String) -> FutureReader<String> {
+        if event_type == ui::Event::Click && event_id == REFRESH_DEVICE_EVENT {
+            astrobox_ng_wit::spawn(async { let _ = refresh_device().await; });
+        }
         if event_type == ui::Event::Click && event_id == PICK_IMAGE_EVENT {
             astrobox_ng_wit::spawn(async { choose_and_begin().await; });
         }
