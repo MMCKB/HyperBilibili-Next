@@ -114,6 +114,8 @@
         "game2048Description": "Merge tiles and beat your best score",
         "aiChat": "AI Chat",
         "aiChatDescription": "Text-only model chat",
+        "gallery": "Gallery",
+        "galleryDescription": "Local images sent through the ABox plugin",
         "notes": "Notes",
         "notesDescription": "Password-protected local notes"
     },
@@ -148,6 +150,25 @@
         "pinHint": "Use 4 to 8 digits only",
         "pinCancel": "Cancel",
         "pinConfirm": "Confirm"
+    },
+    "gallery": {
+        "title": "Gallery",
+        "empty": "No images yet. Choose an image and send it from the ABox Gallery Transfer plugin.",
+        "transferHint": "Send images with the ABox Gallery Transfer plugin",
+        "transferReady": "Ready to receive images",
+        "receiving": "Receiving image",
+        "receiveFailed": "Image transfer failed",
+        "received": "Image saved to gallery",
+        "viewer": "Image viewer",
+        "switch": "Switch",
+        "delete": "Delete",
+        "details": "Details",
+        "deleted": "Image deleted",
+        "fileName": "File name",
+        "fileSize": "File size",
+        "createdAt": "Imported",
+        "format": "Format",
+        "noImage": "Image is missing or was deleted"
     },
     "weather": {
         "title": "Weather",

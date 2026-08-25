@@ -1,0 +1,13 @@
+{
+    "name": "图库图片传输",
+    "icon": "icon.png",
+    "version": "1.0.0",
+    "description": "选择本机图片并分片传入 HyperBili 图库。",
+    "author": "MMCKB",
+    "website": "https://github.com/MMCKB/HyperBilibili-Next",
+    "entry": "astrobox_gallery_transfer.wasm",
+    "wasi_version": 2,
+    "api_level": 3,
+    "permissions": ["device", "interconnect", "register_interconnect_recv"],
+    "additional_files": ["PROTOCOL.md", "README.md"]
+}

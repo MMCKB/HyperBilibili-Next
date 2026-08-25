@@ -1,0 +1,138 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="gallery-view-scroll {{scrclass}}" scroll-x="true" scroll-y="true" bounces="true" id="image-scroll" if="{{hasItem}}">
+      <div style="{{containerStyle}}"><image style="{{imageStyle}}" src="{{ item.uri }}" id="gallery-image"></image></div>
+    </scroll>
+    <div class="gallery-view-empty" if="{{!hasItem}}"><text class="gallery-view-empty-text">{{ $t("gallery.noImage") }}</text></div>
+    <title-bar title="gallery.viewer"></title-bar>
+    <div class="gallery-view-scale" if="{{hasItem}}">
+      <text class="gallery-view-scale-label">{{ item.name }}</text>
+      <slider class="gallery-view-slider" min="10" max="500" step="10" value="{{initialScale}}" @change="UpdateImageStyle"></slider>
+    </div>
+    <div class="gallery-view-actions" if="{{hasItem}}">
+      <div class="gallery-view-action" onclick="SwitchNext"><text class="gallery-view-action-text">{{ $t("gallery.switch") }}</text></div>
+      <div class="gallery-view-action gallery-view-delete" onclick="DeleteCurrent"><text class="gallery-view-action-text">{{ $t("gallery.delete") }}</text></div>
+      <div class="gallery-view-action" onclick="ToggleDetails"><text class="gallery-view-action-text">{{ $t("gallery.details") }}</text></div>
+    </div>
+    <div class="gallery-detail-mask" if="{{showDetails}}" onclick="ToggleDetails">
+      <div class="gallery-detail-card">
+        <text class="gallery-detail-title">{{ $t("gallery.details") }}</text>
+        <text class="gallery-detail-label">{{ $t("gallery.fileName") }}</text>
+        <text class="gallery-detail-value">{{ item.name }}</text>
+        <text class="gallery-detail-label">{{ $t("gallery.format") }}</text>
+        <text class="gallery-detail-value">{{ item.mime }}</text>
+        <text class="gallery-detail-label">{{ $t("gallery.fileSize") }}</text>
+        <text class="gallery-detail-value">{{ detailSize }}</text>
+        <text class="gallery-detail-label">{{ $t("gallery.createdAt") }}</text>
+        <text class="gallery-detail-value">{{ item.createdAt }}</text>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import device from "@system.device"
+import prompt from "@system.prompt"
+import router from "@system.router"
+import { deleteGalleryItem, getActiveGalleryItemId, getGalleryItem, listGalleryItems, setActiveGalleryItemId } from "@src/gallery.ts"
+
+export default {
+  private: {
+    scrclass: "",
+    hasItem: false,
+    item: { id: "", name: "", uri: "", mime: "", size: 0, createdAt: "" },
+    detailSize: "0 B",
+    allItems: [],
+    baseWidth: 0,
+    baseHeight: 0,
+    initialScale: 100,
+    deviceInfo: null,
+    showDetails: false,
+    imageStyle: { "object-fit": "contain", "position": "absolute" },
+    containerStyle: { "position": "relative", "width": "100%", "height": "100%" }
+  },
+  FormatSize(size) {
+    const bytes = Math.max(0, Number(size || 0))
+    if (bytes < 1024) return bytes + " B"
+    if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + " KB"
+    return (bytes / (1024 * 1024)).toFixed(1) + " MB"
+  },
+  async LoadCurrent() {
+    this.allItems = await listGalleryItems()
+    const activeId = getActiveGalleryItemId()
+    const item = await getGalleryItem(activeId)
+    if (!item) {
+      this.hasItem = false
+      return
+    }
+    this.item = item
+    this.detailSize = this.FormatSize(item.size)
+    this.hasItem = true
+    this.showDetails = false
+    this.initialScale = 100
+    this.imageStyle = { "object-fit": "contain", "position": "absolute" }
+    this.containerStyle = { "position": "relative", "width": "100%", "height": "100%" }
+    setTimeout(() => this.MeasureImage(), 300)
+  },
+  MeasureImage() {
+    if (!this.hasItem) return
+    this.$element("gallery-image").getBoundingClientRect({
+      success: (rect) => {
+        this.baseWidth = Math.max(1, rect.width)
+        this.baseHeight = Math.max(1, rect.height)
+        this.UpdateImageStyle({ progress: this.initialScale })
+      }
+    })
+  },
+  UpdateImageStyle(event) {
+    if (!this.deviceInfo || !this.baseWidth || !this.baseHeight) return
+    const scale = Number(event && event.progress !== undefined ? event.progress : this.initialScale) / 100
+    const width = this.baseWidth * scale
+    const height = this.baseHeight * scale
+    const screenWidth = this.deviceInfo.screenWidth
+    const screenHeight = this.deviceInfo.screenHeight
+    this.imageStyle["width"] = width + "px"
+    this.imageStyle["height"] = height + "px"
+    this.imageStyle["left"] = width <= screenWidth ? ((screenWidth - width) / 2) + "px" : "0px"
+    this.imageStyle["top"] = height <= screenHeight ? ((screenHeight - height) / 2) + "px" : "0px"
+    this.containerStyle["width"] = Math.max(width, screenWidth) + "px"
+    this.containerStyle["height"] = Math.max(height, screenHeight) + "px"
+  },
+  async SwitchNext() {
+    if (this.allItems.length < 2) return
+    const currentIndex = this.allItems.map((entry) => entry.id).indexOf(this.item.id)
+    const next = this.allItems[(currentIndex + 1 + this.allItems.length) % this.allItems.length]
+    setActiveGalleryItemId(next.id)
+    await this.LoadCurrent()
+  },
+  async DeleteCurrent() {
+    const deleted = await deleteGalleryItem(this.item.id)
+    if (!deleted) return
+    prompt.showToast({ message: this.$t("gallery.deleted"), duration: 1500 })
+    const items = await listGalleryItems()
+    if (!items.length) {
+      router.back()
+      return
+    }
+    setActiveGalleryItemId(items[0].id)
+    await this.LoadCurrent()
+  },
+  ToggleDetails() {
+    this.showDetails = !this.showDetails
+  },
+  onInit() {
+    global.ui.InitPage(this)
+    device.getInfo({ success: (info) => { this.deviceInfo = info; this.LoadCurrent() } })
+  },
+  onShow() {
+    if (this.deviceInfo) this.LoadCurrent()
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./viewer.less";
+</style>

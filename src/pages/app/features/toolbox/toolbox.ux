@@ -45,6 +45,14 @@
           </div>
           <text class="toolbox-card-arrow">›</text>
         </div>
+        <div class="toolbox-card toolbox-card-next" onclick="OpenGallery">
+          <div class="toolbox-card-icon toolbox-gallery-icon"><text class="toolbox-card-gallery-icon-text">▧</text></div>
+          <div class="toolbox-card-copy">
+            <text class="toolbox-card-title">{{ $t("toolbox.gallery") }}</text>
+            <text class="toolbox-card-subtitle">{{ $t("toolbox.galleryDescription") }}</text>
+          </div>
+          <text class="toolbox-card-arrow">›</text>
+        </div>
       </div>
       <text style="height: 30px"></text>
     </scroll>
@@ -83,6 +91,11 @@ export default {
     lockNotesSession()
     router.push({
       uri: "pages/app/features/toolbox/notes"
+    })
+  },
+  OpenGallery() {
+    router.push({
+      uri: "pages/app/features/toolbox/gallery"
     })
   }
 }

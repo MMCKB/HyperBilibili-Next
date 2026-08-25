@@ -115,6 +115,8 @@
         "game2048Description": "合并数字并挑战最高分",
         "aiChat": "AI 对话",
         "aiChatDescription": "纯文本模型对话",
+        "gallery": "图库",
+        "galleryDescription": "通过 ABox 插件传入的本机图片",
         "notes": "便签",
         "notesDescription": "密码保护的本机便签"
     },
@@ -149,6 +151,25 @@
         "pinHint": "仅可输入 4 至 8 位数字",
         "pinCancel": "取消",
         "pinConfirm": "确认"
+    },
+    "gallery": {
+        "title": "图库",
+        "empty": "暂无图片，请在 ABox 图库传输插件中选择图片后发送。",
+        "transferHint": "使用 ABox 图库传输插件发送图片",
+        "transferReady": "已准备接收图片",
+        "receiving": "正在接收图片",
+        "receiveFailed": "图片接收失败",
+        "received": "图片已保存到图库",
+        "viewer": "图片查看器",
+        "switch": "切换",
+        "delete": "删除",
+        "details": "详情",
+        "deleted": "图片已删除",
+        "fileName": "文件名",
+        "fileSize": "文件大小",
+        "createdAt": "导入时间",
+        "format": "格式",
+        "noImage": "图片不存在或已被删除"
     },
     "weather": {
         "title": "天气",
