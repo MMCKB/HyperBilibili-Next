@@ -116,7 +116,13 @@
         "aiChat": "AI 对话",
         "aiChatDescription": "纯文本模型对话",
         "notes": "便签",
-        "notesDescription": "密码保护的本机便签"
+        "notesDescription": "密码保护的本机便签",
+        "schedule": "课程表",
+        "scheduleDescription": "按星期查看本机课程",
+        "todo": "待办",
+        "todoDescription": "记录今天的重要事项",
+        "countdown": "倒数日",
+        "countdownDescription": "记住每一个重要日子"
     },
     "notes": {
         "title": "便签",
@@ -149,6 +155,53 @@
         "pinHint": "仅可输入 4 至 8 位数字",
         "pinCancel": "取消",
         "pinConfirm": "确认"
+    },
+    "schedule": {
+        "title": "课程表",
+        "next": "下一节课",
+        "today": "今日课程",
+        "add": "添加课程",
+        "empty": "这一天还没有课程。",
+        "courseName": "课程名称",
+        "courseTime": "上课时间",
+        "courseLocation": "上课地点",
+        "timeHint": "格式：09:00-10:00",
+        "locationHint": "例如：教学楼 A201",
+        "added": "课程已添加",
+        "remove": "删除",
+        "removed": "课程已删除",
+        "weekday": "星期",
+        "todayLabel": "今天"
+    },
+    "todo": {
+        "title": "待办",
+        "todayProgress": "今日进度",
+        "completed": "已完成",
+        "today": "今天",
+        "upcoming": "即将到来",
+        "add": "添加待办",
+        "empty": "还没有待办事项。",
+        "taskName": "待办内容",
+        "due": "时间标签",
+        "dueHint": "例如：今天 18:00",
+        "added": "待办已添加",
+        "removed": "待办已删除"
+    },
+    "countdown": {
+        "title": "倒数日",
+        "nearest": "最近的日子",
+        "other": "其他倒数",
+        "add": "添加倒数日",
+        "empty": "还没有倒数日。",
+        "name": "日子名称",
+        "date": "目标日期",
+        "dateHint": "格式：2026-10-01",
+        "daysLater": "天后",
+        "today": "就是今天",
+        "daysPassed": "天前",
+        "added": "倒数日已添加",
+        "removed": "倒数日已删除",
+        "invalidDate": "日期格式应为 YYYY-MM-DD"
     },
     "weather": {
         "title": "天气",

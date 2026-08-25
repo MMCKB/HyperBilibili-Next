@@ -1,0 +1,126 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="false">
+      <title-bar title="todo.title"></title-bar>
+      <div class="todo-content">
+        <div class="todo-header"><text class="todo-title">{{ $t("todo.title") }}</text><div class="add-circle" onclick="StartAdd"><text class="add-circle-text">+</text></div></div>
+        <div class="progress-card">
+          <div class="progress-copy"><text class="progress-label">{{ $t("todo.todayProgress") }}</text><div class="progress-track"><div class="progress-fill" style="width: {{progressPercent}}%"></div></div></div>
+          <div class="progress-number"><text class="progress-count">{{ completedCount }}<text class="progress-total"> / {{ totalCount }}</text></text><text class="progress-caption">{{ $t("todo.completed") }}</text></div>
+        </div>
+        <text class="section-title">{{ $t("todo.today") }}</text>
+        <div class="empty-card" if="{{todayTodos.length === 0}}"><text class="empty-text">{{ $t("todo.empty") }}</text></div>
+        <div class="todo-card {{ $item.completed ? 'todo-done' : '' }}" for="{{todayTodos}}">
+          <div class="todo-check {{ $item.completed ? 'todo-check-done' : '' }}" onclick="ToggleTodo($item.id)"><text class="todo-check-text" if="{{ $item.completed }}">✓</text></div>
+          <div class="todo-copy"><text class="todo-name">{{ $item.title }}</text><text class="todo-due">{{ $item.dueText }}</text></div>
+          <text class="todo-remove" onclick="RemoveTodo($item.id)">×</text>
+        </div>
+        <text class="section-title" if="{{upcomingTodos.length > 0}}">{{ $t("todo.upcoming") }}</text>
+        <div class="todo-card" for="{{upcomingTodos}}">
+          <div class="todo-check {{ $item.completed ? 'todo-check-done' : '' }}" onclick="ToggleTodo($item.id)"><text class="todo-check-text" if="{{ $item.completed }}">✓</text></div>
+          <div class="todo-copy"><text class="todo-name">{{ $item.title }}</text><text class="todo-due">{{ $item.dueText }}</text></div>
+          <text class="todo-remove" onclick="RemoveTodo($item.id)">×</text>
+        </div>
+        <text class="status-text" if="{{statusText}}">{{ statusText }}</text>
+      </div>
+      <text style="height: 30px"></text>
+    </scroll>
+    <full-screen-input if="{{showInput}}" initial-text="{{inputSeed}}" @send="FinishInput" @exit="ExitInput"></full-screen-input>
+  </div>
+</template>
+
+<script>
+import prompt from "@system.prompt"
+import { loadOrganizerData, createTodo, toggleTodo, removeTodo } from "@src/organizer.ts"
+
+export default {
+  private: {
+    scrclass: "",
+    todayTodos: [],
+    upcomingTodos: [],
+    completedCount: 0,
+    totalCount: 0,
+    progressPercent: 0,
+    statusText: "",
+    showInput: false,
+    inputTarget: "",
+    inputSeed: "",
+    draftTitle: ""
+  },
+  onInit() {
+    global.ui.InitPage(this)
+    this.RefreshTodos()
+  },
+  onShow() {
+    this.RefreshTodos()
+  },
+  async RefreshTodos() {
+    const data = await loadOrganizerData()
+    const todos = data.todos.slice().sort((a, b) => Number(a.completed) - Number(b.completed))
+    const today = []
+    const upcoming = []
+    todos.forEach((item) => {
+      if (/明天|周|下周|未来/.test(item.dueText)) upcoming.push(item)
+      else today.push(item)
+    })
+    this.todayTodos = today
+    this.upcomingTodos = upcoming
+    this.totalCount = todos.length
+    this.completedCount = todos.filter((item) => item.completed).length
+    this.progressPercent = todos.length ? Math.round(this.completedCount * 100 / todos.length) : 0
+  },
+  StartAdd() {
+    this.statusText = ""
+    this.inputTarget = "title"
+    this.inputSeed = ""
+    this.showInput = true
+  },
+  ExitInput() {
+    this.showInput = false
+    this.inputTarget = ""
+    this.inputSeed = ""
+  },
+  async FinishInput(evt) {
+    const value = String(evt.detail && evt.detail.content ? evt.detail.content : "").trim()
+    if (!value) {
+      this.ExitInput()
+      return
+    }
+    if (this.inputTarget === "title") {
+      this.draftTitle = value
+      this.showInput = false
+      setTimeout(() => {
+        this.inputTarget = "due"
+        this.inputSeed = "今天"
+        this.showInput = true
+      }, 60)
+      return
+    }
+    if (this.inputTarget === "due") {
+      await createTodo(this.draftTitle, value)
+      this.ExitInput()
+      this.draftTitle = ""
+      this.statusText = this.$t("todo.added")
+      prompt.showToast({ message: this.$t("todo.added"), duration: 1600 })
+      await this.RefreshTodos()
+    }
+  },
+  async ToggleTodo(id) {
+    await toggleTodo(id)
+    await this.RefreshTodos()
+  },
+  async RemoveTodo(id) {
+    await removeTodo(id)
+    this.statusText = this.$t("todo.removed")
+    await this.RefreshTodos()
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./todo.less";
+</style>

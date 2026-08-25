@@ -1,0 +1,127 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="false">
+      <title-bar title="countdown.title"></title-bar>
+      <div class="countdown-content">
+        <div class="countdown-header"><text class="countdown-title">{{ $t("countdown.title") }}</text><div class="add-circle" onclick="StartAdd"><text class="add-circle-text">+</text></div></div>
+        <div class="primary-card" if="{{nearest}}">
+          <text class="primary-label">{{ $t("countdown.nearest") }}</text>
+          <text class="primary-name">{{ nearest.title }}</text>
+          <text class="primary-days">{{ nearest.displayDays }}</text>
+          <text class="primary-suffix">{{ nearest.displayLabel }}</text>
+          <text class="primary-date">{{ nearest.date }}</text>
+        </div>
+        <div class="empty-card" if="{{!nearest}}"><text class="empty-text">{{ $t("countdown.empty") }}</text></div>
+        <text class="section-title" if="{{otherCountdowns.length > 0}}">{{ $t("countdown.other") }}</text>
+        <div class="countdown-row" for="{{otherCountdowns}}"><div class="countdown-row-copy"><text class="countdown-row-name">{{ $item.title }}</text><text class="countdown-row-date">{{ $item.date }}</text></div><text class="countdown-badge">{{ $item.badge }}</text><text class="countdown-remove" onclick="RemoveCountdown($item.id)">×</text></div>
+        <text class="status-text" if="{{statusText}}">{{ statusText }}</text>
+      </div>
+      <text style="height: 30px"></text>
+    </scroll>
+    <full-screen-input if="{{showInput}}" initial-text="{{inputSeed}}" @send="FinishInput" @exit="ExitInput"></full-screen-input>
+  </div>
+</template>
+
+<script>
+import prompt from "@system.prompt"
+import { loadOrganizerData, createCountdown, removeCountdown, daysUntil } from "@src/organizer.ts"
+
+export default {
+  private: {
+    scrclass: "",
+    nearest: null,
+    otherCountdowns: [],
+    statusText: "",
+    showInput: false,
+    inputTarget: "",
+    inputSeed: "",
+    draftTitle: ""
+  },
+  onInit() {
+    global.ui.InitPage(this)
+    this.RefreshCountdowns()
+  },
+  onShow() {
+    this.RefreshCountdowns()
+  },
+  DisplayItem(item) {
+    const days = daysUntil(item.date)
+    let displayDays = String(days)
+    let displayLabel = this.$t("countdown.daysLater")
+    if (days === 0) {
+      displayDays = "0"
+      displayLabel = this.$t("countdown.today")
+    } else if (days < 0) {
+      displayDays = String(Math.abs(days))
+      displayLabel = this.$t("countdown.daysPassed")
+    }
+    return { ...item, dayNumber: days, displayDays, displayLabel, badge: displayDays + " " + displayLabel }
+  },
+  async RefreshCountdowns() {
+    const data = await loadOrganizerData()
+    const items = data.countdowns.map((item) => this.DisplayItem(item)).sort((a, b) => a.dayNumber - b.dayNumber)
+    const future = items.filter((item) => item.dayNumber >= 0)
+    this.nearest = future.length ? future[0] : (items.length ? items[items.length - 1] : null)
+    this.otherCountdowns = items.filter((item) => !this.nearest || item.id !== this.nearest.id)
+  },
+  StartAdd() {
+    this.statusText = ""
+    this.inputTarget = "title"
+    this.inputSeed = ""
+    this.showInput = true
+  },
+  ExitInput() {
+    this.showInput = false
+    this.inputTarget = ""
+    this.inputSeed = ""
+  },
+  async FinishInput(evt) {
+    const value = String(evt.detail && evt.detail.content ? evt.detail.content : "").trim()
+    if (!value) {
+      this.ExitInput()
+      return
+    }
+    if (this.inputTarget === "title") {
+      this.draftTitle = value
+      this.showInput = false
+      setTimeout(() => {
+        this.inputTarget = "date"
+        this.inputSeed = "2026-10-01"
+        this.showInput = true
+      }, 60)
+      return
+    }
+    if (this.inputTarget === "date") {
+      try {
+        await createCountdown(this.draftTitle, value)
+        this.statusText = this.$t("countdown.added")
+        prompt.showToast({ message: this.$t("countdown.added"), duration: 1600 })
+        this.ExitInput()
+        this.draftTitle = ""
+        await this.RefreshCountdowns()
+      } catch (error) {
+        this.statusText = this.$t("countdown.invalidDate")
+        this.showInput = false
+        setTimeout(() => {
+          this.inputTarget = "date"
+          this.inputSeed = value
+          this.showInput = true
+        }, 60)
+      }
+    }
+  },
+  async RemoveCountdown(id) {
+    await removeCountdown(id)
+    this.statusText = this.$t("countdown.removed")
+    await this.RefreshCountdowns()
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./countdown.less";
+</style>

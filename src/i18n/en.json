@@ -115,7 +115,13 @@
         "aiChat": "AI Chat",
         "aiChatDescription": "Text-only model chat",
         "notes": "Notes",
-        "notesDescription": "Password-protected local notes"
+        "notesDescription": "Password-protected local notes",
+        "schedule": "Schedule",
+        "scheduleDescription": "View local classes by weekday",
+        "todo": "To-do",
+        "todoDescription": "Keep track of important tasks",
+        "countdown": "Countdown",
+        "countdownDescription": "Remember every important day"
     },
     "notes": {
         "title": "Notes",
@@ -148,6 +154,53 @@
         "pinHint": "Use 4 to 8 digits only",
         "pinCancel": "Cancel",
         "pinConfirm": "Confirm"
+    },
+    "schedule": {
+        "title": "Schedule",
+        "next": "Next class",
+        "today": "Today's classes",
+        "add": "Add class",
+        "empty": "No classes on this day.",
+        "courseName": "Class name",
+        "courseTime": "Class time",
+        "courseLocation": "Location",
+        "timeHint": "Format: 09:00-10:00",
+        "locationHint": "Example: Building A201",
+        "added": "Class added",
+        "remove": "Delete",
+        "removed": "Class deleted",
+        "weekday": "Weekday",
+        "todayLabel": "Today"
+    },
+    "todo": {
+        "title": "To-do",
+        "todayProgress": "Today's progress",
+        "completed": "completed",
+        "today": "Today",
+        "upcoming": "Upcoming",
+        "add": "Add task",
+        "empty": "No tasks yet.",
+        "taskName": "Task",
+        "due": "Time label",
+        "dueHint": "Example: Today 18:00",
+        "added": "Task added",
+        "removed": "Task deleted"
+    },
+    "countdown": {
+        "title": "Countdown",
+        "nearest": "Next event",
+        "other": "Other countdowns",
+        "add": "Add countdown",
+        "empty": "No countdowns yet.",
+        "name": "Event name",
+        "date": "Target date",
+        "dateHint": "Format: 2026-10-01",
+        "daysLater": "days to go",
+        "today": "Today",
+        "daysPassed": "days ago",
+        "added": "Countdown added",
+        "removed": "Countdown deleted",
+        "invalidDate": "Use the YYYY-MM-DD date format"
     },
     "weather": {
         "title": "Weather",

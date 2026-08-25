@@ -1,0 +1,144 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="false">
+      <title-bar title="schedule.title"></title-bar>
+      <div class="schedule-content">
+        <div class="schedule-header">
+          <div><text class="schedule-title">{{ $t("schedule.title") }}</text><text class="schedule-subtitle">{{ todayLabel }}</text></div>
+          <div class="add-circle" onclick="StartAdd"><text class="add-circle-text">+</text></div>
+        </div>
+        <div class="weekday-row">
+          <div class="weekday-chip {{ $item.active ? 'weekday-active' : '' }}" for="{{weekdays}}" onclick="SelectDay($item.value)"><text class="weekday-text">{{ $item.label }}</text></div>
+        </div>
+        <div class="next-card" if="{{nextCourse}}">
+          <text class="next-label">{{ $t("schedule.next") }}</text>
+          <text class="next-title">{{ nextCourse.title }}</text>
+          <div class="next-meta"><text class="next-meta-text">{{ nextCourse.time }}</text><text class="next-meta-text">{{ nextCourse.location }}</text></div>
+        </div>
+        <text class="section-title">{{ $t("schedule.today") }}</text>
+        <div class="empty-card" if="{{selectedCourses.length === 0}}"><text class="empty-text">{{ $t("schedule.empty") }}</text></div>
+        <div class="course-card" for="{{selectedCourses}}">
+          <text class="course-time">{{ $item.time }}</text>
+          <div class="course-copy"><text class="course-name">{{ $item.title }}</text><text class="course-location">{{ $item.location }}</text></div>
+          <text class="course-remove" onclick="RemoveCourse($item.id)">×</text>
+        </div>
+        <text class="status-text" if="{{statusText}}">{{ statusText }}</text>
+      </div>
+      <text style="height: 30px"></text>
+    </scroll>
+    <full-screen-input if="{{showInput}}" initial-text="{{inputSeed}}" @send="FinishInput" @exit="ExitInput"></full-screen-input>
+  </div>
+</template>
+
+<script>
+import prompt from "@system.prompt"
+import { loadOrganizerData, createCourse, removeCourse, courseSort } from "@src/organizer.ts"
+
+export default {
+  private: {
+    scrclass: "",
+    weekdays: [],
+    selectedDay: 1,
+    selectedCourses: [],
+    nextCourse: null,
+    todayLabel: "",
+    statusText: "",
+    showInput: false,
+    inputTarget: "",
+    inputSeed: "",
+    draftTitle: "",
+    draftTime: ""
+  },
+  onInit() {
+    global.ui.InitPage(this)
+    const now = new Date()
+    const weekday = now.getDay() === 0 ? 7 : now.getDay()
+    this.selectedDay = weekday
+    this.todayLabel = "星期" + ["一", "二", "三", "四", "五", "六", "日"][weekday - 1]
+    this.BuildWeekdays()
+    this.RefreshCourses()
+  },
+  onShow() {
+    this.RefreshCourses()
+  },
+  BuildWeekdays() {
+    const labels = ["一", "二", "三", "四", "五", "六", "日"]
+    this.weekdays = labels.map((label, index) => ({ label, value: index + 1, active: index + 1 === this.selectedDay }))
+  },
+  async RefreshCourses() {
+    const data = await loadOrganizerData()
+    const courses = data.courses.filter((item) => item.weekday === this.selectedDay).sort(courseSort)
+    this.selectedCourses = courses
+    this.nextCourse = courses.length ? courses[0] : null
+  },
+  SelectDay(day) {
+    this.selectedDay = Number(day) || 1
+    this.BuildWeekdays()
+    this.RefreshCourses()
+  },
+  StartAdd() {
+    this.statusText = ""
+    this.inputTarget = "title"
+    this.inputSeed = ""
+    this.showInput = true
+  },
+  ExitInput() {
+    this.showInput = false
+    this.inputTarget = ""
+    this.inputSeed = ""
+  },
+  OpenNextInput(target, seed) {
+    this.showInput = false
+    this.inputTarget = ""
+    this.inputSeed = ""
+    setTimeout(() => {
+      this.inputTarget = target
+      this.inputSeed = seed || ""
+      this.showInput = true
+    }, 60)
+  },
+  async FinishInput(evt) {
+    const value = String(evt.detail && evt.detail.content ? evt.detail.content : "").trim()
+    if (!value) {
+      this.ExitInput()
+      return
+    }
+    if (this.inputTarget === "title") {
+      this.draftTitle = value
+      this.OpenNextInput("time", "09:00-10:00")
+      return
+    }
+    if (this.inputTarget === "time") {
+      this.draftTime = value
+      this.OpenNextInput("location", "")
+      return
+    }
+    if (this.inputTarget === "location") {
+      try {
+        await createCourse({ title: this.draftTitle, time: this.draftTime, location: value, weekday: this.selectedDay })
+        this.statusText = this.$t("schedule.added")
+        prompt.showToast({ message: this.$t("schedule.added"), duration: 1600 })
+      } catch (error) {
+        this.statusText = this.$t("schedule.timeHint")
+      }
+      this.ExitInput()
+      this.draftTitle = ""
+      this.draftTime = ""
+      await this.RefreshCourses()
+    }
+  },
+  async RemoveCourse(id) {
+    await removeCourse(id)
+    this.statusText = this.$t("schedule.removed")
+    await this.RefreshCourses()
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./schedule.less";
+</style>
