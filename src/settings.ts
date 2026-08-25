@@ -27,6 +27,7 @@ interface SettingsInterface {
     vibratemode: string;
     maxlength: number;
     traditional: boolean;
+    keyboardtheme: string;
   };
 }
 
@@ -51,7 +52,8 @@ export let SETTINGS: SettingsInterface = {
     lang: "cn",
     vibratemode: "short",
     maxlength: 5,
-    traditional: false
+    traditional: false,
+    keyboardtheme: "dark"
   }
 };
 

@@ -7,6 +7,17 @@
 
       <text class="keyboard-settings-tip">{{ $t("keyboardSettings.tip") }}</text>
 
+      <div class="keyboard-setting-card" onclick="OpenPicker('theme')">
+        <div class="keyboard-setting-copy">
+          <text class="keyboard-setting-title">{{ $t("keyboardSettings.theme") }}</text>
+          <text class="keyboard-setting-description">{{ $t("keyboardSettings.themeDescription") }}</text>
+        </div>
+        <div class="keyboard-setting-value-wrap">
+          <text class="keyboard-setting-value">{{ themeLabel }}</text>
+          <image class="keyboard-setting-arrow" src="/common/arrow_right.png"></image>
+        </div>
+      </div>
+
       <div class="keyboard-setting-card" onclick="OpenPicker('layout')">
         <div class="keyboard-setting-copy">
           <text class="keyboard-setting-title">{{ $t("keyboardSettings.layout") }}</text>
@@ -77,6 +88,8 @@ export default {
     traditional: false,
     vibratemode: "short",
     maxlength: 5,
+    keyboardtheme: "dark",
+    themeLabel: "",
     layoutLabel: "",
     traditionalLabel: "",
     vibrationLabel: "",
@@ -93,8 +106,16 @@ export default {
     this.traditional = preferences.traditional === true;
     this.vibratemode = preferences.vibratemode === "long" ? "long" : (preferences.vibratemode === "short" ? "short" : "");
     this.maxlength = Number(preferences.maxlength) === 3 ? 3 : 5;
+    this.keyboardtheme = preferences.keyboardtheme === "white" || preferences.keyboardtheme === "blue-gray" ? preferences.keyboardtheme : "dark";
   },
   RefreshLabels() {
+    if (this.keyboardtheme === "white") {
+      this.themeLabel = this.$t("keyboardSettings.themeWhite");
+    } else if (this.keyboardtheme === "blue-gray") {
+      this.themeLabel = this.$t("keyboardSettings.themeBlueGray");
+    } else {
+      this.themeLabel = this.$t("keyboardSettings.themeDark");
+    }
     this.layoutLabel = this.keyboardtype === "T9" ? this.$t("keyboardSettings.layoutT9") : this.$t("keyboardSettings.layoutQwerty");
     this.traditionalLabel = this.traditional ? this.$t("keyboardSettings.traditionalOn") : this.$t("keyboardSettings.traditionalOff");
     if (this.vibratemode === "long") {
@@ -109,7 +130,11 @@ export default {
   OpenPicker(type) {
     this.pickerType = type;
     this.pickerVisible = true;
-    if (type === "layout") {
+    if (type === "theme") {
+      this.pickerTitle = this.$t("keyboardSettings.theme");
+      this.pickerOptions = [this.$t("keyboardSettings.themeDark"), this.$t("keyboardSettings.themeWhite"), this.$t("keyboardSettings.themeBlueGray")];
+      this.pickerSelectedIndex = this.keyboardtheme === "white" ? 1 : (this.keyboardtheme === "blue-gray" ? 2 : 0);
+    } else if (type === "layout") {
       this.pickerTitle = this.$t("keyboardSettings.layout");
       this.pickerOptions = [this.$t("keyboardSettings.layoutQwerty"), this.$t("keyboardSettings.layoutT9")];
       this.pickerSelectedIndex = this.keyboardtype === "T9" ? 1 : 0;
@@ -132,7 +157,9 @@ export default {
     this.pickerType = "";
   },
   SelectPickerOption(index) {
-    if (this.pickerType === "layout") {
+    if (this.pickerType === "theme") {
+      this.keyboardtheme = index === 1 ? "white" : (index === 2 ? "blue-gray" : "dark");
+    } else if (this.pickerType === "layout") {
       this.keyboardtype = index === 1 ? "T9" : "QWERTY";
     } else if (this.pickerType === "traditional") {
       this.traditional = index === 1;
@@ -153,7 +180,8 @@ export default {
         lang: existing.lang || "cn",
         vibratemode: this.vibratemode,
         maxlength: this.maxlength,
-        traditional: this.traditional
+        traditional: this.traditional,
+        keyboardtheme: this.keyboardtheme
       }
     });
   },

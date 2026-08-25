@@ -384,6 +384,11 @@
     "keyboardSettings": {
         "title": "Keyboard Settings",
         "tip": "Your choices apply the next time the input keyboard opens.",
+        "theme": "Square-screen theme",
+        "themeDescription": "Only changes colors for the square-screen input keyboard",
+        "themeDark": "Dark",
+        "themeWhite": "White",
+        "themeBlueGray": "Blue gray",
         "layout": "Default layout",
         "layoutDescription": "Default keyboard for Chinese input on square screens",
         "layoutQwerty": "Full keyboard",

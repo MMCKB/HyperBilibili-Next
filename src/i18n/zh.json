@@ -385,6 +385,11 @@
     "keyboardSettings": {
         "title": "键盘设置",
         "tip": "选择后的偏好会在下次打开输入键盘时生效。",
+        "theme": "方屏键盘主题",
+        "themeDescription": "仅影响方屏输入键盘的配色",
+        "themeDark": "深色",
+        "themeWhite": "纯白",
+        "themeBlueGray": "蓝灰",
         "layout": "默认输入布局",
         "layoutDescription": "方屏中文输入的默认键盘样式",
         "layoutQwerty": "全键盘",
