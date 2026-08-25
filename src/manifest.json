@@ -187,14 +187,17 @@
             "pages/app/features/toolbox/ai/settings": {
                 "component": "aiconfig"
             },
-            "pages/app/features/toolbox/schedule": {
-                "component": "schedule"
-            },
             "pages/app/features/toolbox/todo": {
                 "component": "todo"
             },
+            "pages/app/features/toolbox/todo/editor": {
+                "component": "editor"
+            },
             "pages/app/features/toolbox/countdown": {
                 "component": "countdown"
+            },
+            "pages/app/features/toolbox/countdown/editor": {
+                "component": "editor"
             },
             "pages/app/features/toolbox/notes": {
                 "component": "notes"

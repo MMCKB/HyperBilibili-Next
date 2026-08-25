@@ -1,0 +1,172 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="false">
+      <title-bar title="countdown.edit"></title-bar>
+      <div class="editor-content">
+        <text class="editor-heading">{{ editing ? $t("countdown.edit") : $t("countdown.add") }}</text>
+        <div class="form-card" onclick="OpenInput('title')"><text class="field-label">{{ $t("countdown.name") }}</text><text class="field-value">{{ title || $t("countdown.name") }}</text></div>
+        <text class="mode-label">{{ $t("countdown.date") }}</text>
+        <div class="mode-row"><div class="mode-chip {{ $item.active ? 'mode-active' : '' }}" for="{{modeItems}}" onclick="SelectMode($item.value)"><text class="mode-text">{{ $item.label }}</text></div></div>
+        <div class="form-card" if="{{mode === 'date'}}" onclick="OpenInput('date')"><text class="field-label">{{ $t("countdown.date") }}</text><text class="field-value">{{ date }}</text><text class="field-hint">{{ $t("countdown.dateHint") }}</text></div>
+        <div class="form-card" if="{{mode !== 'date'}}" onclick="OpenInput('days')"><text class="field-label">{{ $t("countdown.dayCount") }}</text><text class="field-value">{{ dayCount }}</text><text class="field-hint">{{ $t("countdown.dayCountHint") }}</text></div>
+        <div class="result-card"><text class="result-label">{{ $t("countdown.date") }}</text><text class="result-value">{{ resolvedDate }}</text></div>
+        <text class="status-text" if="{{statusText}}">{{ statusText }}</text>
+        <div class="save-button" onclick="SaveCountdown"><text class="save-text">{{ $t("countdown.save") }}</text></div>
+        <div class="delete-button" if="{{editing}}" onclick="DeleteCountdown"><text class="delete-text">{{ $t("countdown.delete") }}</text></div>
+      </div>
+      <text style="height: 28px"></text>
+    </scroll>
+    <full-screen-input if="{{showInput}}" initial-text="{{inputSeed}}" @send="FinishInput" @exit="CloseInput"></full-screen-input>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import prompt from "@system.prompt"
+import { getActiveCountdownId, getCountdown, createCountdown, updateCountdown, removeCountdown, todayDateText, isValidDate, isValidDayCount, dateFromDayOffset } from "@src/organizer.ts"
+
+export default {
+  private: {
+    scrclass: "",
+    countdownId: "",
+    editing: false,
+    title: "",
+    mode: "date",
+    modeItems: [],
+    date: "",
+    dayCount: "1",
+    resolvedDate: "",
+    statusText: "",
+    showInput: false,
+    inputTarget: "",
+    inputSeed: ""
+  },
+  onInit() {
+    global.ui.InitPage(this)
+    this.LoadCountdown()
+  },
+  async LoadCountdown() {
+    this.countdownId = getActiveCountdownId()
+    if (!this.countdownId) {
+      this.editing = false
+      this.title = ""
+      this.mode = "date"
+      this.date = todayDateText()
+      this.dayCount = "1"
+    } else {
+      const item = await getCountdown(this.countdownId)
+      if (item) {
+        this.editing = true
+        this.title = item.title
+        this.mode = "date"
+        this.date = item.date
+        this.dayCount = "1"
+      } else {
+        this.editing = false
+        this.countdownId = ""
+        this.date = todayDateText()
+      }
+    }
+    this.BuildModes()
+    this.RefreshResolvedDate()
+  },
+  BuildModes() {
+    this.modeItems = [
+      { value: "date", label: this.$t("countdown.modeDate"), active: this.mode === "date" },
+      { value: "after", label: this.$t("countdown.modeAfter"), active: this.mode === "after" },
+      { value: "before", label: this.$t("countdown.modeBefore"), active: this.mode === "before" }
+    ]
+  },
+  SelectMode(mode) {
+    this.mode = mode
+    this.statusText = ""
+    this.BuildModes()
+    this.RefreshResolvedDate()
+  },
+  RefreshResolvedDate() {
+    if (this.mode === "date") {
+      this.resolvedDate = this.date
+      return
+    }
+    this.resolvedDate = isValidDayCount(this.dayCount) ? dateFromDayOffset(Number(this.dayCount), this.mode === "before" ? "before" : "after") : "—"
+  },
+  OpenInput(target) {
+    this.statusText = ""
+    this.inputTarget = target
+    this.inputSeed = target === "title" ? this.title : (target === "date" ? this.date : this.dayCount)
+    this.showInput = true
+  },
+  CloseInput() {
+    this.showInput = false
+    this.inputTarget = ""
+    this.inputSeed = ""
+  },
+  RetryInput(target, value, message) {
+    this.statusText = message
+    this.showInput = false
+    setTimeout(() => {
+      this.inputTarget = target
+      this.inputSeed = value
+      this.showInput = true
+    }, 60)
+  },
+  FinishInput(evt) {
+    const value = String(evt.detail && evt.detail.content ? evt.detail.content : "").trim()
+    if (!value) {
+      this.CloseInput()
+      return
+    }
+    if (this.inputTarget === "date" && !isValidDate(value)) {
+      this.RetryInput("date", value, this.$t("countdown.invalidDate"))
+      return
+    }
+    if (this.inputTarget === "days" && !isValidDayCount(value)) {
+      this.RetryInput("days", value, this.$t("countdown.invalidDays"))
+      return
+    }
+    if (this.inputTarget === "title") this.title = value
+    if (this.inputTarget === "date") this.date = value
+    if (this.inputTarget === "days") this.dayCount = value
+    this.CloseInput()
+    this.RefreshResolvedDate()
+  },
+  ResolveDateForSave() {
+    if (this.mode === "date") return isValidDate(this.date) ? this.date : ""
+    if (!isValidDayCount(this.dayCount)) return ""
+    return dateFromDayOffset(Number(this.dayCount), this.mode === "before" ? "before" : "after")
+  },
+  async SaveCountdown() {
+    if (!this.title.trim()) {
+      this.statusText = this.$t("countdown.name")
+      return
+    }
+    const targetDate = this.ResolveDateForSave()
+    if (!targetDate) {
+      this.statusText = this.mode === "date" ? this.$t("countdown.invalidDate") : this.$t("countdown.invalidDays")
+      return
+    }
+    try {
+      if (this.editing) await updateCountdown(this.countdownId, { title: this.title, date: targetDate })
+      else await createCountdown(this.title, targetDate)
+      prompt.showToast({ message: this.editing ? this.$t("countdown.saved") : this.$t("countdown.added"), duration: 1500 })
+      setTimeout(() => router.back(), 240)
+    } catch (error) {
+      this.statusText = this.$t("countdown.invalidDate")
+    }
+  },
+  async DeleteCountdown() {
+    if (!this.editing) return
+    await removeCountdown(this.countdownId)
+    prompt.showToast({ message: this.$t("countdown.removed"), duration: 1400 })
+    setTimeout(() => router.back(), 240)
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./editor.less";
+</style>
