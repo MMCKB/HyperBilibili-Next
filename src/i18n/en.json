@@ -378,7 +378,11 @@
         "donation": "Donate",
         "about": "About the App",
         "debug": "Debug",
-        "playerAppearance": "Player Appearance"
+        "playerAppearance": "Player Appearance",
+        "keyboardSettings": "Keyboard Settings"
+    },
+    "keyboardSettings": {
+        "title": "Keyboard Settings"
     },
     "playerAppearance": {
         "title": "Player Appearance",

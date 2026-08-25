@@ -267,6 +267,9 @@
             },
             "pages/app/features/settings/playerappearance": {
                 "component": "playerappearance"
+            },
+            "pages/app/features/settings/keyboard": {
+                "component": "keyboardsettings"
             }
         }
     }

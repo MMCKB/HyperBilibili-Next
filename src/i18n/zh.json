@@ -379,7 +379,11 @@
         "donation": "捐赠",
         "about": "关于应用",
         "debug": "调试",
-        "playerAppearance": "播放器外观"
+        "playerAppearance": "播放器外观",
+        "keyboardSettings": "键盘设置"
+    },
+    "keyboardSettings": {
+        "title": "键盘设置"
     },
     "playerAppearance": {
         "title": "播放器外观",
