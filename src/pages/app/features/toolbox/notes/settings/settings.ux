@@ -1,5 +1,5 @@
 <import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
-<import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
+<import name="notes-pin-input" src="@components/NotesPinInput/NotesPinInput.ux"></import>
 
 <template>
   <div class="page">
@@ -14,7 +14,7 @@
         <text class="notes-settings-status" if="{{statusText}}">{{ statusText }}</text>
       </div>
     </scroll>
-    <full-screen-input if="{{showInput}}" style="position: absolute" initial-text="{{inputSeed}}" @send="FinishInput" @exit="CloseInput"></full-screen-input>
+    <notes-pin-input if="{{showInput}}" title="{{pinTitle}}" @complete="FinishInput" @exit="CloseInput"></notes-pin-input>
   </div>
 </template>
 
@@ -27,7 +27,7 @@ export default {
   private: {
     scrclass: "",
     showInput: false,
-    inputSeed: "",
+    pinTitle: "notes.enterOldPassword",
     step: "",
     oldPin: "",
     statusText: ""
@@ -35,7 +35,7 @@ export default {
   StartPasswordChange() {
     this.statusText = ""
     this.step = "old"
-    this.inputSeed = ""
+    this.pinTitle = "notes.enterOldPassword"
     this.showInput = true
   },
   CloseInput() {
@@ -45,7 +45,7 @@ export default {
   },
   async FinishInput(evt) {
     this.showInput = false
-    const pin = String(evt && evt.detail ? evt.detail.content : "").trim()
+    const pin = String(evt && evt.detail ? evt.detail.pin : "").trim()
     if (!isValidNotesPin(pin)) {
       this.statusText = this.$t("notes.passwordRule")
       prompt.showToast({ message: this.statusText, duration: 2000 })
@@ -61,7 +61,7 @@ export default {
       }
       this.oldPin = pin
       this.step = "new"
-      this.inputSeed = ""
+      this.pinTitle = "notes.enterNewPassword"
       this.showInput = true
       return
     }

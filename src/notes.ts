@@ -16,8 +16,22 @@ interface NotesVault {
 }
 
 const NOTES_STORAGE_KEY = "toolbox_secure_notes_v1";
-let notesSessionUnlocked = false;
-let activeNoteId = "";
+const NOTES_RUNTIME_STATE_KEY = "__hyperbiliNotesRuntimeState";
+
+interface NotesRuntimeState {
+  unlocked: boolean;
+  activeNoteId: string;
+}
+
+function getRuntimeState(): NotesRuntimeState {
+  if (!global[NOTES_RUNTIME_STATE_KEY]) {
+    global[NOTES_RUNTIME_STATE_KEY] = {
+      unlocked: false,
+      activeNoteId: ""
+    };
+  }
+  return global[NOTES_RUNTIME_STATE_KEY] as NotesRuntimeState;
+}
 
 function emptyVault(): NotesVault {
   return {
@@ -119,7 +133,7 @@ export async function setNotesPassword(pin: string): Promise<NotesVault> {
     passwordSalt,
     passwordHash: digestPin(pin, passwordSalt)
   });
-  notesSessionUnlocked = true;
+  getRuntimeState().unlocked = true;
   return saved;
 }
 
@@ -127,25 +141,26 @@ export async function verifyNotesPassword(pin: string): Promise<boolean> {
   const vault = await loadNotesVault();
   if (!hasNotesPassword(vault)) return false;
   const passed = digestPin(pin, vault.passwordSalt) === vault.passwordHash;
-  if (passed) notesSessionUnlocked = true;
+  if (passed) getRuntimeState().unlocked = true;
   return passed;
 }
 
 export function isNotesSessionUnlocked(): boolean {
-  return notesSessionUnlocked;
+  return getRuntimeState().unlocked;
 }
 
 export function lockNotesSession(): void {
-  notesSessionUnlocked = false;
-  activeNoteId = "";
+  const state = getRuntimeState();
+  state.unlocked = false;
+  state.activeNoteId = "";
 }
 
 export function setActiveNoteId(noteId: string): void {
-  activeNoteId = String(noteId || "");
+  getRuntimeState().activeNoteId = String(noteId || "");
 }
 
 export function getActiveNoteId(): string {
-  return activeNoteId;
+  return getRuntimeState().activeNoteId;
 }
 
 export async function createNote(title: string): Promise<NoteItem> {
@@ -193,6 +208,6 @@ export async function changeNotesPassword(oldPin: string, newPin: string): Promi
   const passed = await verifyNotesPassword(oldPin);
   if (!passed) return false;
   await setNotesPassword(newPin);
-  notesSessionUnlocked = true;
+  getRuntimeState().unlocked = true;
   return true;
 }

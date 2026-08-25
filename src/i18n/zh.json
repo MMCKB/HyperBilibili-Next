@@ -145,7 +145,10 @@
         "enterOldPassword": "输入旧密码",
         "enterNewPassword": "输入新密码",
         "passwordChanged": "密码已修改",
-        "oldPasswordWrong": "旧密码不正确"
+        "oldPasswordWrong": "旧密码不正确",
+        "pinHint": "仅可输入 4 至 8 位数字",
+        "pinCancel": "取消",
+        "pinConfirm": "确认"
     },
     "weather": {
         "title": "天气",

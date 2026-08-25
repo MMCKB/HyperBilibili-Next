@@ -144,7 +144,10 @@
         "enterOldPassword": "Enter old password",
         "enterNewPassword": "Enter new password",
         "passwordChanged": "Password changed",
-        "oldPasswordWrong": "Incorrect old password"
+        "oldPasswordWrong": "Incorrect old password",
+        "pinHint": "Use 4 to 8 digits only",
+        "pinCancel": "Cancel",
+        "pinConfirm": "Confirm"
     },
     "weather": {
         "title": "Weather",
