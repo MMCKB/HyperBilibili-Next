@@ -206,8 +206,8 @@
             <text if="{{resultList.length > 0}}" class="rect-theme-candidate-toggle" style="position:absolute;right: 8px;background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('down')">⌄</text>
           </div>
         
-          <text class="rect-theme-control-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('switchLow')" if="{{downFlag==='' && upperFlag && lang==='en'&& !numFlag}}">A</text>
-          <text class="rect-theme-control-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('switchUpper')" if="{{downFlag==='' && !upperFlag && lang==='en'&& !numFlag}}">a</text>
+          <text class="rect-theme-control-key rect-theme-shift-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('switchLow')" if="{{downFlag==='' && upperFlag && lang==='en'&& !numFlag}}">↑</text>
+          <text class="rect-theme-control-key rect-theme-shift-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('switchUpper')" if="{{downFlag==='' && !upperFlag && lang==='en'&& !numFlag}}">↑</text>
           <text class="rect-theme-control-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('switchNum')" if="{{downFlag==='' && !numFlag && lang==='en'}}">123</text>
           <!-- 从方屏切换页进入数字键盘时，原返回键位置改为切换键；英文数字入口仍保留原返回键。 -->
           <text class="rect-switch-trigger" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="openRectPanel('switch')" if="{{numFlag && rectNumFromSwitch}}">切换</text>
@@ -1201,6 +1201,9 @@ export default {
 	text-align:center;
 	line-height:56px;
 	border:3px solid rgba(255,255,255,0.06);
+}
+.rect-theme-shift-key {
+	font-size:38px;
 }
 .rect-theme-back-key {
 	color:rgb(255,255,255);
