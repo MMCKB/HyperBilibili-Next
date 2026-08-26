@@ -206,8 +206,8 @@
             <text if="{{resultList.length > 0}}" class="rect-theme-candidate-toggle" style="position:absolute;right: 8px;background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('down')">⌄</text>
           </div>
         
-          <text class="rect-theme-control-key rect-theme-shift-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('switchLow')" if="{{downFlag==='' && upperFlag && lang==='en'&& !numFlag}}">↑</text>
-          <text class="rect-theme-control-key rect-theme-shift-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('switchUpper')" if="{{downFlag==='' && !upperFlag && lang==='en'&& !numFlag}}">↑</text>
+          <text class="rect-theme-control-key rect-theme-shift-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectShiftLocked ? rectThemeAccent : rectThemeText}}" @click="onBtnClick('switchLow')" if="{{downFlag==='' && upperFlag && lang==='en'&& !numFlag}}">↑</text>
+          <text class="rect-theme-control-key rect-theme-shift-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectShiftLocked ? rectThemeAccent : rectThemeText}}" @click="onBtnClick('switchUpper')" if="{{downFlag==='' && !upperFlag && lang==='en'&& !numFlag}}">↑</text>
           <text class="rect-theme-control-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('switchNum')" if="{{downFlag==='' && !numFlag && lang==='en'}}">123</text>
           <!-- 从方屏切换页进入数字键盘时，原返回键位置改为切换键；英文数字入口仍保留原返回键。 -->
           <text class="rect-switch-trigger" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="openRectPanel('switch')" if="{{numFlag && rectNumFromSwitch}}">切换</text>
@@ -349,6 +349,7 @@ function getT9PinyinGroups(digits, traditional) {
   return SimpleInputMethod.getT9PinyinGroups(digits, traditional) || [];
 }
 // 方屏中文 T9 中每个字母组只对应一个数字。按 ABC、DEF、GHI 即得到 234。
+const RECT_SHIFT_DOUBLE_TAP_WINDOW = 500;
 const T9_GROUP_TO_DIGIT = {
   abc: "2",
   def: "3",
@@ -378,6 +379,9 @@ function normalizeVibrateMode(value) {
 function normalizeCandidateCount(value, fallback) {
   const count = parseInt(value);
   return count > 0 ? count : fallback;
+}
+function normalizeFeatureEnabled(value) {
+  return value === true || value === "true";
 }
 function normalizeKeyboardTheme(value) {
   if (value === "white" || value === "blue-gray") {
@@ -446,6 +450,14 @@ export default {
     keyboardtheme: {
       default: "dark",
     },
+    // 英文双击 Shift 锁定大写由快应用设置页控制，默认关闭。
+    doubletapshiftlock: {
+      default: false,
+    },
+    // 英文句首与换行后的首字母大写由快应用设置页控制，默认关闭。
+    autocapitalize: {
+      default: false,
+    },
   },
   data: {
     cval: "",
@@ -488,6 +500,12 @@ export default {
     rectThemeText: "rgb(255,255,255)",
     rectThemeProgress: "#262626",
     rectThemeAccent: "rgb(13,132,255)",
+    // 方屏英文输入辅助只读取快应用属性，不保存或回写设置。
+    rectDoubleTapShiftLock: false,
+    rectAutoCapitalize: false,
+    rectShiftLocked: false,
+    rectAutoCapitalPending: false,
+    rectLastShiftTapAt: 0,
     // 针对screenShape为rect的设备，会自动获取screenWidth并绑定到根div
     // 这样便能同时适配n67和o65甚至是后续设备，但实际效果可能受designWidth影响
     screenWidth: 336,
@@ -534,6 +552,8 @@ export default {
     this.rectVibrateMode = normalizeVibrateMode(this.vibratemode);
     this.rectCandidateCount = initialCandidateCount;
     this.rectTraditionalInput = normalizeTraditional(this.traditional);
+    this.rectDoubleTapShiftLock = normalizeFeatureEnabled(this.doubletapshiftlock);
+    this.rectAutoCapitalize = normalizeFeatureEnabled(this.autocapitalize);
     this.applyRectTheme(this.keyboardtheme);
     this.$watch("hide", "watchHidePropsChange");
     this.$watch("maxlength", "watchMaxLengthPropsChange");
@@ -541,6 +561,8 @@ export default {
     this.$watch("vibratemode", "watchVibratemodePropsChange");
     this.$watch("traditional", "watchTraditionalPropsChange");
     this.$watch("keyboardtheme", "watchKeyboardthemePropsChange");
+    this.$watch("doubletapshiftlock", "watchDoubletapshiftlockPropsChange");
+    this.$watch("autocapitalize", "watchAutocapitalizePropsChange");
   },
   addAllTxt(txt) {
     this.$emit("complete", { content: txt });
@@ -567,9 +589,11 @@ export default {
     if (mode === "cn") {
       this.lang = "cn";
       this.rectKeyboardtype = "QWERTY";
+      this.rectAutoCapitalPending = false;
     } else if (mode === "en") {
       this.lang = "en";
       this.rectKeyboardtype = "QWERTY";
+      this.prepareRectAutoCapitalization();
     } else if (mode === "t9") {
       this.lang = "cn";
       this.rectKeyboardtype = "T9";
@@ -674,6 +698,48 @@ export default {
     this.resetReslutList();
     this.$emit("cursor", { action: action });
   },
+  isRectEnglishQwerty() {
+    return this.screentype === "rect" && this.lang === "en" && !this.numFlag && this.rectKeyboardtype === "QWERTY";
+  },
+  prepareRectAutoCapitalization() {
+    if (!this.isRectEnglishQwerty() || !this.rectAutoCapitalize || this.rectShiftLocked) {
+      return;
+    }
+    this.rectAutoCapitalPending = true;
+    this.upperFlag = true;
+  },
+  handleRectShiftToggle(nextUpper) {
+    if (this.screentype !== "rect" || !this.rectDoubleTapShiftLock) {
+      this.rectShiftLocked = false;
+      this.rectLastShiftTapAt = 0;
+      this.upperFlag = nextUpper;
+      this.rectAutoCapitalPending = false;
+      return;
+    }
+    const now = Date.now();
+    const isDoubleTap = this.rectLastShiftTapAt > 0 && now - this.rectLastShiftTapAt <= RECT_SHIFT_DOUBLE_TAP_WINDOW;
+    this.rectLastShiftTapAt = now;
+    this.rectAutoCapitalPending = false;
+    if (isDoubleTap) {
+      this.rectShiftLocked = true;
+      this.rectLastShiftTapAt = 0;
+      this.upperFlag = true;
+      return;
+    }
+    this.rectShiftLocked = false;
+    this.upperFlag = nextUpper;
+  },
+  commitEnglishCharacter(text) {
+    if (this.upperFlag) {
+      this.addAllTxt(text.toUpperCase());
+    } else {
+      this.addAllTxt(text.toLowerCase());
+    }
+    if (this.screentype === "rect" && this.rectAutoCapitalPending && !this.rectShiftLocked) {
+      this.rectAutoCapitalPending = false;
+      this.upperFlag = false;
+    }
+  },
   onBtnClick(sign) {
     this.onVibrate();
     switch (sign) {
@@ -686,8 +752,10 @@ export default {
       case "lang":
         if (this.lang === "cn") {
           this.lang = "en";
+          this.prepareRectAutoCapitalization();
         } else {
           this.lang = "cn";
+          this.rectAutoCapitalPending = false;
         }
         this.cval = "";
         this.clearT9Input();
@@ -720,6 +788,7 @@ export default {
         break;
       case "cursorEnter":
         this.emitCursorAction("enter");
+        this.prepareRectAutoCapitalization();
         break;
       case "cursorUp":
         this.emitCursorAction("up");
@@ -738,11 +807,7 @@ export default {
           if (this.lang === "cn") {
             this.cval += this.waitingList[this.waitingIndex];
           } else {
-            if (this.upperFlag) {
-              this.addAllTxt(this.waitingList[this.waitingIndex].toUpperCase());
-            } else {
-              this.addAllTxt(this.waitingList[this.waitingIndex].toLowerCase());
-            }
+            this.commitEnglishCharacter(this.waitingList[this.waitingIndex]);
           }
           this.clearWaiting();
           this.resetReslutList();
@@ -762,10 +827,10 @@ export default {
         this.rectNumFromSwitch = false;
         break;
       case "switchUpper":
-        this.upperFlag = true;
+        this.handleRectShiftToggle(true);
         break;
       case "switchLow":
-        this.upperFlag = false;
+        this.handleRectShiftToggle(false);
         break;
       default:
         if (this.isRectChineseT9() && T9_GROUP_TO_DIGIT[sign]) {
@@ -785,15 +850,7 @@ export default {
               if (this.lang === "cn") {
                 this.cval += this.waitingList[this.waitingIndex];
               } else {
-                if (this.upperFlag) {
-                  this.addAllTxt(
-                    this.waitingList[this.waitingIndex].toUpperCase(),
-                  );
-                } else {
-                  this.addAllTxt(
-                    this.waitingList[this.waitingIndex].toLowerCase(),
-                  );
-                }
+                this.commitEnglishCharacter(this.waitingList[this.waitingIndex]);
               }
               this.lastWaitingStr = sign;
               this.waitingIndex = 0;
@@ -901,11 +958,7 @@ export default {
     if (this.lang === "cn" && !this.numFlag) {
       this.cval += num.toLowerCase();
     } else if (this.lang === "en" && !this.numFlag) {
-      if (this.upperFlag) {
-        this.addAllTxt(num.toUpperCase());
-      } else {
-        this.addAllTxt(num.toLowerCase());
-      }
+      this.commitEnglishCharacter(num);
     } else {
       this.addAllTxt(num);
     }
@@ -916,11 +969,7 @@ export default {
     if (this.lang === "cn") {
       this.cval += this.waitingList[num].toString();
     } else {
-      if (this.upperFlag) {
-        this.addAllTxt(this.waitingList[num].toUpperCase());
-      } else {
-        this.addAllTxt(this.waitingList[num].toLowerCase());
-      }
+      this.commitEnglishCharacter(this.waitingList[num]);
     }
     this.clearWaiting();
     this.resetReslutList();
@@ -968,6 +1017,22 @@ export default {
   },
   watchKeyboardthemePropsChange(newV, oldV) {
     this.applyRectTheme(newV);
+  },
+  watchDoubletapshiftlockPropsChange(newV, oldV) {
+    this.rectDoubleTapShiftLock = normalizeFeatureEnabled(newV);
+    if (!this.rectDoubleTapShiftLock) {
+      this.rectShiftLocked = false;
+      this.rectLastShiftTapAt = 0;
+    }
+  },
+  watchAutocapitalizePropsChange(newV, oldV) {
+    this.rectAutoCapitalize = normalizeFeatureEnabled(newV);
+    if (!this.rectAutoCapitalize) {
+      if (this.rectAutoCapitalPending && !this.rectShiftLocked) {
+        this.upperFlag = false;
+      }
+      this.rectAutoCapitalPending = false;
+    }
   },
   onVibrate() {
     const currentMode = this.screentype === "rect" ? this.rectVibrateMode : this.vibratemode;
