@@ -62,6 +62,28 @@
         </div>
       </div>
 
+      <div class="keyboard-setting-card" onclick="OpenPicker('shiftLock')">
+        <div class="keyboard-setting-copy">
+          <text class="keyboard-setting-title">{{ $t("keyboardSettings.shiftLock") }}</text>
+          <text class="keyboard-setting-description">{{ $t("keyboardSettings.shiftLockDescription") }}</text>
+        </div>
+        <div class="keyboard-setting-value-wrap">
+          <text class="keyboard-setting-value">{{ shiftLockLabel }}</text>
+          <image class="keyboard-setting-arrow" src="/common/arrow_right.png"></image>
+        </div>
+      </div>
+
+      <div class="keyboard-setting-card" onclick="OpenPicker('autoCapitalize')">
+        <div class="keyboard-setting-copy">
+          <text class="keyboard-setting-title">{{ $t("keyboardSettings.autoCapitalize") }}</text>
+          <text class="keyboard-setting-description">{{ $t("keyboardSettings.autoCapitalizeDescription") }}</text>
+        </div>
+        <div class="keyboard-setting-value-wrap">
+          <text class="keyboard-setting-value">{{ autoCapitalizeLabel }}</text>
+          <image class="keyboard-setting-arrow" src="/common/arrow_right.png"></image>
+        </div>
+      </div>
+
       <text class="keyboard-settings-bottom-spacer"></text>
     </scroll>
 
@@ -89,11 +111,15 @@ export default {
     vibratemode: "short",
     maxlength: 5,
     keyboardtheme: "dark",
+    doubletapshiftlock: false,
+    autocapitalize: false,
     themeLabel: "",
     layoutLabel: "",
     traditionalLabel: "",
     vibrationLabel: "",
     candidatesLabel: "",
+    shiftLockLabel: "",
+    autoCapitalizeLabel: "",
     pickerVisible: false,
     pickerType: "",
     pickerTitle: "",
@@ -107,6 +133,8 @@ export default {
     this.vibratemode = preferences.vibratemode === "long" ? "long" : (preferences.vibratemode === "short" ? "short" : "");
     this.maxlength = Number(preferences.maxlength) === 3 ? 3 : 5;
     this.keyboardtheme = preferences.keyboardtheme === "white" || preferences.keyboardtheme === "blue-gray" ? preferences.keyboardtheme : "dark";
+    this.doubletapshiftlock = preferences.doubletapshiftlock === true;
+    this.autocapitalize = preferences.autocapitalize === true;
   },
   RefreshLabels() {
     if (this.keyboardtheme === "white") {
@@ -126,6 +154,8 @@ export default {
       this.vibrationLabel = this.$t("keyboardSettings.vibrationOff");
     }
     this.candidatesLabel = this.maxlength === 3 ? this.$t("keyboardSettings.candidatesThree") : this.$t("keyboardSettings.candidatesFive");
+    this.shiftLockLabel = this.doubletapshiftlock ? this.$t("keyboardSettings.featureEnabled") : this.$t("keyboardSettings.featureDisabled");
+    this.autoCapitalizeLabel = this.autocapitalize ? this.$t("keyboardSettings.featureEnabled") : this.$t("keyboardSettings.featureDisabled");
   },
   OpenPicker(type) {
     this.pickerType = type;
@@ -146,10 +176,18 @@ export default {
       this.pickerTitle = this.$t("keyboardSettings.vibration");
       this.pickerOptions = [this.$t("keyboardSettings.vibrationOff"), this.$t("keyboardSettings.vibrationShort"), this.$t("keyboardSettings.vibrationLong")];
       this.pickerSelectedIndex = this.vibratemode === "long" ? 2 : (this.vibratemode === "short" ? 1 : 0);
-    } else {
+    } else if (type === "candidates") {
       this.pickerTitle = this.$t("keyboardSettings.candidates");
       this.pickerOptions = [this.$t("keyboardSettings.candidatesThree"), this.$t("keyboardSettings.candidatesFive")];
       this.pickerSelectedIndex = this.maxlength === 3 ? 0 : 1;
+    } else if (type === "shiftLock") {
+      this.pickerTitle = this.$t("keyboardSettings.shiftLock");
+      this.pickerOptions = [this.$t("keyboardSettings.featureDisabled"), this.$t("keyboardSettings.featureEnabled")];
+      this.pickerSelectedIndex = this.doubletapshiftlock ? 1 : 0;
+    } else if (type === "autoCapitalize") {
+      this.pickerTitle = this.$t("keyboardSettings.autoCapitalize");
+      this.pickerOptions = [this.$t("keyboardSettings.featureDisabled"), this.$t("keyboardSettings.featureEnabled")];
+      this.pickerSelectedIndex = this.autocapitalize ? 1 : 0;
     }
   },
   ClosePicker() {
@@ -167,6 +205,10 @@ export default {
       this.vibratemode = index === 2 ? "long" : (index === 1 ? "short" : "");
     } else if (this.pickerType === "candidates") {
       this.maxlength = index === 0 ? 3 : 5;
+    } else if (this.pickerType === "shiftLock") {
+      this.doubletapshiftlock = index === 1;
+    } else if (this.pickerType === "autoCapitalize") {
+      this.autocapitalize = index === 1;
     }
     this.SavePreferences();
     this.RefreshLabels();
@@ -181,7 +223,9 @@ export default {
         vibratemode: this.vibratemode,
         maxlength: this.maxlength,
         traditional: this.traditional,
-        keyboardtheme: this.keyboardtheme
+        keyboardtheme: this.keyboardtheme,
+        doubletapshiftlock: this.doubletapshiftlock,
+        autocapitalize: this.autocapitalize
       }
     });
   },

@@ -3,7 +3,7 @@
 
 <template>
     <div class="inputpanel">
-        <input-method if="{{global_show && !emojimode}}" style="position: absolute" hide={{keyboardHide}} @complete="InputEvent" @delete="InputDelete" @cursor="InputCursor" screentype="{{screentype}}" keyboardtype="{{keyboardtype}}" traditional="{{traditional}}" vibratemode="{{vibratemode}}" maxlength="{{maxlength}}" keyboardtheme="{{keyboardtheme}}"></input-method>
+        <input-method if="{{global_show && !emojimode}}" style="position: absolute" hide={{keyboardHide}} @complete="InputEvent" @delete="InputDelete" @cursor="InputCursor" screentype="{{screentype}}" keyboardtype="{{keyboardtype}}" traditional="{{traditional}}" vibratemode="{{vibratemode}}" maxlength="{{maxlength}}" keyboardtheme="{{keyboardtheme}}" doubletapshiftlock="{{doubletapshiftlock}}" autocapitalize="{{autocapitalize}}"></input-method>
         <div class="inputactions">
             <div style="margin-left: 35px" @click="ExitInput">
                 <image class="inputaction_img" src="/common/textinput_back.png"></image>
@@ -47,6 +47,8 @@ export default {
         vibratemode: "short",
         maxlength: 5,
         keyboardtheme: "dark",
+        doubletapshiftlock: false,
+        autocapitalize: false,
         emojimode: false
     },
     NormalizeCursor(index){
@@ -178,6 +180,8 @@ export default {
         this.vibratemode = preferences.vibratemode === "long" ? "long" : (preferences.vibratemode === "short" ? "short" : "")
         this.maxlength = Number(preferences.maxlength) === 3 ? 3 : 5
         this.keyboardtheme = preferences.keyboardtheme === "white" || preferences.keyboardtheme === "blue-gray" ? preferences.keyboardtheme : "dark"
+        this.doubletapshiftlock = preferences.doubletapshiftlock === true
+        this.autocapitalize = preferences.autocapitalize === true
         // 用传入的初始文本初始化输入框
         this.input_text = this.initialText || ""
         this.cursorIndex = this.input_text.length

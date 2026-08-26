@@ -406,7 +406,13 @@
         "candidates": "候选词数量",
         "candidatesDescription": "默认候选栏每行显示的候选词数量",
         "candidatesThree": "3 个",
-        "candidatesFive": "5 个"
+        "candidatesFive": "5 个",
+        "shiftLock": "双击 Shift 锁定大写",
+        "shiftLockDescription": "英文全键快速双击 ↑ 后保持大写，单击解除",
+        "autoCapitalize": "英文自动首字母大写",
+        "autoCapitalizeDescription": "切换英文或点按回车后，下一次英文输入自动大写",
+        "featureDisabled": "关闭",
+        "featureEnabled": "开启"
     },
     "playerAppearance": {
         "title": "播放器外观",
