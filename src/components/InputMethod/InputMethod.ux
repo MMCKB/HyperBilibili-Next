@@ -206,8 +206,8 @@
             <text if="{{resultList.length > 0}}" class="rect-theme-candidate-toggle" style="position:absolute;right: 8px;background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('down')">⌄</text>
           </div>
         
-          <text class="rect-theme-control-key rect-theme-shift-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectShiftLocked ? rectThemeAccent : rectThemeText}}" @click="onBtnClick('switchLow')" if="{{downFlag==='' && upperFlag && lang==='en'&& !numFlag}}">↑</text>
-          <text class="rect-theme-control-key rect-theme-shift-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectShiftLocked ? rectThemeAccent : rectThemeText}}" @click="onBtnClick('switchUpper')" if="{{downFlag==='' && !upperFlag && lang==='en'&& !numFlag}}">↑</text>
+          <img src="./assets/horizontal/bigA.png" style="padding: 6px;margin-left: 6px;width:94px;height:56px;" @click="onBtnClick('switchLow')" if="{{downFlag==='' && upperFlag && lang==='en'&& !numFlag}}" />
+          <img src="./assets/horizontal/a.png" style="padding: 6px;margin-left: 6px;width:94px;height:56px;" @click="onBtnClick('switchUpper')" if="{{downFlag==='' && !upperFlag && lang==='en'&& !numFlag}}" />
           <text class="rect-theme-control-key" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="onBtnClick('switchNum')" if="{{downFlag==='' && !numFlag && lang==='en'}}">123</text>
           <!-- 从方屏切换页进入数字键盘时，原返回键位置改为切换键；英文数字入口仍保留原返回键。 -->
           <text class="rect-switch-trigger" style="background-color:{{rectThemeSurface}};border-color:{{rectThemeBorder}};color:{{rectThemeText}}" @click="openRectPanel('switch')" if="{{numFlag && rectNumFromSwitch}}">切换</text>
@@ -454,10 +454,6 @@ export default {
     doubletapshiftlock: {
       default: false,
     },
-    // 英文句首与换行后的首字母大写由快应用设置页控制，默认关闭。
-    autocapitalize: {
-      default: false,
-    },
   },
   data: {
     cval: "",
@@ -502,9 +498,7 @@ export default {
     rectThemeAccent: "rgb(13,132,255)",
     // 方屏英文输入辅助只读取快应用属性，不保存或回写设置。
     rectDoubleTapShiftLock: false,
-    rectAutoCapitalize: false,
     rectShiftLocked: false,
-    rectAutoCapitalPending: false,
     rectLastShiftTapAt: 0,
     // 针对screenShape为rect的设备，会自动获取screenWidth并绑定到根div
     // 这样便能同时适配n67和o65甚至是后续设备，但实际效果可能受designWidth影响
@@ -553,7 +547,6 @@ export default {
     this.rectCandidateCount = initialCandidateCount;
     this.rectTraditionalInput = normalizeTraditional(this.traditional);
     this.rectDoubleTapShiftLock = normalizeFeatureEnabled(this.doubletapshiftlock);
-    this.rectAutoCapitalize = normalizeFeatureEnabled(this.autocapitalize);
     this.applyRectTheme(this.keyboardtheme);
     this.$watch("hide", "watchHidePropsChange");
     this.$watch("maxlength", "watchMaxLengthPropsChange");
@@ -562,7 +555,6 @@ export default {
     this.$watch("traditional", "watchTraditionalPropsChange");
     this.$watch("keyboardtheme", "watchKeyboardthemePropsChange");
     this.$watch("doubletapshiftlock", "watchDoubletapshiftlockPropsChange");
-    this.$watch("autocapitalize", "watchAutocapitalizePropsChange");
   },
   addAllTxt(txt) {
     this.$emit("complete", { content: txt });
@@ -589,11 +581,9 @@ export default {
     if (mode === "cn") {
       this.lang = "cn";
       this.rectKeyboardtype = "QWERTY";
-      this.rectAutoCapitalPending = false;
     } else if (mode === "en") {
       this.lang = "en";
       this.rectKeyboardtype = "QWERTY";
-      this.prepareRectAutoCapitalization();
     } else if (mode === "t9") {
       this.lang = "cn";
       this.rectKeyboardtype = "T9";
@@ -698,28 +688,16 @@ export default {
     this.resetReslutList();
     this.$emit("cursor", { action: action });
   },
-  isRectEnglishQwerty() {
-    return this.screentype === "rect" && this.lang === "en" && !this.numFlag && this.rectKeyboardtype === "QWERTY";
-  },
-  prepareRectAutoCapitalization() {
-    if (!this.isRectEnglishQwerty() || !this.rectAutoCapitalize || this.rectShiftLocked) {
-      return;
-    }
-    this.rectAutoCapitalPending = true;
-    this.upperFlag = true;
-  },
   handleRectShiftToggle(nextUpper) {
     if (this.screentype !== "rect" || !this.rectDoubleTapShiftLock) {
       this.rectShiftLocked = false;
       this.rectLastShiftTapAt = 0;
       this.upperFlag = nextUpper;
-      this.rectAutoCapitalPending = false;
       return;
     }
     const now = Date.now();
     const isDoubleTap = this.rectLastShiftTapAt > 0 && now - this.rectLastShiftTapAt <= RECT_SHIFT_DOUBLE_TAP_WINDOW;
     this.rectLastShiftTapAt = now;
-    this.rectAutoCapitalPending = false;
     if (isDoubleTap) {
       this.rectShiftLocked = true;
       this.rectLastShiftTapAt = 0;
@@ -735,10 +713,6 @@ export default {
     } else {
       this.addAllTxt(text.toLowerCase());
     }
-    if (this.screentype === "rect" && this.rectAutoCapitalPending && !this.rectShiftLocked) {
-      this.rectAutoCapitalPending = false;
-      this.upperFlag = false;
-    }
   },
   onBtnClick(sign) {
     this.onVibrate();
@@ -752,10 +726,8 @@ export default {
       case "lang":
         if (this.lang === "cn") {
           this.lang = "en";
-          this.prepareRectAutoCapitalization();
         } else {
           this.lang = "cn";
-          this.rectAutoCapitalPending = false;
         }
         this.cval = "";
         this.clearT9Input();
@@ -788,7 +760,6 @@ export default {
         break;
       case "cursorEnter":
         this.emitCursorAction("enter");
-        this.prepareRectAutoCapitalization();
         break;
       case "cursorUp":
         this.emitCursorAction("up");
@@ -1025,15 +996,6 @@ export default {
       this.rectLastShiftTapAt = 0;
     }
   },
-  watchAutocapitalizePropsChange(newV, oldV) {
-    this.rectAutoCapitalize = normalizeFeatureEnabled(newV);
-    if (!this.rectAutoCapitalize) {
-      if (this.rectAutoCapitalPending && !this.rectShiftLocked) {
-        this.upperFlag = false;
-      }
-      this.rectAutoCapitalPending = false;
-    }
-  },
   onVibrate() {
     const currentMode = this.screentype === "rect" ? this.rectVibrateMode : this.vibratemode;
     const mode = normalizeVibrateMode(currentMode);
@@ -1266,9 +1228,6 @@ export default {
 	text-align:center;
 	line-height:56px;
 	border:3px solid rgba(255,255,255,0.06);
-}
-.rect-theme-shift-key {
-	font-size:38px;
 }
 .rect-theme-back-key {
 	color:rgb(255,255,255);
