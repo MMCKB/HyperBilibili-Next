@@ -1,5 +1,5 @@
 <template>
-  <div class="page github-watch5-frame">
+  <div class="page github-watch5-frame" ontouchstart="StartFixedTouch" ontouchmove="MoveFixedTouch" ontouchend="EndFixedTouch">
     <div class="github-text-header">
       <div class="github-home-back" onclick="GoBack"><text class="github-home-back-text">‹</text></div>
       <text class="github-text-title">{{ titletext }}</text>
@@ -13,6 +13,8 @@
 </template>
 
 <script>
+import { startGithubFixedTouch, moveGithubFixedTouch, endGithubFixedTouch } from "@src/githubgesture.ts"
+
 export default {
   public: {
     text: "",
@@ -20,6 +22,15 @@ export default {
   },
   private: {
     scrclass: ""
+  },
+  StartFixedTouch(event) {
+    startGithubFixedTouch(this, event)
+  },
+  MoveFixedTouch(event) {
+    moveGithubFixedTouch(this, event)
+  },
+  EndFixedTouch(event) {
+    endGithubFixedTouch(this, event)
   },
   onInit() {
     global.ui.InitPage(this)

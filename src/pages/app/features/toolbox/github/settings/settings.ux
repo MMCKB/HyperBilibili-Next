@@ -1,5 +1,5 @@
 <template>
-  <div class="page github-watch5-frame">
+  <div class="page github-watch5-frame" ontouchstart="StartFixedTouch" ontouchmove="MoveFixedTouch" ontouchend="EndFixedTouch">
     <div class="github-settings-header">
       <div class="github-home-back" onclick="GoBack"><text class="github-home-back-text">‹</text></div>
       <text class="github-settings-title">{{ $t("github.settings") }}</text>
@@ -29,12 +29,22 @@
 
 <script>
 import router from "@system.router"
+import { startGithubFixedTouch, moveGithubFixedTouch, endGithubFixedTouch } from "@src/githubgesture.ts"
 import { clearGithubToken } from "@src/github.ts"
 
 export default {
   private: {
     scrclass: "",
     confirmVisible: false
+  },
+  StartFixedTouch(event) {
+    startGithubFixedTouch(this, event)
+  },
+  MoveFixedTouch(event) {
+    moveGithubFixedTouch(this, event)
+  },
+  EndFixedTouch(event) {
+    endGithubFixedTouch(this, event)
   },
   onInit() {
     global.ui.InitPage(this)

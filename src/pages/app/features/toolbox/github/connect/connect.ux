@@ -1,7 +1,7 @@
 <import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
 
 <template>
-  <div class="page github-watch5-frame">
+  <div class="page github-watch5-frame" ontouchstart="StartFixedTouch" ontouchmove="MoveFixedTouch" ontouchend="EndFixedTouch">
     <div class="github-connect-header">
       <div class="github-connect-back" onclick="GoBack"><text class="github-connect-back-text">‹</text></div>
       <text class="github-connect-title">{{ $t("github.connectTitle") }}</text>
@@ -28,6 +28,7 @@
 
 <script>
 import router from "@system.router"
+import { startGithubFixedTouch, moveGithubFixedTouch, endGithubFixedTouch } from "@src/githubgesture.ts"
 import { hasGithubToken, saveGithubToken } from "@src/github.ts"
 
 export default {
@@ -38,6 +39,15 @@ export default {
     showInput: false,
     inputSeed: "",
     statusText: ""
+  },
+  StartFixedTouch(event) {
+    startGithubFixedTouch(this, event)
+  },
+  MoveFixedTouch(event) {
+    moveGithubFixedTouch(this, event)
+  },
+  EndFixedTouch(event) {
+    endGithubFixedTouch(this, event)
   },
   async onInit() {
     global.ui.InitPage(this)

@@ -1,5 +1,5 @@
 <template>
-  <div class="page github-watch5-frame">
+  <div class="page github-watch5-frame" ontouchstart="StartFixedTouch" ontouchmove="MoveFixedTouch" ontouchend="EndFixedTouch">
     <div class="github-issues-header">
       <div class="github-home-back" onclick="GoBack"><text class="github-home-back-text">‹</text></div>
       <text class="github-issues-title">{{ $t("github.issues") }}</text>
@@ -7,8 +7,7 @@
     </div>
     <scroll class="github-issues-scroll {{scrclass}}" scroll-y="true" bounces="false">
       <div class="github-issues-content">
-        <text class="github-issues-repository">{{ repositoryLabel }}</text>
-        <text class="github-issues-readonly">{{ $t("github.issuesReadonly") }}</text>
+        <div class="github-issues-overview-card"><text class="github-issues-repository">{{ repositoryLabel }}</text><text class="github-issues-readonly">{{ $t("github.issuesReadonly") }}</text></div>
         <text class="github-issues-status" if="{{statusText}}">{{ statusText }}</text>
         <text class="github-issues-loading" if="{{loading}}">{{ $t("github.loading") }}</text>
         <div class="github-issue-card" for="{{issues}}" onclick="OpenIssue($item)">
@@ -29,6 +28,7 @@
 
 <script>
 import router from "@system.router"
+import { startGithubFixedTouch, moveGithubFixedTouch, endGithubFixedTouch } from "@src/githubgesture.ts"
 import { getActiveGithubRepository, listGithubIssues } from "@src/github.ts"
 
 export default {
@@ -78,6 +78,15 @@ export default {
       this.loaded = true
     }
     this.loading = false
+  },
+  StartFixedTouch(event) {
+    startGithubFixedTouch(this, event)
+  },
+  MoveFixedTouch(event) {
+    moveGithubFixedTouch(this, event)
+  },
+  EndFixedTouch(event) {
+    endGithubFixedTouch(this, event)
   },
   onInit() {
     global.ui.InitPage(this)

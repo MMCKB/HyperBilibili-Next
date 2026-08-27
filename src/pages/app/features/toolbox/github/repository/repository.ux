@@ -1,5 +1,5 @@
 <template>
-  <div class="page github-watch5-frame">
+  <div class="page github-watch5-frame" ontouchstart="StartFixedTouch" ontouchmove="MoveFixedTouch" ontouchend="EndFixedTouch">
     <div class="github-repo-header">
       <div class="github-home-back" onclick="GoBack"><text class="github-home-back-text">‹</text></div>
       <text class="github-repo-header-title">{{ repository.name || $t("github.repository") }}</text>
@@ -7,10 +7,12 @@
     </div>
     <scroll class="github-repo-scroll {{scrclass}}" scroll-y="true" bounces="false">
       <div class="github-repo-content" if="{{repository.name}}">
-        <text class="github-repo-name">{{ repository.name }}</text>
-        <text class="github-repo-owner">{{ repository.owner }}</text>
-        <text class="github-repo-description" if="{{repository.description}}">{{ repository.description }}</text>
-        <div class="github-repo-stats"><text class="github-repo-stat">★ {{ repository.stars }}</text><text class="github-repo-stat">{{ repository.private ? $t("github.privateRepository") : $t("github.publicRepository") }}</text></div>
+        <div class="github-repo-overview-card">
+          <text class="github-repo-name">{{ repository.name }}</text>
+          <text class="github-repo-owner">{{ repository.owner }}</text>
+          <text class="github-repo-description" if="{{repository.description}}">{{ repository.description }}</text>
+          <div class="github-repo-stats"><text class="github-repo-stat">★ {{ repository.stars }}</text><text class="github-repo-stat">{{ repository.private ? $t("github.privateRepository") : $t("github.publicRepository") }}</text></div>
+        </div>
 
         <text class="github-repo-section">{{ $t("github.repositoryActions") }}</text>
         <div class="github-repo-action" onclick="StarRepository">
@@ -43,6 +45,7 @@
 
 <script>
 import router from "@system.router"
+import { startGithubFixedTouch, moveGithubFixedTouch, endGithubFixedTouch } from "@src/githubgesture.ts"
 import { getActiveGithubRepository, getGithubReadme, getGithubRepository, isGithubRepositoryStarred, setActiveGithubRepository, starGithubRepository } from "@src/github.ts"
 
 export default {
@@ -81,6 +84,15 @@ export default {
       this.statusText = this.ErrorText(error)
     }
     this.loading = false
+  },
+  StartFixedTouch(event) {
+    startGithubFixedTouch(this, event)
+  },
+  MoveFixedTouch(event) {
+    moveGithubFixedTouch(this, event)
+  },
+  EndFixedTouch(event) {
+    endGithubFixedTouch(this, event)
   },
   onInit() {
     global.ui.InitPage(this)

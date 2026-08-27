@@ -1,7 +1,7 @@
 <import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
 
 <template>
-  <div class="page github-watch5-frame">
+  <div class="page github-watch5-frame" ontouchstart="StartFixedTouch" ontouchmove="MoveFixedTouch" ontouchend="EndFixedTouch">
     <div class="github-workflow-form-header">
       <div class="github-home-back" onclick="GoBack"><text class="github-home-back-text">‹</text></div>
       <text class="github-workflow-form-title">{{ $t("github.runWorkflow") }}</text>
@@ -9,9 +9,11 @@
     </div>
     <scroll class="github-workflow-form-scroll {{scrclass}}" scroll-y="true" bounces="false">
       <div class="github-workflow-form-content">
-        <text class="github-workflow-form-name">{{ workflow.name }}</text>
-        <text class="github-workflow-form-path">{{ workflow.path }}</text>
-        <text class="github-workflow-form-branch">{{ $t("github.runBranch") }} {{ repository.defaultBranch }}</text>
+        <div class="github-workflow-form-overview-card">
+          <text class="github-workflow-form-name">{{ workflow.name }}</text>
+          <text class="github-workflow-form-path">{{ workflow.path }}</text>
+          <text class="github-workflow-form-branch">{{ $t("github.runBranch") }} {{ repository.defaultBranch }}</text>
+        </div>
         <text class="github-workflow-form-loading" if="{{loadingDefinition}}">{{ $t("github.loading") }}</text>
         <text class="github-workflow-form-status" if="{{statusText}}">{{ statusText }}</text>
 
@@ -64,6 +66,7 @@
 </template>
 
 <script>
+import { startGithubFixedTouch, moveGithubFixedTouch, endGithubFixedTouch } from "@src/githubgesture.ts"
 import { dispatchGithubWorkflow, getActiveGithubRepository, getActiveGithubWorkflow, getGithubWorkflowDefinition } from "@src/github.ts"
 
 export default {
@@ -125,6 +128,15 @@ export default {
       this.definitionLoaded = true
     }
     this.loadingDefinition = false
+  },
+  StartFixedTouch(event) {
+    startGithubFixedTouch(this, event)
+  },
+  MoveFixedTouch(event) {
+    moveGithubFixedTouch(this, event)
+  },
+  EndFixedTouch(event) {
+    endGithubFixedTouch(this, event)
   },
   onInit() {
     global.ui.InitPage(this)

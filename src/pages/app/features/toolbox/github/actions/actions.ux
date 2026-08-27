@@ -1,5 +1,5 @@
 <template>
-  <div class="page github-watch5-frame">
+  <div class="page github-watch5-frame" ontouchstart="StartFixedTouch" ontouchmove="MoveFixedTouch" ontouchend="EndFixedTouch">
     <div class="github-actions-header">
       <div class="github-home-back" onclick="GoBack"><text class="github-home-back-text">‹</text></div>
       <text class="github-actions-title">{{ $t("github.actions") }}</text>
@@ -7,8 +7,7 @@
     </div>
     <scroll class="github-actions-scroll {{scrclass}}" scroll-y="true" bounces="false">
       <div class="github-actions-content">
-        <text class="github-actions-repository">{{ repositoryLabel }}</text>
-        <text class="github-actions-subtitle">{{ $t("github.chooseWorkflow") }}</text>
+        <div class="github-actions-overview-card"><text class="github-actions-repository">{{ repositoryLabel }}</text><text class="github-actions-subtitle">{{ $t("github.chooseWorkflow") }}</text></div>
         <text class="github-actions-status" if="{{statusText}}">{{ statusText }}</text>
         <text class="github-actions-loading" if="{{loading}}">{{ $t("github.loading") }}</text>
         <div class="github-workflow-card" for="{{workflows}}" onclick="OpenWorkflow($item)">
@@ -29,6 +28,7 @@
 
 <script>
 import router from "@system.router"
+import { startGithubFixedTouch, moveGithubFixedTouch, endGithubFixedTouch } from "@src/githubgesture.ts"
 import { getActiveGithubRepository, listGithubWorkflows, setActiveGithubWorkflow } from "@src/github.ts"
 
 export default {
@@ -64,6 +64,15 @@ export default {
       this.loaded = true
     }
     this.loading = false
+  },
+  StartFixedTouch(event) {
+    startGithubFixedTouch(this, event)
+  },
+  MoveFixedTouch(event) {
+    moveGithubFixedTouch(this, event)
+  },
+  EndFixedTouch(event) {
+    endGithubFixedTouch(this, event)
   },
   onInit() {
     global.ui.InitPage(this)

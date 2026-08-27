@@ -1,5 +1,5 @@
 <template>
-  <div class="page github-watch5-frame">
+  <div class="page github-watch5-frame" ontouchstart="StartFixedTouch" ontouchmove="MoveFixedTouch" ontouchend="EndFixedTouch">
     <div class="github-home-header">
       <div class="github-home-back" onclick="GoBack"><text class="github-home-back-text">‹</text></div>
       <text class="github-home-title">GitHub</text>
@@ -9,8 +9,10 @@
 
     <scroll class="github-home-scroll {{scrclass}}" scroll-y="true" bounces="false">
       <div class="github-home-content">
-        <text class="github-home-heading">{{ $t("github.repositories") }}</text>
-        <text class="github-home-subheading">{{ $t("github.repositoriesDescription") }}</text>
+        <div class="github-home-overview-card">
+          <text class="github-home-heading">{{ $t("github.repositories") }}</text>
+          <text class="github-home-subheading">{{ $t("github.repositoriesDescription") }}</text>
+        </div>
         <text class="github-home-status" if="{{statusText}}">{{ statusText }}</text>
         <text class="github-home-refreshed" if="{{refreshText && !statusText}}">{{ refreshText }}</text>
         <text class="github-home-loading" if="{{loading}}">{{ $t("github.loading") }}</text>
@@ -61,6 +63,7 @@
 
 <script>
 import router from "@system.router"
+import { startGithubFixedTouch, moveGithubFixedTouch, endGithubFixedTouch } from "@src/githubgesture.ts"
 import { getGithubProfile, hasGithubToken, listGithubRepositories, setActiveGithubRepository } from "@src/github.ts"
 
 export default {
@@ -141,6 +144,15 @@ export default {
       return false
     }
     return true
+  },
+  StartFixedTouch(event) {
+    startGithubFixedTouch(this, event)
+  },
+  MoveFixedTouch(event) {
+    moveGithubFixedTouch(this, event)
+  },
+  EndFixedTouch(event) {
+    endGithubFixedTouch(this, event)
   },
   async onInit() {
     global.ui.InitPage(this)
