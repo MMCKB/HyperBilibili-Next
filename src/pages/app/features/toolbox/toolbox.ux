@@ -37,14 +37,6 @@
           </div>
           <text class="toolbox-card-arrow">›</text>
         </div>
-        <div class="toolbox-card toolbox-card-next" onclick="OpenGithub">
-          <div class="toolbox-card-icon toolbox-github-icon"><text class="toolbox-card-github-icon-text">GH</text></div>
-          <div class="toolbox-card-copy">
-            <text class="toolbox-card-title">{{ $t("toolbox.github") }}</text>
-            <text class="toolbox-card-subtitle">{{ $t("toolbox.githubDescription") }}</text>
-          </div>
-          <text class="toolbox-card-arrow">›</text>
-        </div>
         <div class="toolbox-card toolbox-card-next" onclick="OpenTodo">
           <div class="toolbox-card-icon toolbox-todo-icon"><text class="toolbox-card-todo-icon-text">✓</text></div>
           <div class="toolbox-card-copy">
@@ -102,9 +94,6 @@ export default {
     router.push({
       uri: "pages/app/features/toolbox/ai"
     })
-  },
-  OpenGithub() {
-    router.push({ uri: "pages/app/features/toolbox/github/connect" })
   },
   OpenTodo() {
     router.push({ uri: "pages/app/features/toolbox/todo" })
