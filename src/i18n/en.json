@@ -137,6 +137,7 @@
         "tokenSaveFailed": "Failed to save token. Try again.",
         "repositories": "Repositories",
         "repositoriesDescription": "Sorted by latest update. Scroll down to load more.",
+        "refreshed": "Repositories and account information refreshed",
         "loading": "Loading…",
         "loadMore": "Load more repositories",
         "noRepositories": "No repositories to show",

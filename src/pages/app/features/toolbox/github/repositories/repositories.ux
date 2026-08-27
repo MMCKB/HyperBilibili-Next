@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page github-watch5-frame">
     <div class="github-home-header">
       <div class="github-home-back" onclick="GoBack"><text class="github-home-back-text">‹</text></div>
       <text class="github-home-title">{{ $t("github.myRepositories") }}</text>
@@ -100,5 +100,6 @@ export default {
 
 <style lang="less">
 @import "@less/global.less";
+@import "../frame.less";
 @import "../github.less";
 </style>

@@ -138,6 +138,7 @@
         "tokenSaveFailed": "令牌保存失败，请重试",
         "repositories": "仓库",
         "repositoriesDescription": "按最近更新排序，可向下加载更多",
+        "refreshed": "已刷新仓库与账户信息",
         "loading": "正在加载…",
         "loadMore": "加载更多仓库",
         "noRepositories": "没有可显示的仓库",

@@ -1,8 +1,9 @@
 <template>
-  <div class="page">
+  <div class="page github-watch5-frame">
     <div class="github-home-header">
       <div class="github-home-back" onclick="GoBack"><text class="github-home-back-text">‹</text></div>
       <text class="github-home-title">GitHub</text>
+      <div class="github-home-refresh" onclick="RefreshGithub"><text class="github-home-refresh-text">{{ refreshing ? "⟳" : "↻" }}</text></div>
       <div class="github-home-menu" onclick="OpenDrawer"><text class="github-home-menu-text">☰</text></div>
     </div>
 
@@ -11,6 +12,7 @@
         <text class="github-home-heading">{{ $t("github.repositories") }}</text>
         <text class="github-home-subheading">{{ $t("github.repositoriesDescription") }}</text>
         <text class="github-home-status" if="{{statusText}}">{{ statusText }}</text>
+        <text class="github-home-refreshed" if="{{refreshText && !statusText}}">{{ refreshText }}</text>
         <text class="github-home-loading" if="{{loading}}">{{ $t("github.loading") }}</text>
 
         <div class="github-repository-card" for="{{repositories}}" onclick="OpenRepository($item)">
@@ -71,6 +73,8 @@ export default {
     loaded: false,
     statusText: "",
     drawerVisible: false,
+    refreshing: false,
+    refreshText: "",
     profileName: "",
     profileLogin: "",
     profileAvatar: ""
@@ -147,7 +151,18 @@ export default {
   GoBack() {
     global.ui.OnBackPressTriggered()
   },
+  async RefreshGithub() {
+    if (this.loading || this.refreshing) return
+    this.refreshing = true
+    this.statusText = ""
+    this.refreshText = ""
+    await this.LoadProfile()
+    await this.LoadRepositories(true)
+    if (!this.statusText) this.refreshText = this.$t("github.refreshed")
+    this.refreshing = false
+  },
   LoadMore() {
+    this.refreshText = ""
     this.LoadRepositories(false)
   },
   OpenRepository(item) {
@@ -175,5 +190,6 @@ export default {
 
 <style lang="less">
 @import "@less/global.less";
+@import "./frame.less";
 @import "./github.less";
 </style>

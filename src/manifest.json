@@ -241,6 +241,9 @@
             "pages/app/features/toolbox/github/workflow": {
                 "component": "workflow"
             },
+            "pages/app/features/toolbox/github/text": {
+                "component": "text"
+            },
             "pages/debug/componentstest": {
                 "component": "componentstest"
             },

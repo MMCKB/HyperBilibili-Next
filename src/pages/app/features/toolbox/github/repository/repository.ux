@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page github-watch5-frame">
     <div class="github-repo-header">
       <div class="github-home-back" onclick="GoBack"><text class="github-home-back-text">‹</text></div>
       <text class="github-repo-header-title">{{ repository.name || $t("github.repository") }}</text>
@@ -109,7 +109,7 @@ export default {
     try {
       const content = await getGithubReadme(this.repository.owner, this.repository.name)
       router.push({
-        uri: "pages/tools/textdetail",
+        uri: "pages/app/features/toolbox/github/text",
         params: { titletext: this.repository.name + " · README", text: content }
       })
     } catch (error) {
@@ -128,5 +128,6 @@ export default {
 
 <style lang="less">
 @import "@less/global.less";
+@import "../frame.less";
 @import "./repository.less";
 </style>

@@ -1,5 +1,5 @@
 <template>
-  <div class="page">
+  <div class="page github-watch5-frame">
     <div class="github-issues-header">
       <div class="github-home-back" onclick="GoBack"><text class="github-home-back-text">‹</text></div>
       <text class="github-issues-title">{{ $t("github.issues") }}</text>
@@ -100,12 +100,13 @@ export default {
     if (!item) return
     const heading = "#" + item.number + " " + item.title
     const metadata = item.stateText + " · " + item.author + " · " + item.updatedText
-    router.push({ uri: "pages/tools/textdetail", params: { titletext: heading, text: metadata + "\n\n" + (item.body || this.$t("github.issueNoBody")) } })
+    router.push({ uri: "pages/app/features/toolbox/github/text", params: { titletext: heading, text: metadata + "\n\n" + (item.body || this.$t("github.issueNoBody")) } })
   }
 }
 </script>
 
 <style lang="less">
 @import "@less/global.less";
+@import "../frame.less";
 @import "./issues.less";
 </style>

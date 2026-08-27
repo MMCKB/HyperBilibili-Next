@@ -1,0 +1,37 @@
+<template>
+  <div class="page github-watch5-frame">
+    <div class="github-text-header">
+      <div class="github-home-back" onclick="GoBack"><text class="github-home-back-text">‹</text></div>
+      <text class="github-text-title">{{ titletext }}</text>
+      <div class="github-home-menu"><text class="github-home-menu-placeholder"> </text></div>
+    </div>
+    <scroll class="github-text-scroll {{scrclass}}" scroll-y="true" bounces="false">
+      <div class="github-text-card"><text class="github-text-content">{{ text }}</text></div>
+      <text class="github-text-bottom"></text>
+    </scroll>
+  </div>
+</template>
+
+<script>
+export default {
+  public: {
+    text: "",
+    titletext: "GitHub"
+  },
+  private: {
+    scrclass: ""
+  },
+  onInit() {
+    global.ui.InitPage(this)
+  },
+  GoBack() {
+    global.ui.OnBackPressTriggered()
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "../frame.less";
+@import "./text.less";
+</style>
