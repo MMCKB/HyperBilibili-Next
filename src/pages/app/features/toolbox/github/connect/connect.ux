@@ -1,0 +1,88 @@
+<import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
+
+<template>
+  <div class="page">
+    <div class="github-connect-header">
+      <div class="github-connect-back" onclick="GoBack"><text class="github-connect-back-text">‹</text></div>
+      <text class="github-connect-title">{{ $t("github.connectTitle") }}</text>
+    </div>
+
+    <div class="github-connect-content">
+      <div class="github-connect-mark"><text class="github-connect-mark-text">GH</text></div>
+      <text class="github-connect-heading">{{ $t("github.connectHeading") }}</text>
+      <text class="github-connect-description">{{ $t("github.connectDescription") }}</text>
+      <div class="github-connect-token" onclick="OpenTokenInput">
+        <text class="github-connect-token-label">{{ $t("github.token") }}</text>
+        <text class="github-connect-token-value">{{ tokenEntered ? $t("github.tokenEntered") : $t("github.tokenTapToEnter") }}</text>
+      </div>
+      <text class="github-connect-note">{{ $t("github.connectNote") }}</text>
+      <div class="github-connect-start" onclick="SaveAndEnter">
+        <text class="github-connect-start-text">{{ $t("github.enterGithub") }}</text>
+      </div>
+      <text class="github-connect-status" if="{{statusText}}">{{ statusText }}</text>
+    </div>
+
+    <full-screen-input if="{{showInput}}" style="position: absolute" initial-text="{{inputSeed}}" @send="FinishInput" @exit="CloseInput"></full-screen-input>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import { hasGithubToken, saveGithubToken } from "@src/github.ts"
+
+export default {
+  private: {
+    scrclass: "",
+    tokenValue: "",
+    tokenEntered: false,
+    showInput: false,
+    inputSeed: "",
+    statusText: ""
+  },
+  async onInit() {
+    global.ui.InitPage(this)
+    if (await hasGithubToken()) {
+      router.replace({ uri: "pages/app/features/toolbox/github" })
+    }
+  },
+  GoBack() {
+    global.ui.OnBackPressTriggered()
+  },
+  OpenTokenInput() {
+    this.statusText = ""
+    this.inputSeed = ""
+    this.showInput = true
+  },
+  CloseInput() {
+    this.showInput = false
+    this.inputSeed = ""
+  },
+  FinishInput(evt) {
+    const token = String(evt && evt.detail ? evt.detail.content : "").trim()
+    this.showInput = false
+    this.inputSeed = ""
+    if (!token) return
+    this.tokenValue = token
+    this.tokenEntered = true
+    this.statusText = ""
+  },
+  async SaveAndEnter() {
+    if (!this.tokenValue) {
+      this.statusText = this.$t("github.tokenRequired")
+      return
+    }
+    const saved = await saveGithubToken(this.tokenValue)
+    this.tokenValue = ""
+    if (!saved) {
+      this.statusText = this.$t("github.tokenSaveFailed")
+      return
+    }
+    router.replace({ uri: "pages/app/features/toolbox/github" })
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./connect.less";
+</style>

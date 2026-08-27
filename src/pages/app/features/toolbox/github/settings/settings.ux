@@ -1,0 +1,62 @@
+<template>
+  <div class="page">
+    <div class="github-settings-header">
+      <div class="github-home-back" onclick="GoBack"><text class="github-home-back-text">‹</text></div>
+      <text class="github-settings-title">{{ $t("github.settings") }}</text>
+      <div class="github-home-menu"><text class="github-home-menu-placeholder"> </text></div>
+    </div>
+    <div class="github-settings-content">
+      <div class="github-settings-token-card">
+        <text class="github-settings-token-label">{{ $t("github.token") }}</text>
+        <text class="github-settings-token-value">{{ $t("github.tokenStoredHidden") }}</text>
+        <text class="github-settings-token-note">{{ $t("github.tokenStoredHiddenDescription") }}</text>
+      </div>
+      <div class="github-settings-clear" onclick="AskClear"><text class="github-settings-clear-text">{{ $t("github.clearToken") }}</text></div>
+    </div>
+
+    <div if="{{confirmVisible}}" class="github-settings-confirm-mask">
+      <div class="github-settings-confirm-card">
+        <text class="github-settings-confirm-title">{{ $t("github.clearToken") }}</text>
+        <text class="github-settings-confirm-description">{{ $t("github.clearTokenDescription") }}</text>
+        <div class="github-settings-confirm-actions">
+          <div class="github-settings-confirm-button github-settings-confirm-cancel" onclick="CancelClear"><text class="github-settings-confirm-button-text">{{ $t("github.cancel") }}</text></div>
+          <div class="github-settings-confirm-button github-settings-confirm-danger" onclick="ConfirmClear"><text class="github-settings-confirm-button-text">{{ $t("github.confirm") }}</text></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import { clearGithubToken } from "@src/github.ts"
+
+export default {
+  private: {
+    scrclass: "",
+    confirmVisible: false
+  },
+  onInit() {
+    global.ui.InitPage(this)
+  },
+  GoBack() {
+    global.ui.OnBackPressTriggered()
+  },
+  AskClear() {
+    this.confirmVisible = true
+  },
+  CancelClear() {
+    this.confirmVisible = false
+  },
+  async ConfirmClear() {
+    this.confirmVisible = false
+    await clearGithubToken()
+    router.replace({ uri: "pages/app/features/toolbox/github/connect" })
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./settings.less";
+</style>

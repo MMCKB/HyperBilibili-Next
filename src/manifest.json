@@ -217,6 +217,30 @@
             "pages/app/features/toolbox/weather/settings": {
                 "component": "weatherconfig"
             },
+            "pages/app/features/toolbox/github": {
+                "component": "github"
+            },
+            "pages/app/features/toolbox/github/connect": {
+                "component": "connect"
+            },
+            "pages/app/features/toolbox/github/settings": {
+                "component": "settings"
+            },
+            "pages/app/features/toolbox/github/repositories": {
+                "component": "repositories"
+            },
+            "pages/app/features/toolbox/github/repository": {
+                "component": "repository"
+            },
+            "pages/app/features/toolbox/github/issues": {
+                "component": "issues"
+            },
+            "pages/app/features/toolbox/github/actions": {
+                "component": "actions"
+            },
+            "pages/app/features/toolbox/github/workflow": {
+                "component": "workflow"
+            },
             "pages/debug/componentstest": {
                 "component": "componentstest"
             },

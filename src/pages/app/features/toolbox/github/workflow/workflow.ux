@@ -1,0 +1,219 @@
+<import name="full-screen-input" src="@components/FullScreenInput/FullScreenInput.ux"></import>
+
+<template>
+  <div class="page">
+    <div class="github-workflow-form-header">
+      <div class="github-home-back" onclick="GoBack"><text class="github-home-back-text">‹</text></div>
+      <text class="github-workflow-form-title">{{ $t("github.runWorkflow") }}</text>
+      <div class="github-home-menu"><text class="github-home-menu-placeholder"> </text></div>
+    </div>
+    <scroll class="github-workflow-form-scroll {{scrclass}}" scroll-y="true" bounces="false">
+      <div class="github-workflow-form-content">
+        <text class="github-workflow-form-name">{{ workflow.name }}</text>
+        <text class="github-workflow-form-path">{{ workflow.path }}</text>
+        <text class="github-workflow-form-branch">{{ $t("github.runBranch") }} {{ repository.defaultBranch }}</text>
+        <text class="github-workflow-form-loading" if="{{loadingDefinition}}">{{ $t("github.loading") }}</text>
+        <text class="github-workflow-form-status" if="{{statusText}}">{{ statusText }}</text>
+
+        <div if="{{definitionLoaded && !dispatchable}}" class="github-workflow-unsupported"><text class="github-workflow-unsupported-text">{{ $t("github.workflowNotDispatchable") }}</text></div>
+
+        <div if="{{definitionLoaded && dispatchable}}">
+          <text class="github-workflow-form-hint">{{ inputs.length ? $t("github.fillWorkflowInputs") : $t("github.noWorkflowInputs") }}</text>
+          <div class="github-workflow-input-card" for="{{inputs}}" onclick="OpenInput($idx)">
+            <div class="github-workflow-input-copy">
+              <text class="github-workflow-input-label">{{ $item.label }}{{ $item.required ? " *" : "" }}</text>
+              <text class="github-workflow-input-description" if="{{ $item.description }}">{{ $item.description }}</text>
+            </div>
+            <div class="github-workflow-input-value-wrap">
+              <text class="github-workflow-input-value">{{ $item.value || $t("github.notSet") }}</text>
+              <text class="github-workflow-input-arrow">›</text>
+            </div>
+          </div>
+          <div class="github-workflow-run-button" onclick="PrepareRun"><text class="github-workflow-run-button-text">{{ $t("github.continueRun") }}</text></div>
+        </div>
+        <text class="github-workflow-form-bottom"></text>
+      </div>
+    </scroll>
+
+    <div if="{{pickerVisible}}" class="github-workflow-picker-mask">
+      <div class="github-workflow-picker">
+        <div class="github-workflow-picker-header"><text class="github-workflow-picker-title">{{ pickerTitle }}</text><div class="github-workflow-picker-close" onclick="ClosePicker"><text class="github-workflow-picker-close-text">×</text></div></div>
+        <scroll class="github-workflow-picker-options" scroll-y="true" bounces="false">
+          <div class="github-workflow-picker-option" for="{{pickerOptions}}" onclick="SelectPickerOption($item)">
+            <text class="github-workflow-picker-option-text">{{ $item }}</text>
+            <text class="github-workflow-picker-check" if="{{ $item === pickerCurrentValue }}">✓</text>
+          </div>
+        </scroll>
+      </div>
+    </div>
+
+    <div if="{{confirmVisible}}" class="github-workflow-confirm-mask">
+      <div class="github-workflow-confirm-card">
+        <text class="github-workflow-confirm-title">{{ $t("github.confirmRunTitle") }}</text>
+        <text class="github-workflow-confirm-description">{{ $t("github.confirmRunDescription") }}</text>
+        <text class="github-workflow-confirm-workflow">{{ workflow.name }}</text>
+        <div class="github-workflow-confirm-actions">
+          <div class="github-workflow-confirm-button github-workflow-confirm-cancel" onclick="CancelRun"><text class="github-workflow-confirm-button-text">{{ $t("github.cancel") }}</text></div>
+          <div class="github-workflow-confirm-button github-workflow-confirm-start" onclick="ConfirmRun"><text class="github-workflow-confirm-button-text">{{ $t("github.startRun") }}</text></div>
+        </div>
+      </div>
+    </div>
+
+    <full-screen-input if="{{showInput}}" style="position: absolute" initial-text="{{inputSeed}}" @send="FinishInput" @exit="CloseInput"></full-screen-input>
+  </div>
+</template>
+
+<script>
+import { dispatchGithubWorkflow, getActiveGithubRepository, getActiveGithubWorkflow, getGithubWorkflowDefinition } from "@src/github.ts"
+
+export default {
+  private: {
+    scrclass: "",
+    repository: {},
+    workflow: {},
+    inputs: [],
+    dispatchable: false,
+    definitionLoaded: false,
+    loadingDefinition: false,
+    statusText: "",
+    pickerVisible: false,
+    pickerTitle: "",
+    pickerOptions: [],
+    pickerCurrentValue: "",
+    activeInputIndex: -1,
+    showInput: false,
+    inputSeed: "",
+    confirmVisible: false,
+    running: false
+  },
+  ErrorText(error) {
+    const code = String(error && error.message ? error.message : "")
+    if (code === "http-401") return this.$t("github.tokenInvalid")
+    if (code === "http-403") return this.$t("github.workflowPermissionDenied")
+    if (code === "http-404") return this.$t("github.notFound")
+    return this.$t("github.workflowRunFailed")
+  },
+  MakeInputView(item) {
+    const type = String(item.type || "string").toLowerCase()
+    const options = Array.isArray(item.options) ? item.options : []
+    let kind = "text"
+    if (options.length > 0 || type === "choice") kind = "choice"
+    if (type === "boolean") kind = "boolean"
+    let initialValue = String(item.defaultValue === undefined || item.defaultValue === null ? "" : item.defaultValue)
+    if (kind === "boolean" && initialValue !== "true" && initialValue !== "false") initialValue = "false"
+    return {
+      id: String(item.id || ""),
+      label: String(item.id || ""),
+      description: String(item.description || ""),
+      required: item.required === true,
+      kind,
+      options,
+      value: initialValue
+    }
+  },
+  async LoadDefinition() {
+    if (!this.repository.name || !this.workflow.path) return
+    this.loadingDefinition = true
+    this.statusText = ""
+    try {
+      const definition = await getGithubWorkflowDefinition(this.repository.owner, this.repository.name, this.workflow.path)
+      this.dispatchable = definition.dispatchable === true
+      this.inputs = definition.inputs.map((item) => this.MakeInputView(item))
+      this.definitionLoaded = true
+    } catch (error) {
+      this.statusText = this.ErrorText(error)
+      this.definitionLoaded = true
+    }
+    this.loadingDefinition = false
+  },
+  onInit() {
+    global.ui.InitPage(this)
+    const repository = getActiveGithubRepository()
+    const workflow = getActiveGithubWorkflow()
+    if (!repository || !workflow) {
+      global.ui.OnBackPressTriggered()
+      return
+    }
+    this.repository = repository
+    this.workflow = workflow
+    this.LoadDefinition()
+  },
+  GoBack() {
+    global.ui.OnBackPressTriggered()
+  },
+  OpenInput(index) {
+    const item = this.inputs[index]
+    if (!item || this.running) return
+    this.activeInputIndex = index
+    if (item.kind === "choice" || item.kind === "boolean") {
+      this.pickerTitle = item.label
+      this.pickerOptions = item.kind === "boolean" ? ["false", "true"] : item.options
+      this.pickerCurrentValue = item.value
+      this.pickerVisible = true
+      return
+    }
+    this.inputSeed = item.value
+    this.showInput = true
+  },
+  ClosePicker() {
+    this.pickerVisible = false
+    this.activeInputIndex = -1
+  },
+  SelectPickerOption(value) {
+    if (this.activeInputIndex < 0 || !this.inputs[this.activeInputIndex]) return
+    const next = this.inputs.slice(0)
+    next[this.activeInputIndex].value = String(value)
+    this.inputs = next
+    this.ClosePicker()
+  },
+  CloseInput() {
+    this.showInput = false
+    this.inputSeed = ""
+    this.activeInputIndex = -1
+  },
+  FinishInput(evt) {
+    const value = String(evt && evt.detail ? evt.detail.content : "")
+    if (this.activeInputIndex >= 0 && this.inputs[this.activeInputIndex]) {
+      const next = this.inputs.slice(0)
+      next[this.activeInputIndex].value = value
+      this.inputs = next
+    }
+    this.CloseInput()
+  },
+  PrepareRun() {
+    if (this.running) return
+    for (let index = 0; index < this.inputs.length; index++) {
+      const item = this.inputs[index]
+      if (item.required && !String(item.value || "").trim()) {
+        this.statusText = this.$t("github.requiredInput") + " " + item.label
+        return
+      }
+    }
+    this.statusText = ""
+    this.confirmVisible = true
+  },
+  CancelRun() {
+    this.confirmVisible = false
+  },
+  async ConfirmRun() {
+    if (this.running) return
+    this.confirmVisible = false
+    this.running = true
+    this.statusText = ""
+    const values = {}
+    this.inputs.forEach((item) => { values[item.id] = String(item.value || "") })
+    try {
+      await dispatchGithubWorkflow(this.repository.owner, this.repository.name, this.workflow.id, this.repository.defaultBranch, values)
+      this.statusText = this.$t("github.workflowStarted")
+    } catch (error) {
+      this.statusText = this.ErrorText(error)
+    }
+    this.running = false
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./workflow.less";
+</style>

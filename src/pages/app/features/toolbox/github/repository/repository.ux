@@ -1,0 +1,132 @@
+<template>
+  <div class="page">
+    <div class="github-repo-header">
+      <div class="github-home-back" onclick="GoBack"><text class="github-home-back-text">‹</text></div>
+      <text class="github-repo-header-title">{{ repository.name || $t("github.repository") }}</text>
+      <div class="github-home-menu"><text class="github-home-menu-placeholder"> </text></div>
+    </div>
+    <scroll class="github-repo-scroll {{scrclass}}" scroll-y="true" bounces="false">
+      <div class="github-repo-content" if="{{repository.name}}">
+        <text class="github-repo-name">{{ repository.name }}</text>
+        <text class="github-repo-owner">{{ repository.owner }}</text>
+        <text class="github-repo-description" if="{{repository.description}}">{{ repository.description }}</text>
+        <div class="github-repo-stats"><text class="github-repo-stat">★ {{ repository.stars }}</text><text class="github-repo-stat">{{ repository.private ? $t("github.privateRepository") : $t("github.publicRepository") }}</text></div>
+
+        <text class="github-repo-section">{{ $t("github.repositoryActions") }}</text>
+        <div class="github-repo-action" onclick="StarRepository">
+          <div class="github-repo-action-icon"><text class="github-repo-action-icon-text">★</text></div>
+          <div class="github-repo-action-copy"><text class="github-repo-action-title">{{ starred ? $t("github.starred") : $t("github.star") }}</text><text class="github-repo-action-description">{{ starred ? $t("github.alreadyStarred") : $t("github.starDescription") }}</text></div>
+          <text class="github-repo-action-arrow">›</text>
+        </div>
+        <div class="github-repo-action" onclick="OpenReadme">
+          <div class="github-repo-action-icon"><text class="github-repo-action-icon-text">M</text></div>
+          <div class="github-repo-action-copy"><text class="github-repo-action-title">{{ $t("github.readme") }}</text><text class="github-repo-action-description">{{ $t("github.readmeDescription") }}</text></div>
+          <text class="github-repo-action-arrow">›</text>
+        </div>
+        <div class="github-repo-action" onclick="OpenIssues">
+          <div class="github-repo-action-icon"><text class="github-repo-action-icon-text">!</text></div>
+          <div class="github-repo-action-copy"><text class="github-repo-action-title">{{ $t("github.issues") }}</text><text class="github-repo-action-description">{{ $t("github.issuesDescription") }}</text></div>
+          <text class="github-repo-action-arrow">›</text>
+        </div>
+        <div class="github-repo-action" onclick="OpenActions">
+          <div class="github-repo-action-icon"><text class="github-repo-action-icon-text">▶</text></div>
+          <div class="github-repo-action-copy"><text class="github-repo-action-title">{{ $t("github.actions") }}</text><text class="github-repo-action-description">{{ $t("github.actionsDescription") }}</text></div>
+          <text class="github-repo-action-arrow">›</text>
+        </div>
+        <text class="github-repo-status" if="{{statusText}}">{{ statusText }}</text>
+        <text class="github-repo-bottom"></text>
+      </div>
+      <text class="github-repo-loading" if="{{loading}}">{{ $t("github.loading") }}</text>
+    </scroll>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import { getActiveGithubRepository, getGithubReadme, getGithubRepository, isGithubRepositoryStarred, setActiveGithubRepository, starGithubRepository } from "@src/github.ts"
+
+export default {
+  private: {
+    scrclass: "",
+    repository: {},
+    starred: false,
+    loading: false,
+    statusText: ""
+  },
+  ErrorText(error) {
+    const code = String(error && error.message ? error.message : "")
+    if (code === "http-401") return this.$t("github.tokenInvalid")
+    if (code === "http-403") return this.$t("github.permissionDenied")
+    if (code === "http-404") return this.$t("github.notFound")
+    return this.$t("github.loadFailed")
+  },
+  async LoadRepository() {
+    const active = getActiveGithubRepository()
+    if (!active) {
+      global.ui.OnBackPressTriggered()
+      return
+    }
+    this.repository = active
+    this.loading = true
+    try {
+      const loaded = await getGithubRepository(active.owner, active.name)
+      this.repository = loaded
+      setActiveGithubRepository(loaded)
+      try {
+        this.starred = await isGithubRepositoryStarred(loaded.owner, loaded.name)
+      } catch (error) {
+        this.starred = false
+      }
+    } catch (error) {
+      this.statusText = this.ErrorText(error)
+    }
+    this.loading = false
+  },
+  onInit() {
+    global.ui.InitPage(this)
+    this.LoadRepository()
+  },
+  GoBack() {
+    global.ui.OnBackPressTriggered()
+  },
+  async StarRepository() {
+    if (this.starred || !this.repository.name || this.loading) return
+    this.loading = true
+    this.statusText = ""
+    try {
+      await starGithubRepository(this.repository.owner, this.repository.name)
+      this.starred = true
+      this.repository.stars = Number(this.repository.stars || 0) + 1
+    } catch (error) {
+      this.statusText = this.ErrorText(error)
+    }
+    this.loading = false
+  },
+  async OpenReadme() {
+    if (!this.repository.name || this.loading) return
+    this.loading = true
+    this.statusText = ""
+    try {
+      const content = await getGithubReadme(this.repository.owner, this.repository.name)
+      router.push({
+        uri: "pages/tools/textdetail",
+        params: { titletext: this.repository.name + " · README", text: content }
+      })
+    } catch (error) {
+      this.statusText = this.ErrorText(error)
+    }
+    this.loading = false
+  },
+  OpenIssues() {
+    if (this.repository.name) router.push({ uri: "pages/app/features/toolbox/github/issues" })
+  },
+  OpenActions() {
+    if (this.repository.name) router.push({ uri: "pages/app/features/toolbox/github/actions" })
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./repository.less";
+</style>
