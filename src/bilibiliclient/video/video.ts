@@ -35,18 +35,25 @@ export const BilibiliClientVideoMethods = {
     },
 
     // 获取视频关键帧雪碧图清单（用于无声音的逐帧预览）
-    // 注意：必须使用 v1 接口（无 /v2 后缀），v2 接口会触发 B 站风控返回 HTML 错误页
     // 返回值约定：接口异常时抛出 Error（携带 code/message 便于诊断）；视频本身没有雪碧图时返回 null
+    // 响应形态说明：getRequest 返回的是 fetch 成功对象 {code: HTTP状态码(200), data: B站响应体}，
+    // B 站业务码位于 response.data.code，数据位于 response.data.data（与本项目其他接口的
+    // response.data.data 取法一致）。此处同时兼容直接返回 B 站响应体的形态。
     async getVideoVideoshot(this: any, bvid: string, cid: string): Promise<any> {
         const url = `https://api.bilibili.com/x/player/videoshot?bvid=${bvid}&cid=${cid}&index=1`;
         const response = await this.getRequest(url);
-        if (!response || typeof response.code !== "number") {
-            throw new Error(`videoshot 响应异常(${typeof response})`);
+        let body = response;
+        // 形态A：fetch 包装对象（code 为 HTTP 状态码且无 message 字段）→ 取出内层 B 站响应体
+        if (body && typeof body.code === "number" && body.message === undefined && body.data !== undefined) {
+            body = body.data;
         }
-        if (response.code !== 0) {
-            throw new Error(`videoshot code=${response.code} msg=${response.message}`);
+        if (!body || typeof body.code !== "number") {
+            throw new Error(`videoshot 响应异常(${typeof body})`);
         }
-        const data = response.data;
+        if (body.code !== 0) {
+            throw new Error(`videoshot code=${body.code} msg=${body.message}`);
+        }
+        const data = body.data;
         if (!data || !Array.isArray(data.image) || data.image.length === 0) {
             return null;
         }
