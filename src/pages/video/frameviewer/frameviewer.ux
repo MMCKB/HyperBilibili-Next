@@ -75,8 +75,8 @@ export default {
     // 内部数据
     spriteUris: [],
     timeline: [],
-    imgXSize: 10,
-    imgYSize: 10,
+    imgXLen: 10,
+    imgYLen: 10,
     tilesPerSprite: 100,
     totalDuration: 0,
     timerId: null
@@ -138,11 +138,12 @@ export default {
       }
 
       const manifest = {
+        v: 2,
         bvid: this.bvid,
         spriteUris: localUris,
-        timeline: this.NormalizeTimeline(shot.index),
-        imgXSize: shot.img_x_size || 10,
-        imgYSize: shot.img_y_size || 10,
+        timeline: this.NormalizeTimeline(shot.index, info.duration || 0),
+        imgXLen: shot.img_x_len || 10,
+        imgYLen: shot.img_y_len || 10,
         totalDuration: info.duration || 0
       }
       this.SaveCacheManifest(manifest)
@@ -162,17 +163,22 @@ export default {
     this.failText = message
   },
 
-  // 兼容两种时间轴格式：[[起始, 结束], ...] 或 [t0, t1, ...]
-  NormalizeTimeline(raw) {
-    if (!Array.isArray(raw) || raw.length === 0) {
+  // 解析时间轴
+  // 接口返回的 index 数组：index[0] 恒为 0 占位，index[i] 是第 i 帧的截取时间（秒）
+  // 转换为 [[起始, 结束], ...] 形式；最后一帧以视频总时长收尾
+  NormalizeTimeline(raw, duration) {
+    if (!Array.isArray(raw) || raw.length < 2) {
       return []
     }
-    if (Array.isArray(raw[0])) {
-      return raw
-    }
+    const times = raw.slice(1)
     const result = []
-    for (let i = 0; i + 1 < raw.length; i++) {
-      result.push([raw[i], raw[i + 1]])
+    for (let i = 0; i < times.length; i++) {
+      const start = times[i]
+      let end = i + 1 < times.length ? times[i + 1] : start
+      if (duration > start && end <= start) {
+        end = duration
+      }
+      result.push([start, end])
     }
     return result
   },
@@ -181,9 +187,14 @@ export default {
     const that = this
     return new Promise((resolve) => {
       const filename = `fvr_${that.bvid}_${index}.jpg`
+      // 接口返回的图片 URL 是协议相对形式（//i0.hdslb.com/...），必须补全协议
+      let fullUrl = url
+      if (typeof fullUrl === "string" && fullUrl.startsWith("//")) {
+        fullUrl = `https:${fullUrl}`
+      }
       const attempt = (useHeader) => {
         const options = {
-          url,
+          url: fullUrl,
           filename,
           success: (res) => {
             request.onDownloadComplete({
@@ -225,7 +236,8 @@ export default {
           }
           try {
             const manifest = JSON.parse(data)
-            if (!manifest.spriteUris || !manifest.spriteUris.length || !manifest.timeline || !manifest.timeline.length) {
+            // 版本不匹配或字段缺失的旧缓存直接弃用
+            if (manifest.v !== 2 || !manifest.spriteUris || !manifest.spriteUris.length || !manifest.timeline || !manifest.timeline.length) {
               resolve(null)
               return
             }
@@ -258,15 +270,16 @@ export default {
   ApplyData(manifest) {
     this.spriteUris = manifest.spriteUris
     this.timeline = manifest.timeline
-    this.imgXSize = manifest.imgXSize || 10
-    this.imgYSize = manifest.imgYSize || 10
-    this.tilesPerSprite = this.imgXSize * this.imgYSize
+    // img_x_len/img_y_len 是雪碧图每行/每列的小图数量（一般 10x10）
+    this.imgXLen = manifest.imgXLen || 10
+    this.imgYLen = manifest.imgYLen || 10
+    this.tilesPerSprite = this.imgXLen * this.imgYLen
     this.frameCount = this.timeline.length
     this.totalDuration = manifest.totalDuration ||
       (this.frameCount > 0 ? this.timeline[this.frameCount - 1][1] : 0)
     this.frameIndex = 0
     // 整张雪碧图缩放到单帧恰好铺满显示区域
-    this.spriteBgSize = `${this.imgXSize * FRAME_WIDTH}px ${this.imgYSize * FRAME_HEIGHT}px`
+    this.spriteBgSize = `${this.imgXLen * FRAME_WIDTH}px ${this.imgYLen * FRAME_HEIGHT}px`
     this.totalTimeText = this.FormatTime(this.totalDuration)
     this.UpdateFrame()
     this.loading = false
@@ -284,8 +297,8 @@ export default {
     const spriteIndex = Math.min(Math.floor(fi / this.tilesPerSprite), this.spriteUris.length - 1)
     const tileIndex = fi % this.tilesPerSprite
     this.frameSpriteUri = this.spriteUris[spriteIndex] || ""
-    const row = Math.floor(tileIndex / this.imgXSize)
-    const col = tileIndex % this.imgXSize
+    const row = Math.floor(tileIndex / this.imgXLen)
+    const col = tileIndex % this.imgXLen
     this.frameBgPos = `-${col * FRAME_WIDTH}px -${row * FRAME_HEIGHT}px`
     const t = this.timeline[fi] || [0, 0]
     this.currentTimeText = this.FormatTime(t[0])

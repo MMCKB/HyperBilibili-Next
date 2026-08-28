@@ -35,8 +35,9 @@ export const BilibiliClientVideoMethods = {
     },
 
     // 获取视频关键帧雪碧图清单（用于无声音的逐帧预览）
+    // 注意：必须使用 v1 接口（无 /v2 后缀），v2 接口会触发 B 站风控返回 HTML 错误页
     async getVideoVideoshot(this: any, bvid: string, cid: string): Promise<any> {
-        const url = `https://api.bilibili.com/x/player/videoshot/v2?bvid=${bvid}&cid=${cid}&index=1`;
+        const url = `https://api.bilibili.com/x/player/videoshot?bvid=${bvid}&cid=${cid}&index=1`;
         const response = await this.getRequest(url);
         const data = response && response.data;
         if (!data || !Array.isArray(data.image) || data.image.length === 0) {
