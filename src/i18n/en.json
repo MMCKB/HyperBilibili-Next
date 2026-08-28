@@ -129,17 +129,15 @@
     "frameviewer": {
         "title": "Watch Video",
         "retry": "Retry",
-        "hint": "Plays keyframes one by one after download (no sound)",
+        "hint": "Plays keyframes one by one after loading (no sound)",
         "loadingInfo": "Loading video info...",
         "loadingShot": "Loading keyframes...",
-        "loadingDownload": "Downloading keyframe images",
         "failNoShot": "Keyframe preview is unavailable for this video",
         "failShotApi": "Keyframe API request failed",
-        "failDownload": "Failed to download keyframe images",
         "failGeneric": "Load failed, please retry",
-        "downloadDone": "Sprites downloaded",
         "readyToRender": "Preparing to render",
         "startPlay": "Starting playback",
+        "frameLoaded": "Frame image loaded",
         "imageError": "Failed to load sprite image"
     },
     "settings": {

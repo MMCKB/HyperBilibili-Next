@@ -21,9 +21,9 @@
 
     <!-- 帧播放器 -->
     <div if="{{ ready }}" class="viewer">
-      <!-- 黑色舞台：整张雪碧图绝对定位铺在下面，四块黑遮罩挖出画面窗口（不用 background-image） -->
+      <!-- 黑色舞台：整张雪碧图绝对定位铺在下面，四块黑遮罩挖出画面窗口 -->
       <div class="framearea" @click="TogglePlay">
-        <image class="sprite" src="{{ spriteUri }}" style="{{ spriteStyle }}" @error="OnSpriteError"></image>
+        <image class="sprite" src="{{ spriteUri }}" style="{{ spriteStyle }}" oncomplete="OnSpriteComplete" onerror="OnSpriteError"></image>
         <div class="mask" style="{{ maskTopStyle }}"></div>
         <div class="mask" style="{{ maskBottomStyle }}"></div>
         <div class="mask" style="{{ maskLeftStyle }}"></div>
@@ -52,10 +52,7 @@
 <script>
 import router from "@system.router"
 import prompt from "@system.prompt"
-import request from "@system.request"
 import storage from "@system.storage"
-
-import { asyncFile } from "../../../asyncapi/file"
 
 // 黑色舞台尺寸
 const STAGE_W = 384
@@ -63,11 +60,11 @@ const STAGE_H = 216
 
 // 画面尺寸档位：决定雪碧图单格显示大小
 // 1x = 160x90 雪碧图单格原始尺寸，显示尺寸 1600x900 与原图一致零缩放
-// 2x = 320x180 实验档（放大 2 倍）
-// 渲染方式：image 组件显示整张雪碧图（绝对定位负偏移选中格子），
-// 四块黑色遮罩盖住舞台其余部分，只露出目标格子。
-// 全部使用项目已验证原语：image + internal:// 文件（播放器封面同款）、
-// 绝对定位 left/top、background-color。
+// 2x = 320x180 实验档（放大 2 倍，可能触碰渲染上限）
+// 渲染方式：image 组件直接加载远程雪碧图 URL（与全项目封面/头像同路径，
+// 由组件自行下载并缓存），绝对定位负偏移选中格子，四块黑色遮罩盖住
+// 画面窗口外的部分。object-fit 使用默认 cover：显示框与雪碧图宽高比
+// 一致（均为 网格列数:网格行数），cover 数值上等价于精确铺满。
 const FRAME_MODES = [
   { w: 160, h: 90, label: "1x" },
   { w: 320, h: 180, label: "2x" }
@@ -102,7 +99,7 @@ export default {
     frameModeIndex: 0,
     frameModeText: "1x",
     // 内部数据
-    spriteUris: [],
+    spriteUrls: [],
     timeline: [],
     imgXLen: 10,
     imgYLen: 10,
@@ -134,7 +131,7 @@ export default {
     this.failDetail = ""
     this.ClearTimer()
     try {
-      // 优先使用本地缓存
+      // 优先使用本地缓存（雪碧图 URL 清单）
       const cached = await this.LoadCacheManifest()
       if (cached) {
         this.ApplyData(cached)
@@ -161,25 +158,21 @@ export default {
         return
       }
 
+      // 接口返回的图片 URL 是协议相对形式（//i0.hdslb.com/...），补全协议
+      const spriteUrls = []
       const imageUrls = shot.image || []
-      const localUris = []
       for (let i = 0; i < imageUrls.length; i++) {
-        this.loadingText = `${this.$t("frameviewer.loadingDownload")} (${i + 1}/${imageUrls.length})`
-        const uri = await this.DownloadSprite(imageUrls[i], i)
-        if (!uri) {
-          this.Fail(this.$t("frameviewer.failDownload"), `第 ${i + 1} 张下载失败: ${imageUrls[i]}`)
-          return
+        let u = imageUrls[i]
+        if (typeof u === "string" && u.startsWith("//")) {
+          u = `https:${u}`
         }
-        localUris.push(uri)
+        spriteUrls.push(u)
       }
 
-      // 关键节点提示：此后进入 复制→缓存→渲染 阶段
-      prompt.showToast({ message: this.$t("frameviewer.downloadDone"), duration: 1000 })
-
       const manifest = {
-        v: 3,
+        v: 4,
         bvid: this.bvid,
-        spriteUris: localUris,
+        spriteUrls,
         timeline: this.NormalizeTimeline(shot.index, info.duration || 0),
         imgXLen: shot.img_x_len || 10,
         imgYLen: shot.img_y_len || 10,
@@ -205,8 +198,17 @@ export default {
       global.logger.error("[frameviewer] fail: " + detail)
     }
   },
+
+  // image 组件事件：加载成功（携带解码后的真实尺寸）/ 失败
+  OnSpriteComplete(e) {
+    const w = e && e.width
+    const h = e && e.height
+    global.logger.log(`[frameviewer] sprite complete ${w}x${h} ${this.spriteUri}`)
+    prompt.showToast({ message: `${this.$t("frameviewer.frameLoaded")} (${w}x${h})`, duration: 800 })
+  },
   OnSpriteError() {
-    prompt.showToast({ message: this.$t("frameviewer.imageError"), duration: 1500 })
+    global.logger.error(`[frameviewer] sprite load fail: ${this.spriteUri}`)
+    prompt.showToast({ message: `${this.$t("frameviewer.imageError")}: ${this.spriteUri}`, duration: 2000 })
   },
 
   // 解析时间轴
@@ -229,108 +231,22 @@ export default {
     return result
   },
 
-  DownloadSprite(url, index) {
-    const that = this
-    return new Promise((resolve) => {
-      const filename = `fvr_${that.bvid}_${index}.jpg`
-      // 接口返回的图片 URL 是协议相对形式（//i0.hdslb.com/...），必须补全协议
-      let fullUrl = url
-      if (typeof fullUrl === "string" && fullUrl.startsWith("//")) {
-        fullUrl = `https:${fullUrl}`
-      }
-      let retried = false
-      const attempt = (useHeader) => {
-        const options = {
-          url: fullUrl,
-          filename,
-          success: (res) => {
-            request.onDownloadComplete({
-              token: res.token,
-              success: (result) => {
-                const uri = result && result.uri
-                if (!uri) {
-                  resolve(null)
-                  return
-                }
-                // 复制到 internal://files/frameviewer/ 下持久化；失败则回退下载原始 uri
-                that.CopyToFiles(uri, filename).then((finalUri) => {
-                  resolve(finalUri || uri)
-                })
-              },
-              fail: () => {
-                global.logger.error(`[frameviewer] onDownloadComplete fail(${index})`)
-                resolve(null)
-              }
-            })
-          },
-          fail: () => {
-            global.logger.error(`[frameviewer] download fail(${index})`)
-            if (!useHeader && !retried) {
-              retried = true
-              attempt(true)
-            } else {
-              resolve(null)
-            }
-          }
-        }
-        if (useHeader) {
-          options.header = JSON.stringify({
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
-            "Referer": "https://www.bilibili.com"
-          })
-        }
-        request.download(options)
-      }
-      attempt(false)
-    })
-  },
-
-  // 将下载的文件复制到 internal://files/frameviewer/，返回新 uri；失败返回 null（调用方回退原 uri）
-  async CopyToFiles(uri, filename) {
-    try {
-      const dir = "internal://files/frameviewer"
-      try {
-        await asyncFile.mkdir({ uri: dir, recursive: true })
-      } catch (e) {
-        // 目录已存在等情况，忽略
-      }
-      const dst = `${dir}/${filename}`
-      try {
-        await asyncFile.delete({ uri: dst })
-      } catch (e) {
-        // 目标不存在，忽略
-      }
-      await asyncFile.copy({ srcUri: uri, dstUri: dst })
-      return dst
-    } catch (e) {
-      global.logger.error("[frameviewer] CopyToFiles fail: " + e.toString())
-      return null
-    }
-  },
-
   // ---------- 缓存 ----------
   LoadCacheManifest() {
     const that = this
     return new Promise((resolve) => {
       storage.get({
         key: `frameviewer_${that.bvid}`,
-        success: async (data) => {
+        success: (data) => {
           if (!data) {
             resolve(null)
             return
           }
           try {
             const manifest = JSON.parse(data)
-            if (manifest.v !== 3 || !manifest.spriteUris || !manifest.spriteUris.length || !manifest.timeline || !manifest.timeline.length) {
+            if (manifest.v !== 4 || !manifest.spriteUrls || !manifest.spriteUrls.length || !manifest.timeline || !manifest.timeline.length) {
               resolve(null)
               return
-            }
-            for (const uri of manifest.spriteUris) {
-              const exists = await asyncFile.access({ uri })
-              if (!exists) {
-                resolve(null)
-                return
-              }
             }
             resolve(manifest)
           } catch (e) {
@@ -352,7 +268,7 @@ export default {
 
   // ---------- 播放 ----------
   ApplyData(manifest) {
-    this.spriteUris = manifest.spriteUris
+    this.spriteUrls = manifest.spriteUrls
     this.timeline = manifest.timeline
     this.imgXLen = manifest.imgXLen || 10
     this.imgYLen = manifest.imgYLen || 10
@@ -364,7 +280,7 @@ export default {
     this.totalTimeText = this.FormatTime(this.totalDuration)
     this.UpdateFrame()
 
-    // 分阶段揭示：若仍崩溃可通过最后的 toast 定位崩点
+    // 分阶段揭示：若仍异常可通过最后的 toast 定位
     prompt.showToast({ message: this.$t("frameviewer.readyToRender"), duration: 1000 })
     setTimeout(() => {
       this.loading = false
@@ -389,19 +305,19 @@ export default {
     this.BuildFrameStyles(fi)
   },
   // 构建渲染样式：
-  // - spriteStyle：整张雪碧图以绝对定位放在舞台上，目标格子对准画面窗口，
-  //   通过负偏移把目标格子"推"进窗口（宽度 = 网格数 x 单格尺寸，1x 档与原图零缩放）
+  // - spriteStyle：整张雪碧图以绝对定位放在舞台上，负偏移把目标格子
+  //   对准画面窗口（显示尺寸 = 网格数 x 单格尺寸，1x 档与原图零缩放）
   // - 四块遮罩：盖住舞台除画面窗口外的全部区域，黑色与舞台底色一致
   BuildFrameStyles(fi) {
     const mode = FRAME_MODES[this.frameModeIndex]
     const w = mode.w
     const h = mode.h
-    const spriteIndex = Math.min(Math.floor(fi / this.tilesPerSprite), this.spriteUris.length - 1)
+    const spriteIndex = Math.min(Math.floor(fi / this.tilesPerSprite), this.spriteUrls.length - 1)
     const tileIndex = fi % this.tilesPerSprite
     const row = Math.floor(tileIndex / this.imgXLen)
     const col = tileIndex % this.imgXLen
 
-    this.spriteUri = this.spriteUris[spriteIndex] || ""
+    this.spriteUri = this.spriteUrls[spriteIndex] || ""
 
     // 画面窗口在舞台内居中
     const areaX = Math.floor((STAGE_W - w) / 2)
@@ -412,7 +328,7 @@ export default {
     const dispH = this.imgYLen * h
     const imgLeft = areaX - col * w
     const imgTop = areaY - row * h
-    this.spriteStyle = `position: absolute; left: ${imgLeft}px; top: ${imgTop}px; width: ${dispW}px; height: ${dispH}px; object-fit: fill;`
+    this.spriteStyle = `position: absolute; left: ${imgLeft}px; top: ${imgTop}px; width: ${dispW}px; height: ${dispH}px;`
 
     // 遮罩矩形（窗口位置不变时与档位绑定，逐帧重算代价可忽略）
     this.maskTopStyle = `position: absolute; left: 0px; top: 0px; width: ${STAGE_W}px; height: ${areaY}px;`
