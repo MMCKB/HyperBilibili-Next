@@ -136,7 +136,10 @@
         "failNoShot": "Keyframe preview is unavailable for this video",
         "failShotApi": "Keyframe API request failed",
         "failDownload": "Failed to download keyframe images",
-        "failGeneric": "Load failed, please retry"
+        "failGeneric": "Load failed, please retry",
+        "downloadDone": "Sprites downloaded",
+        "readyToRender": "Preparing to render",
+        "startPlay": "Starting playback"
     },
     "settings": {
         "title": "Settings",

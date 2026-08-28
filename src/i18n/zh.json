@@ -137,7 +137,10 @@
         "failNoShot": "该视频不支持关键帧预览",
         "failShotApi": "关键帧接口请求失败",
         "failDownload": "关键帧图下载失败",
-        "failGeneric": "加载失败，请重试"
+        "failGeneric": "加载失败，请重试",
+        "downloadDone": "雪碧图下载完成",
+        "readyToRender": "准备渲染画面",
+        "startPlay": "开始逐帧播放"
     },
     "settings": {
         "title": "设置",

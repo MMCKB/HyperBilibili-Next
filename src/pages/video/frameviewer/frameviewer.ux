@@ -26,10 +26,15 @@
       </div>
       <div class="controls">
         <image class="ctrlicon" src="/common/icon/prev.png" @click="Step(-1)"></image>
-        <image class="ctrlicon" style="width: 60px; height: 60px" src="{{ playIcon }}" @click="TogglePlay"></image>
+        <image class="bigctrlicon" src="{{ playIcon }}" @click="TogglePlay"></image>
         <image class="ctrlicon" src="/common/icon/next.png" @click="Step(1)"></image>
-        <div class="speedbtn" @click="CycleSpeed">
-          <text class="speedtext">{{ speed }}x</text>
+      </div>
+      <div class="controls second">
+        <div class="modebtn" @click="CycleSpeed">
+          <text class="modetext">{{ speed }}x</text>
+        </div>
+        <div class="modebtn" @click="CycleFrameMode">
+          <text class="modetext">{{ frameModeText }}</text>
         </div>
         <image class="ctrlicon" src="/common/icon/exit.png" @click="Exit"></image>
       </div>
@@ -47,11 +52,15 @@ import storage from "@system.storage"
 
 import { asyncFile } from "../../../asyncapi/file"
 
-// 帧显示区域尺寸（16:9）
-// 注意：显示区域 × 雪碧图网格数（10x10）会得到整图显示尺寸，
-// 384 * 10 = 3840 必须小于嵌入式 GPU 常见的 4096 纹理上限
-const FRAME_WIDTH = 384
-const FRAME_HEIGHT = 216
+// 画面尺寸档位：
+// [宽, 高, 标签]
+// 1x = 160x90 雪碧图单格原始尺寸，background-size 1600x900 与原图一致，
+//      不触发任何放大（嵌入式 GPU 纹理上限普遍为 2048，放大后 3840 宽会超限导致崩溃）
+// 2x = 320x180 实验档，background-size 3200x1800 超过 2048，用于探测设备实际能力
+const FRAME_MODES = [
+  { w: 160, h: 90, label: "1x" },
+  { w: 320, h: 180, label: "2x" }
+]
 
 export default {
   public: {
@@ -72,8 +81,12 @@ export default {
     currentTimeText: "0:00",
     totalTimeText: "0:00",
     playIcon: "/common/icon/play.png",
-    // 渲染绑定：整段动态样式（项目内 picturedetail/HtmlRenderer 均采用此写法）
+    // 渲染绑定：整段动态样式（宽度/高度也一并写入，画面尺寸可切换）
     frameStyle: "",
+    frameModeIndex: 0,
+    frameModeText: "1x",
+    frameW: 160,
+    frameH: 90,
     // 内部数据
     spriteUris: [],
     timeline: [],
@@ -126,7 +139,6 @@ export default {
       try {
         shot = await global.biliclient.getVideoVideoshot(this.bvid, String(info.cid))
       } catch (apiErr) {
-        // 接口异常（风控/网络），把具体错误透出到诊断区
         this.Fail(this.$t("frameviewer.failShotApi"), apiErr.toString())
         return
       }
@@ -146,6 +158,9 @@ export default {
         }
         localUris.push(uri)
       }
+
+      // 关键节点提示：此后进入 复制→缓存→渲染 阶段
+      prompt.showToast({ message: this.$t("frameviewer.downloadDone"), duration: 1000 })
 
       const manifest = {
         v: 2,
@@ -220,20 +235,19 @@ export default {
                   resolve(null)
                   return
                 }
-                // 下载目录（cache）对 background-image 的兼容性未经验证，
-                // 统一复制到 internal://files/frameviewer/ 下再引用
+                // 复制到 internal://files/frameviewer/ 下再引用
                 that.CopyToFiles(uri, filename).then((finalUri) => {
                   resolve(finalUri || uri)
                 })
               },
               fail: (err) => {
-                global.logger.error(`[frameviewer] onDownloadComplete fail(${index}): ` + JSON.stringify(err))
+                global.logger.error(`[frameviewer] onDownloadComplete fail(${index})`)
                 resolve(null)
               }
             })
           },
-          fail: (err) => {
-            global.logger.error(`[frameviewer] download fail(${index}): ` + JSON.stringify(err))
+          fail: () => {
+            global.logger.error(`[frameviewer] download fail(${index})`)
             if (!useHeader && !retried) {
               retried = true
               attempt(true)
@@ -290,7 +304,6 @@ export default {
           }
           try {
             const manifest = JSON.parse(data)
-            // 版本不匹配或字段缺失的旧缓存直接弃用
             if (manifest.v !== 2 || !manifest.spriteUris || !manifest.spriteUris.length || !manifest.timeline || !manifest.timeline.length) {
               resolve(null)
               return
@@ -324,7 +337,6 @@ export default {
   ApplyData(manifest) {
     this.spriteUris = manifest.spriteUris
     this.timeline = manifest.timeline
-    // img_x_len/img_y_len 是雪碧图每行/每列的小图数量（一般 10x10）
     this.imgXLen = manifest.imgXLen || 10
     this.imgYLen = manifest.imgYLen || 10
     this.tilesPerSprite = this.imgXLen * this.imgYLen
@@ -334,28 +346,45 @@ export default {
     this.frameIndex = 0
     this.totalTimeText = this.FormatTime(this.totalDuration)
     this.UpdateFrame()
-    this.loading = false
-    this.loadFailed = false
-    this.ready = true
-    this.playing = true
-    this.playIcon = "/common/icon/pause.png"
-    this.ScheduleNext()
+
+    // 分阶段揭示：先提示再渲染，若渲染导致崩溃可通过最后的 toast 定位崩点
+    prompt.showToast({ message: this.$t("frameviewer.readyToRender"), duration: 1000 })
+    setTimeout(() => {
+      this.loading = false
+      this.loadFailed = false
+      this.ready = true
+      setTimeout(() => {
+        this.playing = true
+        this.playIcon = "/common/icon/pause.png"
+        this.ScheduleNext()
+        prompt.showToast({ message: this.$t("frameviewer.startPlay"), duration: 800 })
+      }, 500)
+    }, 300)
   },
   UpdateFrame() {
     if (this.frameCount === 0) {
       return
     }
     const fi = Math.min(this.frameIndex, this.frameCount - 1)
+    const t = this.timeline[fi] || [0, 0]
+    this.currentTimeText = this.FormatTime(t[0])
+    this.progress = this.frameCount > 1 ? Math.floor((fi / (this.frameCount - 1)) * 100) : 100
+    this.BuildFrameStyle(fi)
+  },
+  // 构建整段动态样式。画面尺寸档位决定单格显示大小，
+  // background-size = 网格数 x 单格尺寸（1x 档与雪碧图原始尺寸 1600x900 一致，零放大）
+  BuildFrameStyle(fi) {
     const spriteIndex = Math.min(Math.floor(fi / this.tilesPerSprite), this.spriteUris.length - 1)
     const tileIndex = fi % this.tilesPerSprite
     const uri = this.spriteUris[spriteIndex] || ""
     const row = Math.floor(tileIndex / this.imgXLen)
     const col = tileIndex % this.imgXLen
-    // 整段拼接动态样式：url() 内不嵌套插值，遵循项目内已验证的 style 绑定写法
-    this.frameStyle = `background-image: url(${uri}); background-size: ${this.imgXLen * FRAME_WIDTH}px ${this.imgYLen * FRAME_HEIGHT}px; background-position: -${col * FRAME_WIDTH}px -${row * FRAME_HEIGHT}px; background-repeat: no-repeat;`
-    const t = this.timeline[fi] || [0, 0]
-    this.currentTimeText = this.FormatTime(t[0])
-    this.progress = this.frameCount > 1 ? Math.floor((fi / (this.frameCount - 1)) * 100) : 100
+    const w = this.frameW
+    const h = this.frameH
+    // 先求值再取负，避免 col=0 时拼出 "-0px"
+    const posX = -(col * w)
+    const posY = -(row * h)
+    this.frameStyle = `width: ${w}px; height: ${h}px; background-image: url(${uri}); background-size: ${this.imgXLen * w}px ${this.imgYLen * h}px; background-position: ${posX}px ${posY}px; background-repeat: no-repeat;`
   },
   ScheduleNext() {
     this.ClearTimer()
@@ -379,7 +408,6 @@ export default {
     if (next >= this.frameCount - 1) {
       next = this.frameCount - 1
       if (this.playing) {
-        // 播完自动暂停
         this.playing = false
         this.playIcon = "/common/icon/play.png"
       }
@@ -431,6 +459,16 @@ export default {
       this.ScheduleNext()
     }
     prompt.showToast({ message: `${this.speed}x`, duration: 800 })
+  },
+  // 切换画面尺寸档位（1x 原始尺寸安全档 / 2x 实验档）
+  CycleFrameMode() {
+    this.frameModeIndex = (this.frameModeIndex + 1) % FRAME_MODES.length
+    const mode = FRAME_MODES[this.frameModeIndex]
+    this.frameW = mode.w
+    this.frameH = mode.h
+    this.frameModeText = mode.label
+    this.UpdateFrame()
+    prompt.showToast({ message: mode.label, duration: 800 })
   },
   Exit() {
     this.ClearTimer()

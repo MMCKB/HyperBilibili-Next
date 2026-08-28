@@ -40,24 +40,33 @@
 .viewer {
     .flex-column(0px, transparent);
     width: 100%;
+    align-items: center;
 }
 
+// 黑色舞台固定大小，画面（.frame）尺寸由内联样式给出并居中
 .framearea {
     .w(384px);
     .h(216px);
-    background-color: #000000;
+    .flex-column(0px, #000000);
+    justify-content: center;
+    align-items: center;
     .radius(8px);
 }
 
 .frame {
-    .w(384px);
-    .h(216px);
+    // 尺寸与背景图裁切均由内联样式动态提供
 }
 
 .controls {
     .flex-row(0px, transparent);
     width: 400px;
-    margin-top: 25px;
+    margin-top: 20px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.controls.second {
+    margin-top: 15px;
 }
 
 .ctrlicon {
@@ -66,8 +75,14 @@
     object-fit: scale-down;
 }
 
-.speedbtn {
+.bigctrlicon {
     .w(60px);
+    .h(60px);
+    object-fit: scale-down;
+}
+
+.modebtn {
+    .w(70px);
     .h(50px);
     .flex-row(0px, rgba(255, 255, 255, 0.1));
     justify-content: center;
@@ -77,7 +92,7 @@
     border-color: rgba(255, 255, 255, 0.2);
 }
 
-.speedtext {
+.modetext {
     .font-size(26px);
     .font-semibold();
 }
@@ -85,11 +100,11 @@
 .frameprogress {
     .w(330px);
     .h(10px);
-    margin-top: 25px;
+    margin-top: 20px;
 }
 
 .timetext {
     .font-size(22px);
-    margin-top: 15px;
+    margin-top: 12px;
     color: #9e9e9e;
 }
