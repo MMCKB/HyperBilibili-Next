@@ -126,6 +126,17 @@
         "showOnPhone": "Watch on Phone",
         "sendReply": "Send Comment"
     },
+    "frameviewer": {
+        "title": "Watch Video",
+        "retry": "Retry",
+        "hint": "Plays keyframes one by one after download (no sound)",
+        "loadingInfo": "Loading video info...",
+        "loadingShot": "Loading keyframes...",
+        "loadingDownload": "Downloading keyframe images",
+        "failNoShot": "Keyframe preview is unavailable for this video",
+        "failDownload": "Failed to download keyframe images",
+        "failGeneric": "Load failed, please retry"
+    },
     "settings": {
         "title": "Settings",
         "videoPushRelevance": "Video Recommendation Relevance",

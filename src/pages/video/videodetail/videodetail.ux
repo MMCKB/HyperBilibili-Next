@@ -27,7 +27,11 @@
           <image class="vidtoolimg" src="/common/vidtool_generatemanifest.png"></image>
           <text class="vidtooltext">听视频</text>
         </div>
-        <div class="vidtool" style="margin-left: 0px" @click="LikeClick()" @longpress="PowerIt()">
+        <div class="vidtool" @click="OpenFrameViewer()">
+          <image class="vidtoolimg" src="/common/vidtool_watchonphone.png"></image>
+          <text class="vidtooltext">看视频</text>
+        </div>
+        <div class="vidtool" @click="LikeClick()" @longpress="PowerIt()">
           <image class="vidtoolimg" src="{{likesrc}}"></image>
           <text class="vidtooltext">{{ stat_like }}</text>
         </div>
@@ -155,6 +159,14 @@ export default {
     }
     router.push({
       uri: "pages/video/player",
+      params: {
+        bvid: this.bvid
+      }
+    })
+  },
+  OpenFrameViewer() {
+    router.push({
+      uri: "pages/video/frameviewer",
       params: {
         bvid: this.bvid
       }

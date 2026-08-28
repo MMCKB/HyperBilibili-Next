@@ -127,6 +127,17 @@
         "showOnPhone": "手机上看",
         "sendReply": "发送评论"
     },
+    "frameviewer": {
+        "title": "看视频",
+        "retry": "重试",
+        "hint": "下载完成后将按关键帧逐帧播放（无声音）",
+        "loadingInfo": "获取视频信息...",
+        "loadingShot": "获取关键帧...",
+        "loadingDownload": "下载关键帧图",
+        "failNoShot": "该视频不支持关键帧预览",
+        "failDownload": "关键帧图下载失败",
+        "failGeneric": "加载失败，请重试"
+    },
     "settings": {
         "title": "设置",
         "videoPushRelevance": "视频推荐相关性",

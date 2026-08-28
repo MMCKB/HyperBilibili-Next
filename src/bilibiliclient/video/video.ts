@@ -34,6 +34,17 @@ export const BilibiliClientVideoMethods = {
         return response.data.data.favoured;
     },
 
+    // 获取视频关键帧雪碧图清单（用于无声音的逐帧预览）
+    async getVideoVideoshot(this: any, bvid: string, cid: string): Promise<any> {
+        const url = `https://api.bilibili.com/x/player/videoshot/v2?bvid=${bvid}&cid=${cid}&index=1`;
+        const response = await this.getRequest(url);
+        const data = response && response.data;
+        if (!data || !Array.isArray(data.image) || data.image.length === 0) {
+            return null;
+        }
+        return data;
+    },
+
     // 获取视频AI摘要
     async getVideoAISummaryByBVID(this: any, bvid: string, cid: string, up_mid: string) {
         const url = "https://api.bilibili.com/x/web-interface/view/conclusion/get";

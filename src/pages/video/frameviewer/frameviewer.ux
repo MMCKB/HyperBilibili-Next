@@ -1,0 +1,393 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="default-button" src="@components/DefaultButton/DefaultButton.ux"></import>
+
+<template>
+  <div class="page">
+    <title-bar title="frameviewer.title"></title-bar>
+
+    <!-- 加载中 -->
+    <div if="{{ loading }}" class="status">
+      <text class="statustext">{{ loadingText }}</text>
+      <text class="statustext loadinghint">{{ $t("frameviewer.hint") }}</text>
+    </div>
+
+    <!-- 加载失败 -->
+    <div if="{{ loadFailed }}" class="status">
+      <image class="failicon" src="/common/warning_icon.png"></image>
+      <text class="statustext failtext">{{ failText }}</text>
+      <default-button text="frameviewer.retry" margin-top="30px" @click="Retry"></default-button>
+    </div>
+
+    <!-- 帧播放器 -->
+    <div if="{{ ready }}" class="viewer">
+      <div class="framearea" @click="TogglePlay">
+        <div class="frame" style="background-image: url({{ frameSpriteUri }}); background-size: {{ spriteBgSize }}; background-position: {{ frameBgPos }};"></div>
+      </div>
+      <div class="controls">
+        <image class="ctrlicon" src="/common/icon/prev.png" @click="Step(-1)"></image>
+        <image class="ctrlicon" style="width: 60px; height: 60px" src="{{ playIcon }}" @click="TogglePlay"></image>
+        <image class="ctrlicon" src="/common/icon/next.png" @click="Step(1)"></image>
+        <div class="speedbtn" @click="CycleSpeed">
+          <text class="speedtext">{{ speed }}x</text>
+        </div>
+        <image class="ctrlicon" src="/common/icon/exit.png" @click="Exit"></image>
+      </div>
+      <progress class="frameprogress" percent="{{ progress }}"></progress>
+      <text class="timetext">{{ currentTimeText }} / {{ totalTimeText }}</text>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import prompt from "@system.prompt"
+import request from "@system.request"
+import storage from "@system.storage"
+
+import { asyncFile } from "../../../asyncapi/file"
+
+// 帧显示区域尺寸（16:9）
+const FRAME_WIDTH = 432
+const FRAME_HEIGHT = 243
+
+export default {
+  public: {
+    bvid: ""
+  },
+  private: {
+    loading: true,
+    loadingText: "",
+    loadFailed: false,
+    failText: "",
+    ready: false,
+    playing: false,
+    speed: 1,
+    frameIndex: 0,
+    frameCount: 0,
+    progress: 0,
+    currentTimeText: "0:00",
+    totalTimeText: "0:00",
+    playIcon: "/common/icon/play.png",
+    // 渲染绑定：当前雪碧图与裁切位置
+    frameSpriteUri: "",
+    spriteBgSize: "",
+    frameBgPos: "",
+    // 内部数据
+    spriteUris: [],
+    timeline: [],
+    imgXSize: 10,
+    imgYSize: 10,
+    tilesPerSprite: 100,
+    totalDuration: 0,
+    timerId: null
+  },
+  onInit() {
+    global.logger.log("[frameviewer] load bvid: " + this.bvid)
+    this.Load()
+  },
+  onHide() {
+    if (this.playing) {
+      this.playing = false
+      this.playIcon = "/common/icon/play.png"
+    }
+    this.ClearTimer()
+  },
+  onDestroy() {
+    this.ClearTimer()
+  },
+
+  // ---------- 加载 ----------
+  async Load() {
+    this.loading = true
+    this.loadFailed = false
+    this.ready = false
+    this.playing = false
+    this.ClearTimer()
+    try {
+      // 优先使用本地缓存
+      const cached = await this.LoadCacheManifest()
+      if (cached) {
+        this.ApplyData(cached)
+        return
+      }
+
+      this.loadingText = this.$t("frameviewer.loadingInfo")
+      const info = await global.biliclient.getVideoInfoByBVID(this.bvid)
+      if (!info || !info.cid) {
+        this.Fail(this.$t("frameviewer.failNoShot"))
+        return
+      }
+
+      this.loadingText = this.$t("frameviewer.loadingShot")
+      const shot = await global.biliclient.getVideoVideoshot(this.bvid, String(info.cid))
+      if (!shot) {
+        this.Fail(this.$t("frameviewer.failNoShot"))
+        return
+      }
+
+      const imageUrls = shot.image || []
+      const localUris = []
+      for (let i = 0; i < imageUrls.length; i++) {
+        this.loadingText = `${this.$t("frameviewer.loadingDownload")} (${i + 1}/${imageUrls.length})`
+        const uri = await this.DownloadSprite(imageUrls[i], i)
+        if (!uri) {
+          this.Fail(this.$t("frameviewer.failDownload"))
+          return
+        }
+        localUris.push(uri)
+      }
+
+      const manifest = {
+        bvid: this.bvid,
+        spriteUris: localUris,
+        timeline: this.NormalizeTimeline(shot.index),
+        imgXSize: shot.img_x_size || 10,
+        imgYSize: shot.img_y_size || 10,
+        totalDuration: info.duration || 0
+      }
+      this.SaveCacheManifest(manifest)
+      this.ApplyData(manifest)
+    } catch (e) {
+      global.logger.error("[frameviewer] Load error: " + e.toString())
+      this.Fail(this.$t("frameviewer.failGeneric"))
+    }
+  },
+  Retry() {
+    this.Load()
+  },
+  Fail(message) {
+    this.loading = false
+    this.ready = false
+    this.loadFailed = true
+    this.failText = message
+  },
+
+  // 兼容两种时间轴格式：[[起始, 结束], ...] 或 [t0, t1, ...]
+  NormalizeTimeline(raw) {
+    if (!Array.isArray(raw) || raw.length === 0) {
+      return []
+    }
+    if (Array.isArray(raw[0])) {
+      return raw
+    }
+    const result = []
+    for (let i = 0; i + 1 < raw.length; i++) {
+      result.push([raw[i], raw[i + 1]])
+    }
+    return result
+  },
+
+  DownloadSprite(url, index) {
+    const that = this
+    return new Promise((resolve) => {
+      const filename = `fvr_${that.bvid}_${index}.jpg`
+      const attempt = (useHeader) => {
+        const options = {
+          url,
+          filename,
+          success: (res) => {
+            request.onDownloadComplete({
+              token: res.token,
+              success: (result) => resolve(result && result.uri ? result.uri : null),
+              fail: () => resolve(null)
+            })
+          },
+          fail: () => {
+            if (!useHeader) {
+              attempt(true)
+            } else {
+              resolve(null)
+            }
+          }
+        }
+        if (useHeader) {
+          options.header = JSON.stringify({
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+            "Referer": "https://www.bilibili.com"
+          })
+        }
+        request.download(options)
+      }
+      attempt(false)
+    })
+  },
+
+  // ---------- 缓存 ----------
+  LoadCacheManifest() {
+    const that = this
+    return new Promise((resolve) => {
+      storage.get({
+        key: `frameviewer_${that.bvid}`,
+        success: async (data) => {
+          if (!data) {
+            resolve(null)
+            return
+          }
+          try {
+            const manifest = JSON.parse(data)
+            if (!manifest.spriteUris || !manifest.spriteUris.length || !manifest.timeline || !manifest.timeline.length) {
+              resolve(null)
+              return
+            }
+            for (const uri of manifest.spriteUris) {
+              const exists = await asyncFile.access({ uri })
+              if (!exists) {
+                resolve(null)
+                return
+              }
+            }
+            resolve(manifest)
+          } catch (e) {
+            resolve(null)
+          }
+        },
+        fail: () => resolve(null)
+      })
+    })
+  },
+  SaveCacheManifest(manifest) {
+    storage.set({
+      key: `frameviewer_${this.bvid}`,
+      value: JSON.stringify(manifest),
+      success: () => {},
+      fail: () => {}
+    })
+  },
+
+  // ---------- 播放 ----------
+  ApplyData(manifest) {
+    this.spriteUris = manifest.spriteUris
+    this.timeline = manifest.timeline
+    this.imgXSize = manifest.imgXSize || 10
+    this.imgYSize = manifest.imgYSize || 10
+    this.tilesPerSprite = this.imgXSize * this.imgYSize
+    this.frameCount = this.timeline.length
+    this.totalDuration = manifest.totalDuration ||
+      (this.frameCount > 0 ? this.timeline[this.frameCount - 1][1] : 0)
+    this.frameIndex = 0
+    // 整张雪碧图缩放到单帧恰好铺满显示区域
+    this.spriteBgSize = `${this.imgXSize * FRAME_WIDTH}px ${this.imgYSize * FRAME_HEIGHT}px`
+    this.totalTimeText = this.FormatTime(this.totalDuration)
+    this.UpdateFrame()
+    this.loading = false
+    this.loadFailed = false
+    this.ready = true
+    this.playing = true
+    this.playIcon = "/common/icon/pause.png"
+    this.ScheduleNext()
+  },
+  UpdateFrame() {
+    if (this.frameCount === 0) {
+      return
+    }
+    const fi = Math.min(this.frameIndex, this.frameCount - 1)
+    const spriteIndex = Math.min(Math.floor(fi / this.tilesPerSprite), this.spriteUris.length - 1)
+    const tileIndex = fi % this.tilesPerSprite
+    this.frameSpriteUri = this.spriteUris[spriteIndex] || ""
+    const row = Math.floor(tileIndex / this.imgXSize)
+    const col = tileIndex % this.imgXSize
+    this.frameBgPos = `-${col * FRAME_WIDTH}px -${row * FRAME_HEIGHT}px`
+    const t = this.timeline[fi] || [0, 0]
+    this.currentTimeText = this.FormatTime(t[0])
+    this.progress = this.frameCount > 1 ? Math.floor((fi / (this.frameCount - 1)) * 100) : 100
+  },
+  ScheduleNext() {
+    this.ClearTimer()
+    if (!this.playing || !this.ready || this.frameCount === 0) {
+      return
+    }
+    const t = this.timeline[Math.min(this.frameIndex, this.frameCount - 1)]
+    if (!t) {
+      return
+    }
+    const durMs = Math.max(300, ((t[1] - t[0]) * 1000) / this.speed)
+    this.timerId = setTimeout(() => {
+      this.Advance(1)
+    }, durMs)
+  },
+  Advance(dir) {
+    let next = this.frameIndex + dir
+    if (next < 0) {
+      next = 0
+    }
+    if (next >= this.frameCount - 1) {
+      next = this.frameCount - 1
+      if (this.playing) {
+        // 播完自动暂停
+        this.playing = false
+        this.playIcon = "/common/icon/play.png"
+      }
+    }
+    this.frameIndex = next
+    this.UpdateFrame()
+    if (this.playing) {
+      this.ScheduleNext()
+    }
+  },
+  TogglePlay() {
+    if (!this.ready) {
+      return
+    }
+    this.playing = !this.playing
+    this.playIcon = this.playing ? "/common/icon/pause.png" : "/common/icon/play.png"
+    if (this.playing) {
+      if (this.frameIndex >= this.frameCount - 1) {
+        this.frameIndex = 0
+        this.UpdateFrame()
+      }
+      this.ScheduleNext()
+    } else {
+      this.ClearTimer()
+    }
+  },
+  Step(dir) {
+    if (!this.ready || this.frameCount === 0) {
+      return
+    }
+    this.ClearTimer()
+    this.playing = false
+    this.playIcon = "/common/icon/play.png"
+    let next = this.frameIndex + dir
+    if (next < 0) {
+      next = 0
+    }
+    if (next > this.frameCount - 1) {
+      next = this.frameCount - 1
+    }
+    this.frameIndex = next
+    this.UpdateFrame()
+  },
+  CycleSpeed() {
+    const speeds = [1, 2, 4, 8]
+    const idx = speeds.indexOf(this.speed)
+    this.speed = speeds[(idx + 1) % speeds.length]
+    if (this.playing) {
+      this.ScheduleNext()
+    }
+    prompt.showToast({ message: `${this.speed}x`, duration: 800 })
+  },
+  Exit() {
+    this.ClearTimer()
+    router.back()
+  },
+  ClearTimer() {
+    if (this.timerId !== null) {
+      clearTimeout(this.timerId)
+      this.timerId = null
+    }
+  },
+  FormatTime(seconds) {
+    if (!seconds || seconds < 0) {
+      return "0:00"
+    }
+    const min = Math.floor(seconds / 60)
+    const sec = Math.floor(seconds % 60)
+    return `${min}:${sec < 10 ? "0" + sec : sec}`
+  }
+}
+</script>
+
+<style lang="less">
+@import '@less/global.less';
+@import "./frameviewer.less";
+</style>
