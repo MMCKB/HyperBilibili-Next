@@ -1,7 +1,7 @@
 {
-  "package": "com.searchstars.hyperbilibili.dev",
+  "package": "com.mmckb.hyperbilibili.dev",
   "name": "澎湃哔哩",
-  "versionName": "2.5.1next-gen AIME",
+  "versionName": "Next AIME",
   "versionCode": 2,
   "minPlatformVersion": 1000,
   "icon": "/common/logoDEV.png",
