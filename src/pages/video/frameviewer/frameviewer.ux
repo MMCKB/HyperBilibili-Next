@@ -8,20 +8,21 @@
     <!-- 加载中 -->
     <div if="{{ loading }}" class="status">
       <text class="statustext">{{ loadingText }}</text>
-      <text class="statustext loadinghint">{{ $t("frameviewer.hint") }}</text>
+      <text class="loadinghint">{{ $t("frameviewer.hint") }}</text>
     </div>
 
     <!-- 加载失败 -->
     <div if="{{ loadFailed }}" class="status">
       <image class="failicon" src="/common/warning_icon.png"></image>
       <text class="statustext failtext">{{ failText }}</text>
+      <text if="{{ failDetail }}" class="faildetail">{{ failDetail }}</text>
       <default-button text="frameviewer.retry" margin-top="30px" @click="Retry"></default-button>
     </div>
 
     <!-- 帧播放器 -->
     <div if="{{ ready }}" class="viewer">
       <div class="framearea" @click="TogglePlay">
-        <div class="frame" style="background-image: url({{ frameSpriteUri }}); background-size: {{ spriteBgSize }}; background-position: {{ frameBgPos }};"></div>
+        <div class="frame" style="{{ frameStyle }}"></div>
       </div>
       <div class="controls">
         <image class="ctrlicon" src="/common/icon/prev.png" @click="Step(-1)"></image>
@@ -47,8 +48,10 @@ import storage from "@system.storage"
 import { asyncFile } from "../../../asyncapi/file"
 
 // 帧显示区域尺寸（16:9）
-const FRAME_WIDTH = 432
-const FRAME_HEIGHT = 243
+// 注意：显示区域 × 雪碧图网格数（10x10）会得到整图显示尺寸，
+// 384 * 10 = 3840 必须小于嵌入式 GPU 常见的 4096 纹理上限
+const FRAME_WIDTH = 384
+const FRAME_HEIGHT = 216
 
 export default {
   public: {
@@ -59,6 +62,7 @@ export default {
     loadingText: "",
     loadFailed: false,
     failText: "",
+    failDetail: "",
     ready: false,
     playing: false,
     speed: 1,
@@ -68,10 +72,8 @@ export default {
     currentTimeText: "0:00",
     totalTimeText: "0:00",
     playIcon: "/common/icon/play.png",
-    // 渲染绑定：当前雪碧图与裁切位置
-    frameSpriteUri: "",
-    spriteBgSize: "",
-    frameBgPos: "",
+    // 渲染绑定：整段动态样式（项目内 picturedetail/HtmlRenderer 均采用此写法）
+    frameStyle: "",
     // 内部数据
     spriteUris: [],
     timeline: [],
@@ -102,6 +104,7 @@ export default {
     this.loadFailed = false
     this.ready = false
     this.playing = false
+    this.failDetail = ""
     this.ClearTimer()
     try {
       // 优先使用本地缓存
@@ -114,14 +117,21 @@ export default {
       this.loadingText = this.$t("frameviewer.loadingInfo")
       const info = await global.biliclient.getVideoInfoByBVID(this.bvid)
       if (!info || !info.cid) {
-        this.Fail(this.$t("frameviewer.failNoShot"))
+        this.Fail(this.$t("frameviewer.failNoShot"), `getVideoInfo 无 cid (bvid=${this.bvid})`)
         return
       }
 
       this.loadingText = this.$t("frameviewer.loadingShot")
-      const shot = await global.biliclient.getVideoVideoshot(this.bvid, String(info.cid))
+      let shot
+      try {
+        shot = await global.biliclient.getVideoVideoshot(this.bvid, String(info.cid))
+      } catch (apiErr) {
+        // 接口异常（风控/网络），把具体错误透出到诊断区
+        this.Fail(this.$t("frameviewer.failShotApi"), apiErr.toString())
+        return
+      }
       if (!shot) {
-        this.Fail(this.$t("frameviewer.failNoShot"))
+        this.Fail(this.$t("frameviewer.failNoShot"), `cid=${info.cid} 无雪碧图数据`)
         return
       }
 
@@ -131,7 +141,7 @@ export default {
         this.loadingText = `${this.$t("frameviewer.loadingDownload")} (${i + 1}/${imageUrls.length})`
         const uri = await this.DownloadSprite(imageUrls[i], i)
         if (!uri) {
-          this.Fail(this.$t("frameviewer.failDownload"))
+          this.Fail(this.$t("frameviewer.failDownload"), `第 ${i + 1} 张下载失败: ${imageUrls[i]}`)
           return
         }
         localUris.push(uri)
@@ -150,17 +160,21 @@ export default {
       this.ApplyData(manifest)
     } catch (e) {
       global.logger.error("[frameviewer] Load error: " + e.toString())
-      this.Fail(this.$t("frameviewer.failGeneric"))
+      this.Fail(this.$t("frameviewer.failGeneric"), e.toString())
     }
   },
   Retry() {
     this.Load()
   },
-  Fail(message) {
+  Fail(message, detail) {
     this.loading = false
     this.ready = false
     this.loadFailed = true
     this.failText = message
+    this.failDetail = detail || ""
+    if (detail) {
+      global.logger.error("[frameviewer] fail: " + detail)
+    }
   },
 
   // 解析时间轴
@@ -192,6 +206,7 @@ export default {
       if (typeof fullUrl === "string" && fullUrl.startsWith("//")) {
         fullUrl = `https:${fullUrl}`
       }
+      let retried = false
       const attempt = (useHeader) => {
         const options = {
           url: fullUrl,
@@ -199,12 +214,28 @@ export default {
           success: (res) => {
             request.onDownloadComplete({
               token: res.token,
-              success: (result) => resolve(result && result.uri ? result.uri : null),
-              fail: () => resolve(null)
+              success: (result) => {
+                const uri = result && result.uri
+                if (!uri) {
+                  resolve(null)
+                  return
+                }
+                // 下载目录（cache）对 background-image 的兼容性未经验证，
+                // 统一复制到 internal://files/frameviewer/ 下再引用
+                that.CopyToFiles(uri, filename).then((finalUri) => {
+                  resolve(finalUri || uri)
+                })
+              },
+              fail: (err) => {
+                global.logger.error(`[frameviewer] onDownloadComplete fail(${index}): ` + JSON.stringify(err))
+                resolve(null)
+              }
             })
           },
-          fail: () => {
-            if (!useHeader) {
+          fail: (err) => {
+            global.logger.error(`[frameviewer] download fail(${index}): ` + JSON.stringify(err))
+            if (!useHeader && !retried) {
+              retried = true
               attempt(true)
             } else {
               resolve(null)
@@ -221,6 +252,29 @@ export default {
       }
       attempt(false)
     })
+  },
+
+  // 将下载的文件复制到 internal://files/frameviewer/，返回新 uri；失败返回 null（调用方回退原 uri）
+  async CopyToFiles(uri, filename) {
+    try {
+      const dir = "internal://files/frameviewer"
+      try {
+        await asyncFile.mkdir({ uri: dir, recursive: true })
+      } catch (e) {
+        // 目录已存在等情况，忽略
+      }
+      const dst = `${dir}/${filename}`
+      try {
+        await asyncFile.delete({ uri: dst })
+      } catch (e) {
+        // 目标不存在，忽略
+      }
+      await asyncFile.copy({ srcUri: uri, dstUri: dst })
+      return dst
+    } catch (e) {
+      global.logger.error("[frameviewer] CopyToFiles fail: " + e.toString())
+      return null
+    }
   },
 
   // ---------- 缓存 ----------
@@ -278,8 +332,6 @@ export default {
     this.totalDuration = manifest.totalDuration ||
       (this.frameCount > 0 ? this.timeline[this.frameCount - 1][1] : 0)
     this.frameIndex = 0
-    // 整张雪碧图缩放到单帧恰好铺满显示区域
-    this.spriteBgSize = `${this.imgXLen * FRAME_WIDTH}px ${this.imgYLen * FRAME_HEIGHT}px`
     this.totalTimeText = this.FormatTime(this.totalDuration)
     this.UpdateFrame()
     this.loading = false
@@ -296,10 +348,11 @@ export default {
     const fi = Math.min(this.frameIndex, this.frameCount - 1)
     const spriteIndex = Math.min(Math.floor(fi / this.tilesPerSprite), this.spriteUris.length - 1)
     const tileIndex = fi % this.tilesPerSprite
-    this.frameSpriteUri = this.spriteUris[spriteIndex] || ""
+    const uri = this.spriteUris[spriteIndex] || ""
     const row = Math.floor(tileIndex / this.imgXLen)
     const col = tileIndex % this.imgXLen
-    this.frameBgPos = `-${col * FRAME_WIDTH}px -${row * FRAME_HEIGHT}px`
+    // 整段拼接动态样式：url() 内不嵌套插值，遵循项目内已验证的 style 绑定写法
+    this.frameStyle = `background-image: url(${uri}); background-size: ${this.imgXLen * FRAME_WIDTH}px ${this.imgYLen * FRAME_HEIGHT}px; background-position: -${col * FRAME_WIDTH}px -${row * FRAME_HEIGHT}px; background-repeat: no-repeat;`
     const t = this.timeline[fi] || [0, 0]
     this.currentTimeText = this.FormatTime(t[0])
     this.progress = this.frameCount > 1 ? Math.floor((fi / (this.frameCount - 1)) * 100) : 100

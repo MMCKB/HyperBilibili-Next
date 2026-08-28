@@ -36,10 +36,17 @@ export const BilibiliClientVideoMethods = {
 
     // 获取视频关键帧雪碧图清单（用于无声音的逐帧预览）
     // 注意：必须使用 v1 接口（无 /v2 后缀），v2 接口会触发 B 站风控返回 HTML 错误页
+    // 返回值约定：接口异常时抛出 Error（携带 code/message 便于诊断）；视频本身没有雪碧图时返回 null
     async getVideoVideoshot(this: any, bvid: string, cid: string): Promise<any> {
         const url = `https://api.bilibili.com/x/player/videoshot?bvid=${bvid}&cid=${cid}&index=1`;
         const response = await this.getRequest(url);
-        const data = response && response.data;
+        if (!response || typeof response.code !== "number") {
+            throw new Error(`videoshot 响应异常(${typeof response})`);
+        }
+        if (response.code !== 0) {
+            throw new Error(`videoshot code=${response.code} msg=${response.message}`);
+        }
+        const data = response.data;
         if (!data || !Array.isArray(data.image) || data.image.length === 0) {
             return null;
         }

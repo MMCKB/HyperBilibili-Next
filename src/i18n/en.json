@@ -134,6 +134,7 @@
         "loadingShot": "Loading keyframes...",
         "loadingDownload": "Downloading keyframe images",
         "failNoShot": "Keyframe preview is unavailable for this video",
+        "failShotApi": "Keyframe API request failed",
         "failDownload": "Failed to download keyframe images",
         "failGeneric": "Load failed, please retry"
     },
