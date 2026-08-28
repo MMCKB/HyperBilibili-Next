@@ -1,4 +1,4 @@
-name: Build RPK variants
+name: Build RPK
 
 on:
   push:
@@ -16,19 +16,9 @@ on:
       - master
       - Next-main
   workflow_dispatch:
-    inputs:
-      target:
-        description: 构建目标设备
-        required: true
-        type: choice
-        default: rw5
-        options:
-          - rw5
-          - s3s4
-          - all
 
 concurrency:
-  group: build-${{ github.ref }}-${{ github.event.inputs.target || 'rw5' }}
+  group: build-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -37,108 +27,76 @@ jobs:
     permissions:
       contents: write
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - target: rw5
-            design_width: 432
-            device_name: RedmiWatch5_6
-          - target: s3s4
-            design_width: 466
-            device_name: S3S4
-
     steps:
-      - name: 判断是否需要构建该目标
-        id: should_run
-        shell: bash
-        run: |
-          set -euo pipefail
-          EVENT="${{ github.event_name }}"
-          INPUT_TARGET="${{ github.event.inputs.target }}"
-          MATRIX_TARGET="${{ matrix.target }}"
-          SHOULD_RUN="false"
-          if [ "$EVENT" != "workflow_dispatch" ]; then
-            if [ "$MATRIX_TARGET" = "rw5" ]; then SHOULD_RUN="true"; fi
-          elif [ "$INPUT_TARGET" = "all" ] || [ "$INPUT_TARGET" = "$MATRIX_TARGET" ]; then
-            SHOULD_RUN="true"
-          fi
-          echo "should_run=$SHOULD_RUN" >> "$GITHUB_OUTPUT"
-
       - name: 检出代码
-        if: steps.should_run.outputs.should_run == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 1
 
       - name: 安装 Node.js
-        if: steps.should_run.outputs.should_run == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: "24"
 
       - name: 安装 Yarn 1.x
-        if: steps.should_run.outputs.should_run == 'true'
         run: |
           npm install -g yarn@1.22.22
           yarn --version
 
-      - name: 构建两个 RPK 变体 (${{ matrix.device_name }})
-        if: steps.should_run.outputs.should_run == 'true'
-        run: VARIANT_DESIGN_WIDTH=${{ matrix.design_width }} yarn build:variants
+      - name: 安装依赖
+        run: yarn install --frozen-lockfile --network-timeout 600000
 
-      - name: 命名两个构建产物
-        if: steps.should_run.outputs.should_run == 'true'
+      - name: 构建 RPK (RedmiWatch5_6)
+        run: yarn build
+
+      - name: 命名构建产物
         id: artifact
         shell: bash
         run: |
           set -euo pipefail
           VERSION=$(node -p "require('./src/manifest.json').versionName.replace(/ /g, '_')")
           COMMIT_SHA="${GITHUB_SHA::7}"
-          FULL_NAME="hyperbilibili-${{ matrix.device_name }}-with-toolbox-v${VERSION}-${COMMIT_SHA}.rpk"
-          LITE_NAME="hyperbilibili-${{ matrix.device_name }}-without-toolbox-v${VERSION}-${COMMIT_SHA}.rpk"
-          mv artifacts/HyperBilibili-Next-with-toolbox.rpk "artifacts/$FULL_NAME"
-          mv artifacts/HyperBilibili-Next-without-toolbox.rpk "artifacts/$LITE_NAME"
-          echo "rpk_paths<<EOF" >> "$GITHUB_OUTPUT"
-          echo "artifacts/$FULL_NAME" >> "$GITHUB_OUTPUT"
-          echo "artifacts/$LITE_NAME" >> "$GITHUB_OUTPUT"
-          echo "EOF" >> "$GITHUB_OUTPUT"
-          ls -lh artifacts/
+          RPK_PATH=$(find dist -name "*.rpk" | head -n 1)
+          if [ -z "$RPK_PATH" ]; then
+            echo "未在 dist 中找到 RPK 产物"
+            exit 1
+          fi
+          RPK_NAME="hyperbilibili-RedmiWatch5_6-v${VERSION}-${COMMIT_SHA}.rpk"
+          cp "$RPK_PATH" "$RPK_NAME"
+          echo "rpk_path=$RPK_NAME" >> "$GITHUB_OUTPUT"
+          ls -lh "$RPK_NAME"
 
-      - name: 上传两个构建产物
-        if: steps.should_run.outputs.should_run == 'true'
+      - name: 上传构建产物
         uses: actions/upload-artifact@v4
         with:
-          name: rpk-${{ matrix.device_name }}-variants
-          path: artifacts/*.rpk
+          name: rpk-RedmiWatch5_6
+          path: ${{ steps.artifact.outputs.rpk_path }}
           if-no-files-found: error
           retention-days: 30
           compression-level: 0
 
       - name: 发布到 Release
-        if: steps.should_run.outputs.should_run == 'true' && github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ matrix.device_name }}-${{ github.sha }}
-          name: ${{ matrix.device_name }} 双版本构建产物 (${{ github.sha }})
+          tag_name: vRedmiWatch5_6-${{ github.sha }}
+          name: RedmiWatch5_6 构建产物 (${{ github.sha }})
           body: |
-            设备: ${{ matrix.device_name }}
+            设备: RedmiWatch5_6
             提交: ${{ github.sha }}
-            产物: 含工具箱版、无工具箱版
             触发: ${{ github.event_name }}
           make_latest: "false"
           prerelease: true
-          files: ${{ steps.artifact.outputs.rpk_paths }}
+          files: ${{ steps.artifact.outputs.rpk_path }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: 上传构建日志（失败时）
-        if: failure() && steps.should_run.outputs.should_run == 'true'
+        if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: build-logs-${{ matrix.device_name }}
+          name: build-logs-RedmiWatch5_6
           path: |
-            artifacts/
-            .hyperbilibili-variants/
+            dist/
           retention-days: 7
           if-no-files-found: ignore

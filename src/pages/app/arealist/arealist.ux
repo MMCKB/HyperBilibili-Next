@@ -37,10 +37,6 @@
                     <image src="/common/arealist_savedcontent.png"></image>
                     <text class="smallbtntext">{{ $t("arealist.downloads") }}</text>
                 </div>
-                <div class="smallbtn" style="margin-left: 18px; background-color: {{colors.toolbox}}" onclick="OpenToolbox">
-                    <div class="toolbox-entry-icon"><text class="toolbox-entry-icon-text">工</text></div>
-                    <text class="smallbtntext">{{ $t("arealist.toolbox") }}</text>
-                </div>
             </div>
             <text style="font-size: 24px; font-weight: 600; margin-top: 50px">{{ $t("arealist.scrollToSearch") }}</text>
             <text style="margin-top: 450px;"></text>
@@ -65,8 +61,7 @@ export default {
             dynamic: "#222222",
             mypage: "#222222",
             settings: "#222222",
-            savedcontent: "#222222",
-            toolbox: "#222222"
+            savedcontent: "#222222"
         },
         anims: {
             ChangePageFX: null,
@@ -96,16 +91,6 @@ export default {
     onInit(){
         global.logger.log("lastpage=", this.lastpage)
         this.colors[this.lastpage] = "#FF7DA8"
-    },
-    OpenToolbox(){
-        try{
-            router.push({
-                uri: "pages/app/features/toolbox"
-            })
-        }
-        catch(e){
-            global.logger.error(e.toString())
-        }
     },
     GoPage(pagename){
         try{

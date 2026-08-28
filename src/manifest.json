@@ -172,51 +172,6 @@
             "pages/app/features/savedcontent": {
                 "component": "savedcontent"
             },
-            "pages/app/features/toolbox": {
-                "component": "toolbox"
-            },
-            "pages/app/features/toolbox/calculator": {
-                "component": "calculator"
-            },
-            "pages/app/features/toolbox/game2048": {
-                "component": "game2048"
-            },
-            "pages/app/features/toolbox/ai": {
-                "component": "ai"
-            },
-            "pages/app/features/toolbox/ai/settings": {
-                "component": "aiconfig"
-            },
-            "pages/app/features/toolbox/todo": {
-                "component": "todo"
-            },
-            "pages/app/features/toolbox/todo/editor": {
-                "component": "editor"
-            },
-            "pages/app/features/toolbox/countdown": {
-                "component": "countdown"
-            },
-            "pages/app/features/toolbox/countdown/editor": {
-                "component": "editor"
-            },
-            "pages/app/features/toolbox/notes": {
-                "component": "notes"
-            },
-            "pages/app/features/toolbox/notes/list": {
-                "component": "list"
-            },
-            "pages/app/features/toolbox/notes/detail": {
-                "component": "detail"
-            },
-            "pages/app/features/toolbox/notes/settings": {
-                "component": "settings"
-            },
-            "pages/app/features/toolbox/weather": {
-                "component": "weather"
-            },
-            "pages/app/features/toolbox/weather/settings": {
-                "component": "weatherconfig"
-            },
             "pages/debug/componentstest": {
                 "component": "componentstest"
             },
