@@ -140,7 +140,8 @@
         "failGeneric": "加载失败，请重试",
         "downloadDone": "雪碧图下载完成",
         "readyToRender": "准备渲染画面",
-        "startPlay": "开始逐帧播放"
+        "startPlay": "开始逐帧播放",
+        "imageError": "雪碧图加载失败"
     },
     "settings": {
         "title": "设置",

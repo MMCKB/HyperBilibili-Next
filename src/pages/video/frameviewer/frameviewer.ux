@@ -21,8 +21,13 @@
 
     <!-- 帧播放器 -->
     <div if="{{ ready }}" class="viewer">
+      <!-- 黑色舞台：整张雪碧图绝对定位铺在下面，四块黑遮罩挖出画面窗口（不用 background-image） -->
       <div class="framearea" @click="TogglePlay">
-        <div class="frame" style="{{ frameStyle }}"></div>
+        <image class="sprite" src="{{ spriteUri }}" style="{{ spriteStyle }}" @error="OnSpriteError"></image>
+        <div class="mask" style="{{ maskTopStyle }}"></div>
+        <div class="mask" style="{{ maskBottomStyle }}"></div>
+        <div class="mask" style="{{ maskLeftStyle }}"></div>
+        <div class="mask" style="{{ maskRightStyle }}"></div>
       </div>
       <div class="controls">
         <image class="ctrlicon" src="/common/icon/prev.png" @click="Step(-1)"></image>
@@ -52,11 +57,17 @@ import storage from "@system.storage"
 
 import { asyncFile } from "../../../asyncapi/file"
 
-// 画面尺寸档位：
-// [宽, 高, 标签]
-// 1x = 160x90 雪碧图单格原始尺寸，background-size 1600x900 与原图一致，
-//      不触发任何放大（嵌入式 GPU 纹理上限普遍为 2048，放大后 3840 宽会超限导致崩溃）
-// 2x = 320x180 实验档，background-size 3200x1800 超过 2048，用于探测设备实际能力
+// 黑色舞台尺寸
+const STAGE_W = 384
+const STAGE_H = 216
+
+// 画面尺寸档位：决定雪碧图单格显示大小
+// 1x = 160x90 雪碧图单格原始尺寸，显示尺寸 1600x900 与原图一致零缩放
+// 2x = 320x180 实验档（放大 2 倍）
+// 渲染方式：image 组件显示整张雪碧图（绝对定位负偏移选中格子），
+// 四块黑色遮罩盖住舞台其余部分，只露出目标格子。
+// 全部使用项目已验证原语：image + internal:// 文件（播放器封面同款）、
+// 绝对定位 left/top、background-color。
 const FRAME_MODES = [
   { w: 160, h: 90, label: "1x" },
   { w: 320, h: 180, label: "2x" }
@@ -81,12 +92,15 @@ export default {
     currentTimeText: "0:00",
     totalTimeText: "0:00",
     playIcon: "/common/icon/play.png",
-    // 渲染绑定：整段动态样式（宽度/高度也一并写入，画面尺寸可切换）
-    frameStyle: "",
+    // 渲染绑定：雪碧图与四块遮罩
+    spriteUri: "",
+    spriteStyle: "",
+    maskTopStyle: "",
+    maskBottomStyle: "",
+    maskLeftStyle: "",
+    maskRightStyle: "",
     frameModeIndex: 0,
     frameModeText: "1x",
-    frameW: 160,
-    frameH: 90,
     // 内部数据
     spriteUris: [],
     timeline: [],
@@ -163,7 +177,7 @@ export default {
       prompt.showToast({ message: this.$t("frameviewer.downloadDone"), duration: 1000 })
 
       const manifest = {
-        v: 2,
+        v: 3,
         bvid: this.bvid,
         spriteUris: localUris,
         timeline: this.NormalizeTimeline(shot.index, info.duration || 0),
@@ -190,6 +204,9 @@ export default {
     if (detail) {
       global.logger.error("[frameviewer] fail: " + detail)
     }
+  },
+  OnSpriteError() {
+    prompt.showToast({ message: this.$t("frameviewer.imageError"), duration: 1500 })
   },
 
   // 解析时间轴
@@ -235,12 +252,12 @@ export default {
                   resolve(null)
                   return
                 }
-                // 复制到 internal://files/frameviewer/ 下再引用
+                // 复制到 internal://files/frameviewer/ 下持久化；失败则回退下载原始 uri
                 that.CopyToFiles(uri, filename).then((finalUri) => {
                   resolve(finalUri || uri)
                 })
               },
-              fail: (err) => {
+              fail: () => {
                 global.logger.error(`[frameviewer] onDownloadComplete fail(${index})`)
                 resolve(null)
               }
@@ -304,7 +321,7 @@ export default {
           }
           try {
             const manifest = JSON.parse(data)
-            if (manifest.v !== 2 || !manifest.spriteUris || !manifest.spriteUris.length || !manifest.timeline || !manifest.timeline.length) {
+            if (manifest.v !== 3 || !manifest.spriteUris || !manifest.spriteUris.length || !manifest.timeline || !manifest.timeline.length) {
               resolve(null)
               return
             }
@@ -347,7 +364,7 @@ export default {
     this.totalTimeText = this.FormatTime(this.totalDuration)
     this.UpdateFrame()
 
-    // 分阶段揭示：先提示再渲染，若渲染导致崩溃可通过最后的 toast 定位崩点
+    // 分阶段揭示：若仍崩溃可通过最后的 toast 定位崩点
     prompt.showToast({ message: this.$t("frameviewer.readyToRender"), duration: 1000 })
     setTimeout(() => {
       this.loading = false
@@ -369,22 +386,39 @@ export default {
     const t = this.timeline[fi] || [0, 0]
     this.currentTimeText = this.FormatTime(t[0])
     this.progress = this.frameCount > 1 ? Math.floor((fi / (this.frameCount - 1)) * 100) : 100
-    this.BuildFrameStyle(fi)
+    this.BuildFrameStyles(fi)
   },
-  // 构建整段动态样式。画面尺寸档位决定单格显示大小，
-  // background-size = 网格数 x 单格尺寸（1x 档与雪碧图原始尺寸 1600x900 一致，零放大）
-  BuildFrameStyle(fi) {
+  // 构建渲染样式：
+  // - spriteStyle：整张雪碧图以绝对定位放在舞台上，目标格子对准画面窗口，
+  //   通过负偏移把目标格子"推"进窗口（宽度 = 网格数 x 单格尺寸，1x 档与原图零缩放）
+  // - 四块遮罩：盖住舞台除画面窗口外的全部区域，黑色与舞台底色一致
+  BuildFrameStyles(fi) {
+    const mode = FRAME_MODES[this.frameModeIndex]
+    const w = mode.w
+    const h = mode.h
     const spriteIndex = Math.min(Math.floor(fi / this.tilesPerSprite), this.spriteUris.length - 1)
     const tileIndex = fi % this.tilesPerSprite
-    const uri = this.spriteUris[spriteIndex] || ""
     const row = Math.floor(tileIndex / this.imgXLen)
     const col = tileIndex % this.imgXLen
-    const w = this.frameW
-    const h = this.frameH
-    // 先求值再取负，避免 col=0 时拼出 "-0px"
-    const posX = -(col * w)
-    const posY = -(row * h)
-    this.frameStyle = `width: ${w}px; height: ${h}px; background-image: url(${uri}); background-size: ${this.imgXLen * w}px ${this.imgYLen * h}px; background-position: ${posX}px ${posY}px; background-repeat: no-repeat;`
+
+    this.spriteUri = this.spriteUris[spriteIndex] || ""
+
+    // 画面窗口在舞台内居中
+    const areaX = Math.floor((STAGE_W - w) / 2)
+    const areaY = Math.floor((STAGE_H - h) / 2)
+
+    // 雪碧图显示尺寸与偏移：目标格子的左上角落在 (areaX, areaY)
+    const dispW = this.imgXLen * w
+    const dispH = this.imgYLen * h
+    const imgLeft = areaX - col * w
+    const imgTop = areaY - row * h
+    this.spriteStyle = `position: absolute; left: ${imgLeft}px; top: ${imgTop}px; width: ${dispW}px; height: ${dispH}px; object-fit: fill;`
+
+    // 遮罩矩形（窗口位置不变时与档位绑定，逐帧重算代价可忽略）
+    this.maskTopStyle = `position: absolute; left: 0px; top: 0px; width: ${STAGE_W}px; height: ${areaY}px;`
+    this.maskBottomStyle = `position: absolute; left: 0px; top: ${areaY + h}px; width: ${STAGE_W}px; height: ${STAGE_H - areaY - h}px;`
+    this.maskLeftStyle = `position: absolute; left: 0px; top: ${areaY}px; width: ${areaX}px; height: ${h}px;`
+    this.maskRightStyle = `position: absolute; left: ${areaX + w}px; top: ${areaY}px; width: ${STAGE_W - areaX - w}px; height: ${h}px;`
   },
   ScheduleNext() {
     this.ClearTimer()
@@ -463,12 +497,9 @@ export default {
   // 切换画面尺寸档位（1x 原始尺寸安全档 / 2x 实验档）
   CycleFrameMode() {
     this.frameModeIndex = (this.frameModeIndex + 1) % FRAME_MODES.length
-    const mode = FRAME_MODES[this.frameModeIndex]
-    this.frameW = mode.w
-    this.frameH = mode.h
-    this.frameModeText = mode.label
+    this.frameModeText = FRAME_MODES[this.frameModeIndex].label
     this.UpdateFrame()
-    prompt.showToast({ message: mode.label, duration: 800 })
+    prompt.showToast({ message: this.frameModeText, duration: 800 })
   },
   Exit() {
     this.ClearTimer()

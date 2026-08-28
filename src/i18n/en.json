@@ -139,7 +139,8 @@
         "failGeneric": "Load failed, please retry",
         "downloadDone": "Sprites downloaded",
         "readyToRender": "Preparing to render",
-        "startPlay": "Starting playback"
+        "startPlay": "Starting playback",
+        "imageError": "Failed to load sprite image"
     },
     "settings": {
         "title": "Settings",
