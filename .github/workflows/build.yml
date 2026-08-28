@@ -1,4 +1,4 @@
-name: Build RPK
+name: 构建 RPK
 
 on:
   push:
@@ -16,6 +16,17 @@ on:
       - master
       - Next-main
   workflow_dispatch:
+    inputs:
+      upload_release:
+        description: 是否上传到 Release
+        required: true
+        type: boolean
+        default: true
+      prerelease:
+        description: 是否为预发布
+        required: true
+        type: boolean
+        default: true
 
 concurrency:
   group: build-${{ github.ref }}
@@ -46,7 +57,7 @@ jobs:
       - name: 安装依赖
         run: yarn install --frozen-lockfile --network-timeout 600000
 
-      - name: 构建 RPK (RedmiWatch5_6)
+      - name: 构建 RPK（RedmiWatch5_6）
         run: yarn build
 
       - name: 命名构建产物
@@ -63,7 +74,11 @@ jobs:
           fi
           RPK_NAME="hyperbilibili-RedmiWatch5_6-v${VERSION}-${COMMIT_SHA}.rpk"
           cp "$RPK_PATH" "$RPK_NAME"
-          echo "rpk_path=$RPK_NAME" >> "$GITHUB_OUTPUT"
+          {
+            echo "rpk_path=$RPK_NAME"
+            echo "version=$VERSION"
+            echo "short_sha=$COMMIT_SHA"
+          } >> "$GITHUB_OUTPUT"
           ls -lh "$RPK_NAME"
 
       - name: 上传构建产物
@@ -76,17 +91,19 @@ jobs:
           compression-level: 0
 
       - name: 发布到 Release
-        if: github.event_name != 'pull_request'
+        if: github.event_name != 'pull_request' && github.event.inputs.upload_release != 'false'
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: vRedmiWatch5_6-${{ github.sha }}
-          name: RedmiWatch5_6 构建产物 (${{ github.sha }})
+          tag_name: vRedmiWatch5_6-v${{ steps.artifact.outputs.version }}-${{ steps.artifact.outputs.short_sha }}
+          name: RedmiWatch5_6 v${{ steps.artifact.outputs.version }}（${{ steps.artifact.outputs.short_sha }}）
           body: |
             设备: RedmiWatch5_6
+            版本: v${{ steps.artifact.outputs.version }}
             提交: ${{ github.sha }}
+            预发布: ${{ github.event.inputs.prerelease != 'false' }}
             触发: ${{ github.event_name }}
-          make_latest: "false"
-          prerelease: true
+          prerelease: ${{ github.event.inputs.prerelease != 'false' }}
+          make_latest: ${{ github.event.inputs.prerelease == 'false' }}
           files: ${{ steps.artifact.outputs.rpk_path }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
