@@ -43,23 +43,24 @@
     align-items: center;
 }
 
-// 黑色舞台：整张雪碧图绝对定位铺在下方，四块黑遮罩挖出画面窗口
-// （framearea 默认 relative 定位，绝对定位子元素以它为基准）
+// 黑色舞台：scroll 视口在其中居中，舞台底色包住视口四周
 .framearea {
     .w(384px);
     .h(216px);
     .flex-column(0px, #000000);
     .radius(8px);
+    justify-content: center;
+    align-items: center;
 }
 
-// 雪碧图：位置/尺寸由内联样式动态提供（position absolute + 负偏移选中格子）
-// object-fit 用默认 cover：显示框与雪碧图宽高比一致，cover 等价于精确铺满
+// scroll 视口：尺寸随档位由内联样式动态提供（单帧显示大小），
+// 超出视口的雪碧图部分由 scroll 天然裁剪
+.sprite-viewport {
+    overflow: hidden;
+}
+
+// 雪碧图：尺寸由内联样式动态提供（整图显示大小，档位固定后不逐帧变化）
 .sprite {
-}
-
-// 遮罩：纯黑色矩形，位置/尺寸由内联样式动态提供，盖住画面窗口外的雪碧图
-.mask {
-    background-color: #000000;
 }
 
 .controls {

@@ -135,8 +135,6 @@
         "failNoShot": "Keyframe preview is unavailable for this video",
         "failShotApi": "Keyframe API request failed",
         "failGeneric": "Load failed, please retry",
-        "readyToRender": "Preparing to render",
-        "startPlay": "Starting playback",
         "frameLoaded": "Frame image loaded",
         "imageError": "Failed to load sprite image"
     },

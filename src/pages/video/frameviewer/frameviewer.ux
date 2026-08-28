@@ -21,13 +21,11 @@
 
     <!-- 帧播放器 -->
     <div if="{{ ready }}" class="viewer">
-      <!-- 黑色舞台：整张雪碧图绝对定位铺在下面，四块黑遮罩挖出画面窗口 -->
+      <!-- 黑色舞台：scroll 作为固定视口裁剪雪碧图，滚动偏移选中当前帧 -->
       <div class="framearea" @click="TogglePlay">
-        <image class="sprite" src="{{ spriteUri }}" style="{{ spriteStyle }}" oncomplete="OnSpriteComplete" onerror="OnSpriteError"></image>
-        <div class="mask" style="{{ maskTopStyle }}"></div>
-        <div class="mask" style="{{ maskBottomStyle }}"></div>
-        <div class="mask" style="{{ maskLeftStyle }}"></div>
-        <div class="mask" style="{{ maskRightStyle }}"></div>
+        <scroll id="spritescroll" class="sprite-viewport" style="{{ viewportStyle }}" scroll-x="true" scroll-y="true" scroll-left="{{ scrollLeft }}" scroll-top="{{ scrollTop }}">
+          <image class="sprite" src="{{ spriteUri }}" style="{{ spriteStyle }}" oncomplete="OnSpriteComplete" onerror="OnSpriteError"></image>
+        </scroll>
       </div>
       <div class="controls">
         <image class="ctrlicon" src="/common/icon/prev.png" @click="Step(-1)"></image>
@@ -54,17 +52,13 @@ import router from "@system.router"
 import prompt from "@system.prompt"
 import storage from "@system.storage"
 
-// 黑色舞台尺寸
-const STAGE_W = 384
-const STAGE_H = 216
-
 // 画面尺寸档位：决定雪碧图单格显示大小
 // 1x = 160x90 雪碧图单格原始尺寸，显示尺寸 1600x900 与原图一致零缩放
 // 2x = 320x180 实验档（放大 2 倍，可能触碰渲染上限）
 // 渲染方式：image 组件直接加载远程雪碧图 URL（与全项目封面/头像同路径，
-// 由组件自行下载并缓存），绝对定位负偏移选中格子，四块黑色遮罩盖住
-// 画面窗口外的部分。object-fit 使用默认 cover：显示框与雪碧图宽高比
-// 一致（均为 网格列数:网格行数），cover 数值上等价于精确铺满。
+// 由组件自行下载并缓存），放在固定尺寸的 scroll 视口内，超出的部分被
+// scroll 天然裁剪；scroll-left/scroll-top 滚动到目标格子实现选帧。
+// image 的尺寸与档位绑定、不逐帧变化，逐帧只改滚动偏移，避免重复加载。
 const FRAME_MODES = [
   { w: 160, h: 90, label: "1x" },
   { w: 320, h: 180, label: "2x" }
@@ -89,13 +83,14 @@ export default {
     currentTimeText: "0:00",
     totalTimeText: "0:00",
     playIcon: "/common/icon/play.png",
-    // 渲染绑定：雪碧图与四块遮罩
+    // 渲染绑定：scroll 视口 + 雪碧图
     spriteUri: "",
     spriteStyle: "",
-    maskTopStyle: "",
-    maskBottomStyle: "",
-    maskLeftStyle: "",
-    maskRightStyle: "",
+    viewportStyle: "",
+    scrollLeft: 0,
+    scrollTop: 0,
+    // 首张雪碧图加载完成只提示一次
+    spriteLoaded: false,
     frameModeIndex: 0,
     frameModeText: "1x",
     // 内部数据
@@ -129,6 +124,7 @@ export default {
     this.ready = false
     this.playing = false
     this.failDetail = ""
+    this.spriteLoaded = false
     this.ClearTimer()
     try {
       // 优先使用本地缓存（雪碧图 URL 清单）
@@ -200,11 +196,15 @@ export default {
   },
 
   // image 组件事件：加载成功（携带解码后的真实尺寸）/ 失败
+  // 仅首张加载完成时提示一次，后续换图/重排不再打扰
   OnSpriteComplete(e) {
     const w = e && e.width
     const h = e && e.height
     global.logger.log(`[frameviewer] sprite complete ${w}x${h} ${this.spriteUri}`)
-    prompt.showToast({ message: `${this.$t("frameviewer.frameLoaded")} (${w}x${h})`, duration: 800 })
+    if (!this.spriteLoaded) {
+      this.spriteLoaded = true
+      prompt.showToast({ message: `${this.$t("frameviewer.frameLoaded")} (${w}x${h})`, duration: 800 })
+    }
   },
   OnSpriteError() {
     global.logger.error(`[frameviewer] sprite load fail: ${this.spriteUri}`)
@@ -280,19 +280,12 @@ export default {
     this.totalTimeText = this.FormatTime(this.totalDuration)
     this.UpdateFrame()
 
-    // 分阶段揭示：若仍异常可通过最后的 toast 定位
-    prompt.showToast({ message: this.$t("frameviewer.readyToRender"), duration: 1000 })
-    setTimeout(() => {
-      this.loading = false
-      this.loadFailed = false
-      this.ready = true
-      setTimeout(() => {
-        this.playing = true
-        this.playIcon = "/common/icon/pause.png"
-        this.ScheduleNext()
-        prompt.showToast({ message: this.$t("frameviewer.startPlay"), duration: 800 })
-      }, 500)
-    }, 300)
+    this.loading = false
+    this.loadFailed = false
+    this.ready = true
+    this.playing = true
+    this.playIcon = "/common/icon/pause.png"
+    this.ScheduleNext()
   },
   UpdateFrame() {
     if (this.frameCount === 0) {
@@ -305,9 +298,11 @@ export default {
     this.BuildFrameStyles(fi)
   },
   // 构建渲染样式：
-  // - spriteStyle：整张雪碧图以绝对定位放在舞台上，负偏移把目标格子
-  //   对准画面窗口（显示尺寸 = 网格数 x 单格尺寸，1x 档与原图零缩放）
-  // - 四块遮罩：盖住舞台除画面窗口外的全部区域，黑色与舞台底色一致
+  // - viewportStyle：scroll 视口尺寸 = 单帧显示尺寸，居中在黑色舞台内
+  // - spriteStyle：image 尺寸 = 整张雪碧图显示尺寸（1x 档与原图零缩放），
+  //   尺寸只与档位绑定、不逐帧变化，避免触发 image 重新加载
+  // - scrollLeft/scrollTop：滚动到目标格子左上角，视口天然裁剪其余部分
+  //   属性绑定之外再通过 scrollTo 方法兜底，防止属性动态更新不生效
   BuildFrameStyles(fi) {
     const mode = FRAME_MODES[this.frameModeIndex]
     const w = mode.w
@@ -319,22 +314,20 @@ export default {
 
     this.spriteUri = this.spriteUrls[spriteIndex] || ""
 
-    // 画面窗口在舞台内居中
-    const areaX = Math.floor((STAGE_W - w) / 2)
-    const areaY = Math.floor((STAGE_H - h) / 2)
+    this.viewportStyle = `width: ${w}px; height: ${h}px;`
+    this.spriteStyle = `width: ${this.imgXLen * w}px; height: ${this.imgYLen * h}px;`
 
-    // 雪碧图显示尺寸与偏移：目标格子的左上角落在 (areaX, areaY)
-    const dispW = this.imgXLen * w
-    const dispH = this.imgYLen * h
-    const imgLeft = areaX - col * w
-    const imgTop = areaY - row * h
-    this.spriteStyle = `position: absolute; left: ${imgLeft}px; top: ${imgTop}px; width: ${dispW}px; height: ${dispH}px;`
-
-    // 遮罩矩形（窗口位置不变时与档位绑定，逐帧重算代价可忽略）
-    this.maskTopStyle = `position: absolute; left: 0px; top: 0px; width: ${STAGE_W}px; height: ${areaY}px;`
-    this.maskBottomStyle = `position: absolute; left: 0px; top: ${areaY + h}px; width: ${STAGE_W}px; height: ${STAGE_H - areaY - h}px;`
-    this.maskLeftStyle = `position: absolute; left: 0px; top: ${areaY}px; width: ${areaX}px; height: ${h}px;`
-    this.maskRightStyle = `position: absolute; left: ${areaX + w}px; top: ${areaY}px; width: ${STAGE_W - areaX - w}px; height: ${h}px;`
+    this.scrollLeft = col * w
+    this.scrollTop = row * h
+    const x = this.scrollLeft
+    const y = this.scrollTop
+    // scroll 组件挂载后才可用；首帧为 (0,0) 无需滚动
+    setTimeout(() => {
+      const el = this.$element("spritescroll")
+      if (el && typeof el.scrollTo === "function") {
+        el.scrollTo({ x: x, y: y })
+      }
+    }, 0)
   },
   ScheduleNext() {
     this.ClearTimer()
