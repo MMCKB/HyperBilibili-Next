@@ -100,9 +100,6 @@
             "pages/video/player": {
                 "component": "player"
             },
-            "pages/video/frameviewer": {
-                "component": "frameviewer"
-            },
             "pages/app/arealist": {
                 "component": "arealist"
             },

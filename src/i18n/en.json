@@ -126,18 +126,6 @@
         "showOnPhone": "Watch on Phone",
         "sendReply": "Send Comment"
     },
-    "frameviewer": {
-        "title": "Watch Video",
-        "retry": "Retry",
-        "hint": "Plays keyframes one by one after loading (no sound)",
-        "loadingInfo": "Loading video info...",
-        "loadingShot": "Loading keyframes...",
-        "failNoShot": "Keyframe preview is unavailable for this video",
-        "failShotApi": "Keyframe API request failed",
-        "failGeneric": "Load failed, please retry",
-        "frameLoaded": "Frame image loaded",
-        "imageError": "Failed to load sprite image"
-    },
     "settings": {
         "title": "Settings",
         "videoPushRelevance": "Video Recommendation Relevance",
