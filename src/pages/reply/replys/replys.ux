@@ -10,6 +10,10 @@
   <div class="page">
     <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
       <title-bar title="{{titletext}}"></title-bar>
+      <div class="newreplybtn" if="{{!secmode}}" @click="OpenNewReply">
+        <image class="newreplybtn_img" src="/common/replycontrol_reply.png"></image>
+        <text class="newreplybtn_text">发评论</text>
+      </div>
       <image style="position: absolute; margin-top: 245px" if="{{anims.show_loading}}" src="{{anims.loading_src.value}}"></image>
       <list class="replylist">
         <list-item type="replies"
@@ -63,8 +67,11 @@ export default {
 
     let result
     try {
-      result = this.secmode
-        ? await global.biliclient.GiveTreeReply(
+      if (!this.reply_target) {
+        // 顶部"发评论"：对视频/动态本身发一级评论，无回复目标
+        result = await global.biliclient.GiveReply(this.type, this.oid, content)
+      } else if (this.secmode) {
+        result = await global.biliclient.GiveTreeReply(
             this.type,
             this.oid,
             this.reply_target,
@@ -72,15 +79,22 @@ export default {
             this.reply_dialog,
             content
         )
-        : await global.biliclient.GiveSecReply(
+      } else {
+        result = await global.biliclient.GiveSecReply(
             this.type,
             this.oid,
             this.reply_target,
             content
         )
+      }
 
       if (result.code === 0) {
         prompt.showToast({message: "发送成功"})
+        // 刷新列表让新评论立即可见（仅一级评论区）
+        if (!this.reply_target) {
+          this.current_pn = 1
+          this.LoadReplies()
+        }
       } else {
         prompt.showToast({
           message: `发送失败，错误代码：${result.code} 原因：${result.message}`,
@@ -99,6 +113,12 @@ export default {
     this.replymode = true
     this.reply_target = evt.detail.rpid
     this.reply_dialog = evt.detail.dialog
+  },
+  // 顶部"发评论"：清空回复目标，发送时走一级评论接口
+  OpenNewReply() {
+    this.replymode = true
+    this.reply_target = null
+    this.reply_dialog = ""
   },
   ShowTools(evt) {
     const uri = this.secmode ? "pages/tools/textdetail" : "pages/reply/replytools"
