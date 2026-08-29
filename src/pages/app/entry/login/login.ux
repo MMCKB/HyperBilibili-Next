@@ -41,7 +41,7 @@ export default {
         if (this.mode === "addaccount") {
           // 添加账号模式：清栈回账号切换页查看/继续切换
           router.clear()
-          router.replace({uri: "pages/app/features/mypage/accountswitch/accountswitch"})
+          router.replace({uri: "pages/app/features/mypage/accountswitch"})
         } else {
           router.replace({uri: "pages/app/entry/introduction"})
         }

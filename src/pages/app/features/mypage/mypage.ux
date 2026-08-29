@@ -79,7 +79,7 @@ export default {
   },
   GoAccountSwitch(){
     router.push({
-      uri: "pages/app/features/mypage/accountswitch/accountswitch"
+      uri: "pages/app/features/mypage/accountswitch"
     })
   },
   GoFollowings(){

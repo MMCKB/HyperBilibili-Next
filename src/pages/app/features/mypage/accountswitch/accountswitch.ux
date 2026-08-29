@@ -1,3 +1,5 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+
 <template>
   <div class="page">
     <scroll scroll-y="true" class="scroll" bounces="true">

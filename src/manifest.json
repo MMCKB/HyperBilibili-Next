@@ -112,7 +112,7 @@
             "pages/app/features/mypage": {
                 "component": "mypage"
             },
-            "pages/app/features/mypage/accountswitch/accountswitch": {
+            "pages/app/features/mypage/accountswitch": {
                 "component": "accountswitch"
             },
             "pages/folders/favfolders": {
