@@ -90,10 +90,9 @@ export default {
 
       if (result.code === 0) {
         prompt.showToast({message: "发送成功"})
-        // 刷新列表让新评论立即可见（仅一级评论区）
+        // 一级评论：本地构造新评论插到列表头，立刻可见，无需整页刷新
         if (!this.reply_target) {
-          this.current_pn = 1
-          this.LoadReplies()
+          this.InsertMyReply(content, result)
         }
       } else {
         prompt.showToast({
@@ -119,6 +118,44 @@ export default {
     this.replymode = true
     this.reply_target = null
     this.reply_dialog = ""
+  },
+  // 发送成功后把新评论插到列表第一位（不重新请求列表接口）
+  // B站 add 接口的 data.reply 回传完整评论体，优先使用；缺失时用本地账号信息拼装
+  InsertMyReply(content, result) {
+    const serverReply = result && result.data && result.data.reply
+    let newReply
+    if (serverReply) {
+      newReply = serverReply
+      // 补充本地时间字段（服务器体可能缺 reply_control）
+      if (!newReply.reply_control) {
+        newReply.reply_control = {time_desc: "刚刚", location: ""}
+      }
+    } else {
+      const account = global.biliclient.accountInfo
+      if (!account || !account.mid) {
+        // 拿不到账号信息时退回整页刷新
+        this.current_pn = 1
+        this.LoadReplies()
+        return
+      }
+      newReply = {
+        rpid: (result && result.data && result.data.rpid) || Date.now(),
+        member: {
+          mid: account.mid,
+          uname: account.uname || "我",
+          avatar: account.face || "",
+          level_info: {current_level: account.level_info ? account.level_info.current_level : 0}
+        },
+        content: {message: content},
+        like: 0,
+        rcount: 0,
+        reply_control: {time_desc: "刚刚", location: ""}
+      }
+    }
+    // 就地更新数组，保持 list 组件引用不失效
+    this.replies.splice(0, 0, newReply)
+    this.replycount++
+    this.maxpn = Math.ceil(this.replycount / 10)
   },
   ShowTools(evt) {
     const uri = this.secmode ? "pages/tools/textdetail" : "pages/reply/replytools"
