@@ -3,12 +3,13 @@
 
 <template>
   <div class="page">
-    <!-- 右上角切换账号按钮 -->
-    <div class="switchaccountbtn" @click="GoAccountSwitch">
-      <image class="switchaccountbtn_icon" src="/common/mypage_messager.png"></image>
-    </div>
     <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
       <switch-bar title="mypage.title"></switch-bar>
+      <!-- 切换账号：文档流内小按钮，位于时间/标题下方，不遮挡内容 -->
+      <div class="switchaccountbtn" @click="GoAccountSwitch">
+        <image class="switchaccountbtn_icon" src="/common/switch.png"></image>
+        <text class="switchaccountbtn_text">切换账号</text>
+      </div>
       <user-info account-info="{{accountInfo}}" stat="{{stat}}" @viewfollowings="GoFollowings" @viewfollowers="GoFollowers"></user-info>
       <div class="btnbase" style="margin-top: 40px" @click="GoMyFavFolders()">
         <image class="btnimg" src="/common/mypage_star.png"></image>

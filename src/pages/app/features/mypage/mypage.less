@@ -1,20 +1,24 @@
-// 右上角切换账号按钮：圆屏右上安全区，与标题栏同行
+// 切换账号按钮：文档流内元素，标题栏下方居中，随页面滚动
 .switchaccountbtn {
-    position: absolute;
-    right: 15px;
-    top: 12px;
-    width: 44px;
-    height: 44px;
-    border-radius: 22px;
-    background-color: rgba(0, 0, 0, 0.8);
+    margin: 5px auto 0px auto;
+    padding: 8px 20px;
+    border-radius: 19px;
+    background-color: #262626;
+    flex-direction: row;
     align-items: center;
     justify-content: center;
 }
 
 .switchaccountbtn_icon {
-    width: 30px;
-    height: 30px;
+    width: 26px;
+    height: 26px;
     object-fit: scale-down;
+}
+
+.switchaccountbtn_text {
+    margin-left: 8px;
+    font-size: 22px;
+    color: #999999;
 }
 
 .btnbase {
