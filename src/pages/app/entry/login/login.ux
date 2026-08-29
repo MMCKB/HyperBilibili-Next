@@ -23,6 +23,10 @@ export default {
     qr_value: "",
     show_qr: false,
     qrpoll_interval: null,
+    // 轮询防重叠：网络慢时 1.5s 定时器会在上一次请求返回前再次触发
+    // 两个 login() 并发执行会交错读写账号存储，可能互相覆盖
+    polling: false,
+    loginDone: false,
     anims: {
       show_loading: false,
       pagediv: null,
@@ -30,13 +34,16 @@ export default {
     }
   },
   async PollQR() {
+    if (this.polling || this.loginDone) return
+    this.polling = true
     try {
       // 二维码页只负责扫码：始终忽略本地已存账号（含激活账号）
       // 能走到这一页说明要走扫码流程，否则会立即"登录成功"跳走
       const result = await global.biliclient.login(true, this.qrpoll_interval, true)
       if (result.success) {
+        this.loginDone = true
         global.logger.log("登录成功")
-        // 账号已由 login() 内部 commitCurrentAccount 写入单账号键+列表+激活标记
+        // 账号已由 login() 内部 commitCurrentAccount 写入单账号键+列表+激活标记+文件镜像
         prompt.showToast({message: "登录成功"})
         clearInterval(this.qrpoll_interval)
         if (this.mode === "addaccount") {
@@ -51,6 +58,8 @@ export default {
       }
     } catch (error) {
       global.logger.error("轮询QR登录时出错:", error)
+    } finally {
+      this.polling = false
     }
   },
   async GetQR() {

@@ -1,5 +1,11 @@
 import { storage, router } from '../../tsimports';
+import { asyncFile } from '../../asyncapi/file';
 import { AccountData } from './accountData';
+
+// 账号状态文件镜像
+// 部分设备上 storage 的写入在进程被杀时会丢（表现为"临退出前添加的账号重启后消失"）
+// 文件写入已在本平台验证可跨重启持久（日志就是文件写入），作为 storage 的兜底
+const ACCOUNT_STATE_FILE = 'internal://files/account_state.json';
 
 // 登录相关的方法
 export const BilibiliClientLoginMethods = {
@@ -93,7 +99,7 @@ export const BilibiliClientLoginMethods = {
                 global.logger.log('使用二维码登录成功');
                 await this.updateAccountInfo();
                 await this.updateBUVID();
-                // 三处一致：单账号键 + 多账号列表 + 激活账号标记（重启后恢复到刚登录的账号）
+                // 四处一致：单账号键 + 多账号列表 + 激活账号标记 + 文件镜像（重启后恢复到刚登录的账号）
                 await this.commitCurrentAccount();
                 return { success: true, message: "登录成功" };
             } else {
@@ -102,10 +108,14 @@ export const BilibiliClientLoginMethods = {
         }
     },
 
-    // 退出登录（清空单账号键与激活标记；多账号列表是否移除对应项由调用方决定）
+    // 退出登录（清空单账号键与激活标记；账号列表保留，重新登录后仍可切换其它账号）
+    // 文件镜像同步清掉激活标记，否则 storage 清了但文件还在，重启会复活旧激活账号
     logOut(this: any) {
         storage.delete({ key: "bilibili_account" });
         storage.delete({ key: "bilibili_active_mid" });
+        this.getStoredAccountsList().then((accounts: any[]) => {
+            this.persistAccountFile(null, accounts);
+        }).catch(() => { });
     },
 
     // 从响应头中提取Cookies
@@ -134,7 +144,13 @@ export const BilibiliClientLoginMethods = {
             storage.get({
                 key: 'bilibili_account',
                 success: (data: string) => {
-                    resolve(data ? JSON.parse(data) as AccountData : null);
+                    // 解析失败（数据损坏）返回 null；不 catch 的话 Promise 永远 pending，会卡死启动
+                    try {
+                        resolve(data ? JSON.parse(data) as AccountData : null);
+                    } catch (e) {
+                        global.logger.error('存储的账号数据解析失败，按无数据处理');
+                        resolve(null);
+                    }
                 },
                 fail: (data: any, code: number) => {
                     global.logger.log(`获取存储的账号数据失败，错误码 = ${code}`);
@@ -157,39 +173,107 @@ export const BilibiliClientLoginMethods = {
                         resolve();
                     },
                     fail: (data: any, code: number) => {
-                        global.logger.log(`存储账号数据失败，错误码 = ${code}`);
+                        global.logger.error(`存储账号数据失败，错误码 = ${code}`);
                         reject();
                     }
                 });
             });
+        } else {
+            // 静默跳过会让单账号键保留旧账号的数据，重启后恢复到错误账号 —— 必须留痕
+            global.logger.error('账号数据不完整（cookie 缺失），跳过单账号键写入');
+            return Promise.resolve();
         }
     },
 
     // ==================== 多账号管理 ====================
-    // 存储结构：key = bilibili_accounts，value = JSON 数组（每项含 AccountData + 显示信息）
-    // 当前账号仍用 bilibili_account 存（保持单账号逻辑兼容）
+    // 三层存储：
+    // 1. bilibili_accounts（storage）—— 账号列表
+    // 2. bilibili_active_mid（storage）—— 激活账号标记
+    // 3. account_state.json（文件镜像）—— { activeMid, accounts } 全量状态
+    // 部分设备 storage 写入会在进程被杀时丢失，文件镜像用于兜底恢复；
+    // 读取时三层取并集自愈，写入时 commitCurrentAccount / 登出统一同步
 
-    // 获取已存的所有账号列表（登录态）
+    // 读取文件镜像（不存在返回 null，属首次使用的正常情况）
+    async readAccountFile(this: any): Promise<{ activeMid: string | null, accounts: any[] } | null> {
+        try {
+            const text = await asyncFile.readText({ uri: ACCOUNT_STATE_FILE });
+            if (!text) return null;
+            const parsed = JSON.parse(text);
+            if (!parsed || !Array.isArray(parsed.accounts)) return null;
+            return { activeMid: parsed.activeMid || null, accounts: parsed.accounts };
+        } catch (error) {
+            return null;
+        }
+    },
+
+    // 写入文件镜像（storage 丢失时的最后防线，失败仅记日志不阻断流程）
+    async persistAccountFile(this: any, activeMid: string | null, accounts: any[]): Promise<void> {
+        try {
+            await asyncFile.writeText({
+                uri: ACCOUNT_STATE_FILE,
+                text: JSON.stringify({ activeMid: activeMid, accounts: accounts })
+            });
+            global.logger.log(`账号文件镜像已写入: ${accounts.length} 个账号, active=${activeMid}`);
+        } catch (error) {
+            global.logger.error(`账号文件镜像写入失败: ${error && error.toString ? error.toString() : error}`);
+        }
+    },
+
+    // 获取已存的所有账号列表（登录态）：storage 与文件镜像取并集，任一层丢数据都能找回
     async getStoredAccountsList(this: any): Promise<any[]> {
-        return new Promise((resolve) => {
+        let stored: any[] = [];
+        await new Promise<void>((resolve) => {
             storage.get({
                 key: 'bilibili_accounts',
                 success: (data: string) => {
-                    resolve(data ? JSON.parse(data) : []);
+                    // 解析失败按空列表处理，避免 Promise 永远 pending 卡死登录
+                    try {
+                        stored = data ? JSON.parse(data) : [];
+                    } catch (e) {
+                        global.logger.error('账号列表解析失败，按空列表处理');
+                        stored = [];
+                    }
+                    resolve();
                 },
-                fail: () => resolve([])
+                fail: () => resolve()
             });
         });
+        if (!Array.isArray(stored)) stored = [];
+
+        const fileState = await this.readAccountFile();
+        if (!fileState || fileState.accounts.length === 0) return stored;
+
+        // 并集合并：同 mid 以 storage 为准（会话内更新），文件独有的账号补回来
+        const merged = stored.slice();
+        let healed = 0;
+        for (const fa of fileState.accounts) {
+            if (!fa || fa.mid === undefined || fa.mid === null) continue;
+            const idx = merged.findIndex(a => String(a.mid) === String(fa.mid));
+            if (idx < 0) {
+                merged.push(fa);
+                healed++;
+            }
+        }
+        if (healed > 0) {
+            global.logger.log(`storage 账号列表不完整，从文件镜像找回 ${healed} 个账号`);
+            // 回写 storage 修复，切换页等直接读 storage 的地方也能看到
+            await this.storeAccountsList(merged);
+        }
+        return merged;
     },
 
-    // 保存账号列表
+    // 保存账号列表到 storage（文件镜像由 commitCurrentAccount / 登出统一同步）
     async storeAccountsList(this: any, accounts: any[]): Promise<void> {
         return new Promise((resolve) => {
             storage.set({
                 key: 'bilibili_accounts',
                 value: JSON.stringify(accounts),
                 success: () => resolve(),
-                fail: () => resolve()
+                fail: (data: any, code: number) => {
+                    // 不吞错误码：storage 写失败是"重启丢账号"的头号嫌疑，必须留痕
+                    global.logger.error(`账号列表存储失败，错误码 = ${code}`);
+                    resolve();
+                }
             });
         });
     },
@@ -214,21 +298,24 @@ export const BilibiliClientLoginMethods = {
         await this.storeAccountsList(accounts);
     },
 
-    // 从列表移除指定账号
-    async removeAccountFromList(this: any, mid: string): Promise<void> {
-        const accounts = await this.getStoredAccountsList();
-        await this.storeAccountsList(accounts.filter(a => String(a.mid) !== String(mid)));
-    },
-
     // 当前激活账号 mid：多账号模式下重启恢复的依据
+    // storage 丢失时从文件镜像找回
     async getActiveAccountMid(this: any): Promise<string | null> {
-        return new Promise((resolve) => {
+        const stored: string | null = await new Promise((resolve) => {
             storage.get({
                 key: 'bilibili_active_mid',
                 success: (data: string) => resolve(data || null),
                 fail: () => resolve(null)
             });
         });
+        if (stored) return stored;
+
+        const fileState = await this.readAccountFile();
+        if (fileState && fileState.activeMid) {
+            global.logger.log(`激活账号标记从文件镜像恢复: ${fileState.activeMid}`);
+            return fileState.activeMid;
+        }
+        return null;
     },
 
     async setActiveAccountMid(this: any, mid: string): Promise<void> {
@@ -237,18 +324,28 @@ export const BilibiliClientLoginMethods = {
                 key: 'bilibili_active_mid',
                 value: mid,
                 success: () => resolve(),
-                fail: () => resolve()
+                fail: (data: any, code: number) => {
+                    global.logger.error(`激活账号标记存储失败，错误码 = ${code}`);
+                    resolve();
+                }
             });
         });
     },
 
-    // 提交当前 client 上的账号：单账号键（兼容）+ 多账号列表 + 激活账号标记三处一致
+    // 提交当前 client 上的账号：storage 三处（单账号键 + 列表 + 激活标记）+ 文件镜像
     // 登录成功 / 切换账号后调用，保证重启后恢复到正确的账号
     async commitCurrentAccount(this: any): Promise<void> {
-        await this.storeAccountData();
+        // 单账号键写失败不阻断：列表 + 激活标记 + 文件镜像才是多账号的恢复依据
+        try {
+            await this.storeAccountData();
+        } catch (e) { /* 已在 storeAccountData 内记日志 */ }
         await this.upsertCurrentAccountToList();
         if (this.accountInfo && this.accountInfo.mid) {
-            await this.setActiveAccountMid(String(this.accountInfo.mid));
+            const activeMid = String(this.accountInfo.mid);
+            await this.setActiveAccountMid(activeMid);
+            // 文件镜像：与 storage 相同的全量状态，storage 被杀丢失时从这里恢复
+            const accounts = await this.getStoredAccountsList();
+            await this.persistAccountFile(activeMid, accounts);
         }
     },
 
@@ -272,10 +369,13 @@ export const BilibiliClientLoginMethods = {
         return true;
     },
 
-    // 登出：同时清掉列表里对应的账号（logOut 已负责清单账号键和激活标记）
+    // 登出：从列表移除当前账号，storage 与文件镜像同步清理（防止重启后复活已退出账号）
     async logOutWithList(this: any): Promise<void> {
         const mid = this.accountInfo ? this.accountInfo.mid : null;
-        if (mid) await this.removeAccountFromList(String(mid));
+        const accounts = await this.getStoredAccountsList();
+        const remaining = mid ? accounts.filter(a => String(a.mid) !== String(mid)) : accounts;
+        await this.storeAccountsList(remaining);
+        await this.persistAccountFile(null, remaining);
         this.logOut();
     }
 };
