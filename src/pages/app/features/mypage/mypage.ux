@@ -3,6 +3,10 @@
 
 <template>
   <div class="page">
+    <!-- 右上角切换账号按钮 -->
+    <div class="switchaccountbtn" @click="GoAccountSwitch">
+      <image class="switchaccountbtn_icon" src="/common/mypage_messager.png"></image>
+    </div>
     <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
       <switch-bar title="mypage.title"></switch-bar>
       <user-info account-info="{{accountInfo}}" stat="{{stat}}" @viewfollowings="GoFollowings" @viewfollowers="GoFollowers"></user-info>
@@ -71,6 +75,11 @@ export default {
   GoWatchLater(){
     router.push({
       uri: "pages/folders/watchlater"
+    })
+  },
+  GoAccountSwitch(){
+    router.push({
+      uri: "pages/app/features/mypage/accountswitch/accountswitch"
     })
   },
   GoFollowings(){

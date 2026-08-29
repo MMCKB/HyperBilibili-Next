@@ -1,0 +1,106 @@
+<template>
+  <div class="page">
+    <scroll scroll-y="true" class="scroll" bounces="true">
+      <title-bar title="{{titletext}}"></title-bar>
+
+      <!-- 当前账号 -->
+      <div class="sectiontitle">
+        <text class="sectiontitle_text">当前账号</text>
+      </div>
+      <div class="accountitem current">
+        <image class="accountitem_face" src="{{currentAccount.face}}@106w_106h"></image>
+        <div class="accountitem_info">
+          <text class="accountitem_name">{{currentAccount.uname}}</text>
+          <text class="accountitem_mid">UID {{currentAccount.mid}}</text>
+        </div>
+        <text class="accountitem_badge">当前</text>
+      </div>
+
+      <!-- 其他账号 -->
+      <div class="sectiontitle" if="{{otherAccounts.length > 0}}">
+        <text class="sectiontitle_text">其他账号</text>
+      </div>
+      <div class="accountitem" for="{{otherAccounts}}" @click="SwitchAccount($item.mid)">
+        <image class="accountitem_face" src="{{$item.face}}@106w_106h"></image>
+        <div class="accountitem_info">
+          <text class="accountitem_name">{{$item.uname}}</text>
+          <text class="accountitem_mid">UID {{$item.mid}}</text>
+        </div>
+        <image class="accountitem_switchicon" src="/common/arrow_right.png"></image>
+      </div>
+
+      <!-- 添加账号入口 -->
+      <div class="addaccountbtn" @click="GoAddAccount">
+        <image class="addaccountbtn_icon" src="/common/settings_logout.png"></image>
+        <text class="addaccountbtn_text">添加账号</text>
+      </div>
+
+      <text style="margin-top: 25px"></text>
+    </scroll>
+
+    <!-- 取消按钮（右下角，独立于列表） -->
+    <div class="cancelbtn" @click="GoBack">
+      <text class="cancelbtn_text">取消</text>
+    </div>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import prompt from "@system.prompt"
+
+export default {
+  private: {
+    titletext: "切换账号",
+    currentAccount: {},
+    otherAccounts: []
+  },
+  // 切换到选中账号：重载账号态后清栈回首页
+  async SwitchAccount(mid) {
+    prompt.showToast({message: "切换中...", duration: 1000})
+    try {
+      const ok = await global.biliclient.switchToAccount(String(mid))
+      if (ok) {
+        prompt.showToast({message: "已切换账号", duration: 2000})
+        // 清栈重建：首页推荐/动态/消息等账号态数据全部失效
+        router.clear()
+        router.replace({uri: "pages/app/features/main"})
+      } else {
+        prompt.showToast({message: "账号不存在，请重新登录", duration: 3000})
+      }
+    } catch (error) {
+      global.logger.error("切换账号失败:", error.toString())
+      prompt.showToast({message: "切换失败，请重试", duration: 3000})
+    }
+  },
+  GoAddAccount() {
+    router.push({uri: "pages/app/entry/login", params: {mode: "addaccount"}})
+  },
+  GoBack() {
+    router.back()
+  },
+  onInit() {
+    this.titletext = "切换账号"
+    // 当前账号直接取 client 上的实时信息
+    const info = global.biliclient.accountInfo
+    this.currentAccount = {
+      mid: info ? info.mid : "",
+      uname: info ? info.uname : "",
+      face: info ? info.face : ""
+    }
+    // 已存列表里除当前 mid 外的都是"其他账号"
+    global.biliclient.getStoredAccountsList().then(accounts => {
+      const currentMid = String(this.currentAccount.mid)
+      this.otherAccounts = (accounts || [])
+          .map(a => ({mid: a.mid, uname: a.uname, face: a.face}))
+          .filter(a => String(a.mid) !== currentMid)
+      global.logger.log("账号列表加载完成，其他账号数:", this.otherAccounts.length)
+    })
+  }
+}
+</script>
+
+<style lang="less">
+@import '@less/global.less';
+@import './accountswitch.less';
+</style>

@@ -18,6 +18,7 @@ import prompt from "@system.prompt"
 import router from "@system.router"
 
 export default {
+  props: ["mode"],
   private: {
     qr_value: "",
     show_qr: false,
@@ -33,9 +34,17 @@ export default {
       const result = await global.biliclient.login(true, this.qrpoll_interval)
       if (result.success) {
         global.logger.log("登录成功")
+        // 登录成功后把当前账号写入多账号列表
+        await global.biliclient.upsertCurrentAccountToList()
         prompt.showToast({message: "登录成功"})
-        router.replace({uri: "pages/app/entry/introduction"})
         clearInterval(this.qrpoll_interval)
+        if (this.mode === "addaccount") {
+          // 添加账号模式：清栈回账号切换页查看/继续切换
+          router.clear()
+          router.replace({uri: "pages/app/features/mypage/accountswitch/accountswitch"})
+        } else {
+          router.replace({uri: "pages/app/entry/introduction"})
+        }
       } else if (result.message.includes("登录失败")) {
         prompt.showToast({message: result.message, duration: 5000})
       }

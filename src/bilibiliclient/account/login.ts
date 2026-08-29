@@ -129,5 +129,86 @@ export const BilibiliClientLoginMethods = {
                 });
             });
         }
+    },
+
+    // ==================== 多账号管理 ====================
+    // 存储结构：key = bilibili_accounts，value = JSON 数组（每项含 AccountData + 显示信息）
+    // 当前账号仍用 bilibili_account 存（保持单账号逻辑兼容）
+
+    // 获取已存的所有账号列表（登录态）
+    async getStoredAccountsList(this: any): Promise<any[]> {
+        return new Promise((resolve) => {
+            storage.get({
+                key: 'bilibili_accounts',
+                success: (data: string) => {
+                    resolve(data ? JSON.parse(data) : []);
+                },
+                fail: () => resolve([])
+            });
+        });
+    },
+
+    // 保存账号列表
+    async storeAccountsList(this: any, accounts: any[]): Promise<void> {
+        return new Promise((resolve) => {
+            storage.set({
+                key: 'bilibili_accounts',
+                value: JSON.stringify(accounts),
+                success: () => resolve(),
+                fail: () => resolve()
+            });
+        });
+    },
+
+    // 把当前登录的账号加入列表（已存在同 mid 则更新；登录后调用）
+    async upsertCurrentAccountToList(this: any): Promise<void> {
+        if (!this.accountInfo || !this.accountInfo.mid) return;
+        const accounts = await this.getStoredAccountsList();
+        const entry = {
+            sessData: this.sessData,
+            biliJct: this.biliJct,
+            dedeUserID: this.dedeUserID,
+            sid: this.sid,
+            mid: this.accountInfo.mid,
+            uname: this.accountInfo.uname || "",
+            face: this.accountInfo.face || ""
+        };
+        const idx = accounts.findIndex(a => a.mid === entry.mid);
+        if (idx >= 0) accounts[idx] = entry;
+        else accounts.push(entry);
+        await this.storeAccountsList(accounts);
+    },
+
+    // 从列表移除指定账号
+    async removeAccountFromList(this: any, mid: string): Promise<void> {
+        const accounts = await this.getStoredAccountsList();
+        await this.storeAccountsList(accounts.filter(a => a.mid !== mid));
+    },
+
+    // 切换到列表中的指定账号：写回单账号存储并重载账号态
+    async switchToAccount(this: any, mid: string): Promise<boolean> {
+        const accounts = await this.getStoredAccountsList();
+        const target = accounts.find(a => a.mid === mid);
+        if (!target) return false;
+
+        this.sessData = target.sessData;
+        this.biliJct = target.biliJct;
+        this.dedeUserID = target.dedeUserID;
+        this.sid = target.sid;
+        await this.storeAccountData();
+
+        // 重载账号态（accountInfo / BUVID 都要按新账号刷新，不能沿用旧账号的）
+        await this.updateAccountInfo();
+        await this.updateBUVID();
+        // 保存列表中该账号的显示信息
+        await this.upsertCurrentAccountToList();
+        return true;
+    },
+
+    // 登出：同时清掉列表里对应的账号
+    async logOutWithList(this: any): Promise<void> {
+        const mid = this.accountInfo ? this.accountInfo.mid : null;
+        if (mid) await this.removeAccountFromList(String(mid));
+        this.logOut();
     }
 };

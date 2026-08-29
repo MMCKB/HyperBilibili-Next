@@ -1,0 +1,108 @@
+// 切换账号页样式（圆屏 480px）
+.titlecontainer {
+    padding: 0px 30px;
+}
+
+.sectiontitle {
+    margin-top: 20px;
+    padding: 0px 25px;
+}
+
+.sectiontitle_text {
+    font-size: 24px;
+    color: #999999;
+}
+
+// 账号条目：头像 + 昵称/UID + 右侧标识
+.accountitem {
+    margin: 10px 20px 0px 20px;
+    padding: 15px 20px;
+    border-radius: 24px;
+    background-color: rgba(44, 44, 46, 1);
+    flex-direction: row;
+    align-items: center;
+}
+
+// 当前账号高亮（B站粉描边）
+.accountitem.current {
+    border: 2px solid #fb7299;
+}
+
+.accountitem_face {
+    width: 80px;
+    height: 80px;
+    border-radius: 40px;
+}
+
+.accountitem_info {
+    flex-direction: column;
+    margin-left: 18px;
+    flex-size: 1;
+}
+
+.accountitem_name {
+    font-size: 28px;
+    color: white;
+    font-weight: 600;
+}
+
+.accountitem_mid {
+    font-size: 20px;
+    color: #999999;
+    margin-top: 4px;
+}
+
+// "当前"徽标
+.accountitem_badge {
+    font-size: 20px;
+    color: #fb7299;
+    font-weight: 600;
+}
+
+.accountitem_switchicon {
+    width: 30px;
+    height: 30px;
+    object-fit: scale-down;
+}
+
+// 添加账号按钮：虚线感边框样式
+.addaccountbtn {
+    margin: 25px 20px 0px 20px;
+    padding: 18px 20px;
+    border-radius: 24px;
+    background-color: rgba(0, 0, 0, 0);
+    border: 2px solid rgba(251, 114, 153, 0.6);
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.addaccountbtn_icon {
+    width: 30px;
+    height: 30px;
+    object-fit: scale-down;
+}
+
+.addaccountbtn_text {
+    margin-left: 10px;
+    font-size: 26px;
+    color: #fb7299;
+    font-weight: 600;
+}
+
+// 取消按钮：右下角独立胶囊
+.cancelbtn {
+    position: absolute;
+    right: 20px;
+    bottom: 25px;
+    padding: 10px 28px;
+    border-radius: 21px;
+    background-color: rgba(0, 0, 0, 0.8);
+    align-items: center;
+    justify-content: center;
+}
+
+.cancelbtn_text {
+    font-size: 24px;
+    color: white;
+}
