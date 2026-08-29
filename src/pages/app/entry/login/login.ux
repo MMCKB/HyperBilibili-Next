@@ -31,12 +31,12 @@ export default {
   },
   async PollQR() {
     try {
-      // 添加账号模式必须走扫码：忽略本地已存账号，否则立即"登录成功"跳回切换页
-      const result = await global.biliclient.login(true, this.qrpoll_interval, this.mode === "addaccount")
+      // 二维码页只负责扫码：始终忽略本地已存账号（含激活账号）
+      // 能走到这一页说明要走扫码流程，否则会立即"登录成功"跳走
+      const result = await global.biliclient.login(true, this.qrpoll_interval, true)
       if (result.success) {
         global.logger.log("登录成功")
-        // 登录成功后把当前账号写入多账号列表
-        await global.biliclient.upsertCurrentAccountToList()
+        // 账号已由 login() 内部 commitCurrentAccount 写入单账号键+列表+激活标记
         prompt.showToast({message: "登录成功"})
         clearInterval(this.qrpoll_interval)
         if (this.mode === "addaccount") {

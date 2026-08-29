@@ -38,10 +38,27 @@ export const BilibiliClientLoginMethods = {
     },
 
     // 登录函数，使用本地存储的账号数据或通过二维码登录
-    // ignoreStored: 添加账号模式下传 true，跳过"本地已有账号"捷径强制走扫码流程
-    // （否则已登录状态下加账号会立即命中本地账号"登录成功"，二维码页直接跳走）
+    // ignoreStored: 二维码登录页传 true 跳过"本地已有账号"捷径强制走扫码流程
+    // （已登录状态下加账号、或残留激活标记时，否则会立即命中"登录成功"，二维码页直接跳走）
     async login(this: any, send_req: boolean, interval: NodeJS.Timeout | null = null, ignoreStored: boolean = false): Promise<{ success: boolean, message: string }> {
         if (!ignoreStored) {
+            // 多账号：优先按"激活账号 mid"从账号列表恢复（上次使用的账号）
+            // 单账号键在添加账号时会被新账号覆盖，重启恢复不能只依赖它
+            const accounts = await this.getStoredAccountsList();
+            const activeMid = await this.getActiveAccountMid();
+            const active = activeMid ? accounts.find((a: any) => String(a.mid) === String(activeMid)) : null;
+            if (active) {
+                this.sessData = active.sessData;
+                this.biliJct = active.biliJct;
+                this.dedeUserID = active.dedeUserID;
+                this.sid = active.sid;
+                global.logger.log(`使用激活账号(mid=${activeMid})登录成功`);
+                await this.updateAccountInfo();
+                await this.updateBUVID();
+                return { success: true, message: "登录成功" };
+            }
+
+            // 兼容旧版：单账号键（旧版本登录的账号不在多账号列表里）
             const accountData = await this.getStoredAccountData();
             if (accountData) {
                 this.sessData = accountData.sessData;
@@ -53,6 +70,9 @@ export const BilibiliClientLoginMethods = {
                 await this.updateAccountInfo();
                 global.logger.log('拉buvid')
                 await this.updateBUVID();
+                // 迁移：旧账号也写进多账号列表并打上激活标记
+                // 否则下次"添加账号"时会被新账号顶掉丢失
+                await this.commitCurrentAccount();
 
                 return { success: true, message: "登录成功" };
             }
@@ -62,11 +82,19 @@ export const BilibiliClientLoginMethods = {
             if (response && response.data && response.data.data.code === 0) {
                 if (interval) clearInterval(interval);
 
+                // 添加账号：新账号马上会覆盖 client 上的 cookies 和单账号键
+                // 先把当前登录的原账号写入多账号列表，防止它被新账号顶掉后彻底丢失
+                // 必须放在 extractCookies 之前 —— 那时 client 上还是原账号的数据
+                if (this.accountInfo && this.accountInfo.mid) {
+                    await this.upsertCurrentAccountToList();
+                }
+
                 this.extractCookiesFromResponse(response.headers['Set-Cookie']);
-                await this.storeAccountData();
-                global.logger.log('使用二维码登录并存储账号数据成功');
+                global.logger.log('使用二维码登录成功');
                 await this.updateAccountInfo();
                 await this.updateBUVID();
+                // 三处一致：单账号键 + 多账号列表 + 激活账号标记（重启后恢复到刚登录的账号）
+                await this.commitCurrentAccount();
                 return { success: true, message: "登录成功" };
             } else {
                 return { success: false, message: "等待用户操作..." };
@@ -74,9 +102,10 @@ export const BilibiliClientLoginMethods = {
         }
     },
 
-    // 退出登录（删除本地存储的账号数据）
+    // 退出登录（清空单账号键与激活标记；多账号列表是否移除对应项由调用方决定）
     logOut(this: any) {
         storage.delete({ key: "bilibili_account" });
+        storage.delete({ key: "bilibili_active_mid" });
     },
 
     // 从响应头中提取Cookies
@@ -178,7 +207,8 @@ export const BilibiliClientLoginMethods = {
             uname: this.accountInfo.uname || "",
             face: this.accountInfo.face || ""
         };
-        const idx = accounts.findIndex(a => a.mid === entry.mid);
+        // mid 来源不同可能是数字或字符串，统一转字符串比较（与 switchToAccount 一致）
+        const idx = accounts.findIndex(a => String(a.mid) === String(entry.mid));
         if (idx >= 0) accounts[idx] = entry;
         else accounts.push(entry);
         await this.storeAccountsList(accounts);
@@ -187,30 +217,62 @@ export const BilibiliClientLoginMethods = {
     // 从列表移除指定账号
     async removeAccountFromList(this: any, mid: string): Promise<void> {
         const accounts = await this.getStoredAccountsList();
-        await this.storeAccountsList(accounts.filter(a => a.mid !== mid));
+        await this.storeAccountsList(accounts.filter(a => String(a.mid) !== String(mid)));
+    },
+
+    // 当前激活账号 mid：多账号模式下重启恢复的依据
+    async getActiveAccountMid(this: any): Promise<string | null> {
+        return new Promise((resolve) => {
+            storage.get({
+                key: 'bilibili_active_mid',
+                success: (data: string) => resolve(data || null),
+                fail: () => resolve(null)
+            });
+        });
+    },
+
+    async setActiveAccountMid(this: any, mid: string): Promise<void> {
+        return new Promise((resolve) => {
+            storage.set({
+                key: 'bilibili_active_mid',
+                value: mid,
+                success: () => resolve(),
+                fail: () => resolve()
+            });
+        });
+    },
+
+    // 提交当前 client 上的账号：单账号键（兼容）+ 多账号列表 + 激活账号标记三处一致
+    // 登录成功 / 切换账号后调用，保证重启后恢复到正确的账号
+    async commitCurrentAccount(this: any): Promise<void> {
+        await this.storeAccountData();
+        await this.upsertCurrentAccountToList();
+        if (this.accountInfo && this.accountInfo.mid) {
+            await this.setActiveAccountMid(String(this.accountInfo.mid));
+        }
     },
 
     // 切换到列表中的指定账号：写回单账号存储并重载账号态
     async switchToAccount(this: any, mid: string): Promise<boolean> {
         const accounts = await this.getStoredAccountsList();
-        const target = accounts.find(a => a.mid === mid);
+        // mid 可能是数字或字符串（列表来源不同），统一转字符串比较
+        const target = accounts.find(a => String(a.mid) === String(mid));
         if (!target) return false;
 
         this.sessData = target.sessData;
         this.biliJct = target.biliJct;
         this.dedeUserID = target.dedeUserID;
         this.sid = target.sid;
-        await this.storeAccountData();
 
         // 重载账号态（accountInfo / BUVID 都要按新账号刷新，不能沿用旧账号的）
         await this.updateAccountInfo();
         await this.updateBUVID();
-        // 保存列表中该账号的显示信息
-        await this.upsertCurrentAccountToList();
+        // 三处存储一致：单账号键 + 列表显示信息 + 激活账号标记（重启后按此恢复）
+        await this.commitCurrentAccount();
         return true;
     },
 
-    // 登出：同时清掉列表里对应的账号
+    // 登出：同时清掉列表里对应的账号（logOut 已负责清单账号键和激活标记）
     async logOutWithList(this: any): Promise<void> {
         const mid = this.accountInfo ? this.accountInfo.mid : null;
         if (mid) await this.removeAccountFromList(String(mid));
