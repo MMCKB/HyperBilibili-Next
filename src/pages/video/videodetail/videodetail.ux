@@ -27,23 +27,25 @@
           <image class="vidtoolimg" src="/common/vidtool_generatemanifest.png"></image>
           <text class="vidtooltext">听视频</text>
         </div>
-        <!-- 一键三连区：长按点赞按钮，粉色圆环包围三按钮转圈蓄力，松开回退/转满触发 -->
+        <!-- 一键三连区：长按点赞，三个按钮各自一个独立粉色圆环同步转圈蓄力，松开回退/转满触发 -->
         <div class="sanlianzone">
           <div class="vidtool" @click="LikeClick" @touchstart="SanlianStart" @touchend="SanlianEnd" @touchcancel="SanlianEnd">
             <image class="vidtoolimg" src="{{likesrc}}"></image>
             <text class="vidtooltext">{{ stat_like }}</text>
+            <progress if="{{sanlianActive}}" class="sanlianring" type="arc" percent="{{sanlianProgress}}"></progress>
           </div>
-          <div class="vidtool" @click="CoinClick()">
+          <div class="vidtool">
             <image class="vidtoolimg" src="{{coinsrc}}"></image>
             <text class="vidtooltext">{{ stat_coin }}</text>
+            <progress if="{{sanlianActive}}" class="sanlianring" type="arc" percent="{{sanlianProgress}}"></progress>
           </div>
-          <div class="vidtool" @click="AddToFav()">
+          <div class="vidtool">
             <image class="vidtoolimg" src="{{starsrc}}"></image>
             <text class="vidtooltext">
               {{ stat_favorite }}
             </text>
+            <progress if="{{sanlianActive}}" class="sanlianring" type="arc" percent="{{sanlianProgress}}"></progress>
           </div>
-          <progress if="{{sanlianActive}}" class="sanlianring" type="arc" percent="{{sanlianProgress}}"></progress>
         </div>
         <div class="vidtool" @click="AISummary()">
           <image class="vidtoolimg" src="/common/vidtool_aisummary.png"></image>

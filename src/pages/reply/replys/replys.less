@@ -5,28 +5,31 @@
     justify-content: center;
 }
 
-// 顶部"发评论"按钮：圆角胶囊样式，宽度适配圆屏安全区
-.newreplybtn {
-    margin-top: 15px;
-    padding: 10px 25px;
-    border-radius: 20px;
-    background-color: #fb7299;
+// 底部操作栏：发评论按钮 + 翻页器一行，透明背景，圆屏底部安全区
+.bottombar {
+    position: absolute;
+    bottom: 15px;
+    width: 100%;
     flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0px 18px;
+}
+
+// 发评论按钮：透明底、无文字，仅图标（放在页切换器左侧）
+.newreplybtn {
+    width: 40px;
+    height: 40px;
+    border-radius: 20px;
+    background-color: rgba(0, 0, 0, 0.8);
     align-items: center;
     justify-content: center;
 }
 
 .newreplybtn_img {
-    width: 24px;
-    height: 24px;
+    width: 28px;
+    height: 28px;
     object-fit: scale-down;
-}
-
-.newreplybtn_text {
-    margin-left: 8px;
-    font-size: 22px;
-    font-weight: 600;
-    color: white;
 }
 
 .inputpanel {
