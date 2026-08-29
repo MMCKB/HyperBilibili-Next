@@ -53,3 +53,22 @@
 .vidtoolimg {
     width: 62px;
 }
+
+// 一键三连区：包裹点赞/投币/收藏三按钮，蓄力环以此定位
+.sanlianzone {
+    flex-direction: row;
+    position: relative;
+}
+
+// 蓄力环：B站粉，包围三个按钮转圈（1 秒一圈），layer 为淡粉轨道
+.sanlianring {
+    position: absolute;
+    left: 2px;
+    top: -100px;
+    radius: 145px;
+    stroke-width: 7px;
+    start-angle: 270deg;
+    total-angle: 360deg;
+    color: #fb7299;
+    layer-color: rgba(251, 114, 153, 0.25);
+}
