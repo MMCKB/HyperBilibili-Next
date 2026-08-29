@@ -38,21 +38,26 @@ export const BilibiliClientLoginMethods = {
     },
 
     // 登录函数，使用本地存储的账号数据或通过二维码登录
-    async login(this: any, send_req: boolean, interval: NodeJS.Timeout | null = null): Promise<{ success: boolean, message: string }> {
-        const accountData = await this.getStoredAccountData();
-        if (accountData) {
-            this.sessData = accountData.sessData;
-            this.biliJct = accountData.biliJct;
-            this.dedeUserID = accountData.dedeUserID;
-            this.sid = accountData.sid;
-            global.logger.log('使用存储的账号数据登录成功');
-            global.logger.log('拉账号信息')
-            await this.updateAccountInfo();
-            global.logger.log('拉buvid')
-            await this.updateBUVID();
+    // ignoreStored: 添加账号模式下传 true，跳过"本地已有账号"捷径强制走扫码流程
+    // （否则已登录状态下加账号会立即命中本地账号"登录成功"，二维码页直接跳走）
+    async login(this: any, send_req: boolean, interval: NodeJS.Timeout | null = null, ignoreStored: boolean = false): Promise<{ success: boolean, message: string }> {
+        if (!ignoreStored) {
+            const accountData = await this.getStoredAccountData();
+            if (accountData) {
+                this.sessData = accountData.sessData;
+                this.biliJct = accountData.biliJct;
+                this.dedeUserID = accountData.dedeUserID;
+                this.sid = accountData.sid;
+                global.logger.log('使用存储的账号数据登录成功');
+                global.logger.log('拉账号信息')
+                await this.updateAccountInfo();
+                global.logger.log('拉buvid')
+                await this.updateBUVID();
 
-            return { success: true, message: "登录成功" };
-        } else if (send_req) {
+                return { success: true, message: "登录成功" };
+            }
+        }
+        if (send_req) {
             const response = await this.getRequest(`https://passport.bilibili.com/x/passport-login/web/qrcode/poll?qrcode_key=${this.qrCodeKey}`);
             if (response && response.data && response.data.data.code === 0) {
                 if (interval) clearInterval(interval);

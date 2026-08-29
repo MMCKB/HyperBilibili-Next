@@ -204,10 +204,22 @@ export default {
     }
   },
   logout() {
-    global.biliclient.logOut()
-    router.clear()
-    router.replace({
-      uri: "pages/app/entry/splash"
+    prompt.showDialog({
+      title: "退出登录",
+      message: "确定退出当前账号吗？该账号将从账号列表中移除。",
+      buttons: [
+        {text: "取消", color: "#999999"},
+        {text: "退出", color: "#fb7299"}
+      ],
+      success: async (data) => {
+        if (data.index !== 1) return
+        // 同时从多账号列表移除，避免列表残留已退出账号（切换过去会会话失效）
+        await global.biliclient.logOutWithList()
+        router.clear()
+        router.replace({
+          uri: "pages/app/entry/splash"
+        })
+      }
     })
   },
   UpdateNumView() {

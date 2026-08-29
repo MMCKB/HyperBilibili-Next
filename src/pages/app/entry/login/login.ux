@@ -31,7 +31,8 @@ export default {
   },
   async PollQR() {
     try {
-      const result = await global.biliclient.login(true, this.qrpoll_interval)
+      // 添加账号模式必须走扫码：忽略本地已存账号，否则立即"登录成功"跳回切换页
+      const result = await global.biliclient.login(true, this.qrpoll_interval, this.mode === "addaccount")
       if (result.success) {
         global.logger.log("登录成功")
         // 登录成功后把当前账号写入多账号列表
