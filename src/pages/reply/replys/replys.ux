@@ -19,12 +19,10 @@
         </list-item>
       </list>
     </scroll>
-    <!-- 底部操作栏：发评论 + 翻页同行，透明背景 -->
-    <div class="bottombar" if="{{!secmode}}">
-      <div class="newreplybtn" @click="OpenNewReply">
-        <image class="newreplybtn_img" src="/common/replycontrol_reply.png"></image>
-      </div>
-      <floating-page-changer current_pn="{{current_pn}}" @backpn="BackPN" @nextpn="NextPN"></floating-page-changer>
+    <!-- 翻页器为组件自身绝对定位（左下），发评论按钮独立定位在其右侧同一行，避免重叠 -->
+    <floating-page-changer current_pn="{{current_pn}}" @backpn="BackPN" @nextpn="NextPN"></floating-page-changer>
+    <div class="newreplybtn" if="{{!secmode}}" @click="OpenNewReply">
+      <image class="newreplybtn_img" src="/common/replycontrol_reply.png"></image>
     </div>
     <full-screen-input if="{{replymode}}" @send="SendReply" @exit="ExitInput"></full-screen-input>
   </div>

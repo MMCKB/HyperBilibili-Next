@@ -60,19 +60,19 @@
 }
 
 // 蓄力环：每个按钮一个，B站粉，同步转圈（1 秒一圈），layer 为淡粉轨道
-// 以所在 vidtool（默认 relative？需显式声明）为定位基准，包住图标+文字
+// 只包住图标区域（约 62px），不包含下方的数字文字
 .vidtool {
     position: relative;
 }
 
 .sanlianring {
     position: absolute;
-    left: -8px;
-    top: -12px;
-    right: -8px;
-    bottom: -10px;
-    radius: 48px;
-    stroke-width: 7px;
+    left: 7px;
+    top: -5px;
+    width: 70px;
+    height: 70px;
+    radius: 32px;
+    stroke-width: 6px;
     start-angle: 270deg;
     total-angle: 360deg;
     color: #fb7299;

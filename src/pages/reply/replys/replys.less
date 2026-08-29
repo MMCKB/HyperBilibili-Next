@@ -5,19 +5,12 @@
     justify-content: center;
 }
 
-// 底部操作栏：发评论按钮 + 翻页器一行，透明背景，圆屏底部安全区
-.bottombar {
-    position: absolute;
-    bottom: 15px;
-    width: 100%;
-    flex-direction: row;
-    justify-content: space-between;
-    align-items: center;
-    padding: 0px 18px;
-}
-
-// 发评论按钮：透明底、无文字，仅图标（放在页切换器左侧）
+// 发评论按钮：与底部翻页器同一行，放在翻页器右侧（翻页器占左下 0~240px 左右）
+// 背景色与翻页器容器一致，视觉成套；left 固定避开圆屏右下角裁切区
 .newreplybtn {
+    position: absolute;
+    left: 250px;
+    bottom: 25px;
     width: 40px;
     height: 40px;
     border-radius: 20px;
