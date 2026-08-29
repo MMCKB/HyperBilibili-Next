@@ -210,9 +210,11 @@ export default {
       }
 
       // 并行获取文件列表
+      // logs 目录容错：日志已改为不落盘，新安装设备上该目录可能不存在
+      // 单独 catch 按空列表处理，避免整个扫描因一处失败而中止
       const [rootFiles, logFiles, savedContentFiles] = await Promise.all([
         asyncFile.list({uri: "internal://files/"}),
-        asyncFile.list({uri: "internal://files/logs"}),
+        asyncFile.list({uri: "internal://files/logs"}).catch(() => ({fileList: []})),
         this.getSavedContentList()
       ])
 
