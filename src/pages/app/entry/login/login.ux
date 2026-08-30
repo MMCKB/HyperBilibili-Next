@@ -9,6 +9,34 @@
       </div>
       <text style="margin-top: 20px; font-size: 26px; font-weight: bold">{{ $t("login.goToOfficialApp") }}</text>
       <text style="font-size: 20px">{{ $t("login.doScan") }}</text>
+      <!-- 已存账号快捷登录：退出登录后无需重新扫码，直接选回剩余账号 -->
+      <div class="acctbtn" @click="OpenAccountPopup">
+        <text class="acctbtn-text">选择已有账号</text>
+      </div>
+
+      <!-- 账号选择弹层（应用内自绘，列表支持滚动） -->
+      <div class="acct-mask" if="{{showAcctPopup}}">
+        <div class="acct-card">
+          <text class="acct-card-title">选择要登录的账号</text>
+          <scroll class="acct-scroll" scroll-y="true" bounces="true" if="{{popupAccounts.length > 0}}">
+            <div class="acct-item" for="{{popupAccounts}}" @click="PickAccount($item.mid)">
+              <image class="acct-item-face" src="{{$item.face}}@106w_106h"></image>
+              <div class="acct-item-info">
+                <text class="acct-item-name">{{$item.uname}}</text>
+                <text class="acct-item-mid">UID {{$item.mid}}</text>
+              </div>
+              <image class="acct-item-arrow" src="/common/arrow_right.png"></image>
+            </div>
+            <div style="height: 10px"></div>
+          </scroll>
+          <div class="acct-empty" if="{{popupAccounts.length === 0}}">
+            <text class="acct-empty-text">当前无账号可以登录</text>
+          </div>
+          <div class="acct-close" @click="CloseAcctPopup">
+            <text class="acct-close-text">取消</text>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -27,6 +55,9 @@ export default {
     // 两个 login() 并发执行会交错读写账号存储，可能互相覆盖
     polling: false,
     loginDone: false,
+    // 账号选择弹层
+    showAcctPopup: false,
+    popupAccounts: [],
     anims: {
       show_loading: false,
       pagediv: null,
@@ -77,6 +108,61 @@ export default {
       this.anims.show_loading = false
     }
   },
+  // 打开账号选择弹层：先读多账号列表（退出登录后剩的就是可登的账号）
+  OpenAccountPopup() {
+    global.biliclient.getStoredAccountsList().then((accounts) => {
+      this.popupAccounts = (accounts || []).map((a) => ({
+        mid: a.mid,
+        uname: a.uname || "B站用户",
+        face: a.face || ""
+      }))
+      this.showAcctPopup = true
+    }).catch((e) => {
+      // 读取失败也弹窗展示空态，不让用户卡住
+      global.logger.error("加载已存账号列表失败:", e.toString())
+      this.popupAccounts = []
+      this.showAcctPopup = true
+    })
+  },
+  CloseAcctPopup() {
+    this.showAcctPopup = false
+  },
+  // 选中账号直接登录：等同账号切换页的 SwitchAccount
+  async PickAccount(mid) {
+    this.showAcctPopup = false
+    // 停掉扫码轮询：选中账号期间不再走二维码登录路径
+    this.loginDone = true
+    clearInterval(this.qrpoll_interval)
+    prompt.showToast({message: "正在登录...", duration: 1500})
+
+    try {
+      const ok = await global.biliclient.switchToAccount(String(mid))
+      if (ok) {
+        // 会话已失效时 updateAccountInfo 已跳会话失效页，这里不再二次跳转
+        const info = global.biliclient.accountInfo
+        if (!info || !info.isLogin) return
+        prompt.showToast({message: "登录成功", duration: 1500})
+        if (this.mode === "addaccount") {
+          router.clear()
+          router.replace({uri: "pages/app/features/mypage/accountswitch"})
+        } else {
+          router.replace({uri: "pages/app/entry/introduction"})
+        }
+      } else {
+        this.RestartPoll()
+        prompt.showToast({message: "账号已失效，请扫码重新登录", duration: 3000})
+      }
+    } catch (error) {
+      global.logger.error("选择账号登录失败:", error.toString())
+      this.RestartPoll()
+      prompt.showToast({message: "登录失败，请重试", duration: 3000})
+    }
+  },
+  // 恢复扫码轮询（选账号失败时，二维码登录路径继续可用）
+  RestartPoll() {
+    this.loginDone = false
+    this.qrpoll_interval = setInterval(() => this.PollQR(), 1500)
+  },
   onReady() {
     const {pagediv_mgt, loading_img_src} = this.anims
 
@@ -109,5 +195,127 @@ export default {
   justify-content: center;
   border-radius: 5%;
   background-color: white;
+}
+
+// 选择已有账号按钮：粉色描边胶囊（与账号切换页"添加账号"同语言）
+.acctbtn {
+  margin-top: 30px;
+  width: 300px;
+  height: 72px;
+  border-radius: 90px;
+  border: 2px solid rgba(251, 114, 153, 0.6);
+  align-items: center;
+  justify-content: center;
+}
+
+.acctbtn-text {
+  font-size: 26px;
+  color: #fb7299;
+  font-weight: 600;
+}
+
+// 账号选择弹层：卡片整体控制在圆形屏幕内（480 圆屏，对角不越界）
+.acct-mask {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.7);
+  justify-content: center;
+  align-items: center;
+}
+
+.acct-card {
+  width: 300px;
+  border-radius: 30px;
+  background-color: #1c1c1c;
+  flex-direction: column;
+  align-items: center;
+  padding-top: 25px;
+  padding-bottom: 22px;
+}
+
+.acct-card-title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+// 多账号时列表可滚动
+.acct-scroll {
+  width: 280px;
+  height: 170px;
+  margin-top: 12px;
+}
+
+.acct-item {
+  width: 272px;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 24px;
+  background-color: rgba(44, 44, 46, 1);
+  flex-direction: row;
+  align-items: center;
+}
+
+.acct-item-face {
+  width: 60px;
+  height: 60px;
+  border-radius: 30px;
+}
+
+.acct-item-info {
+  flex-direction: column;
+  margin-left: 14px;
+  flex-size: 1;
+}
+
+.acct-item-name {
+  font-size: 26px;
+  color: white;
+  font-weight: 600;
+}
+
+.acct-item-mid {
+  font-size: 20px;
+  color: #999999;
+  margin-top: 4px;
+}
+
+.acct-item-arrow {
+  width: 28px;
+  height: 28px;
+  object-fit: scale-down;
+}
+
+// 空态：无账号可登录
+.acct-empty {
+  width: 250px;
+  height: 90px;
+  margin-top: 12px;
+  justify-content: center;
+  align-items: center;
+}
+
+.acct-empty-text {
+  font-size: 24px;
+  color: #9e9e9e;
+}
+
+.acct-close {
+  width: 250px;
+  height: 66px;
+  border-radius: 90px;
+  background-color: #333333;
+  justify-content: center;
+  align-items: center;
+  margin-top: 18px;
+}
+
+.acct-close-text {
+  font-size: 28px;
+  font-weight: 600;
+  color: #ffffff;
 }
 </style>
