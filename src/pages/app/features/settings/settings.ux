@@ -73,6 +73,21 @@
       <image style="margin-top: 30px" src="/common/opensource_warning.png"></image>
       <text style="margin-top: 25px"></text>
     </scroll>
+    <!-- 退出登录确认弹层（应用内自绘）
+         不用 prompt.showDialog：该系统弹窗在本机引擎上点按钮后 success 回调不触发，
+         表现为"点了退出没反应"，且 try/catch 无从捕获（回调根本没执行） -->
+    <div class="confirm-mask" if="{{showLogoutConfirm}}">
+      <div class="confirm-card">
+        <text class="confirm-title">退出登录</text>
+        <text class="confirm-msg">确定退出当前账号吗？退出后将从账号列表移除。</text>
+        <div class="confirm-btn confirm-btn-primary" @click="ConfirmLogout">
+          <text class="confirm-btn-text">退出</text>
+        </div>
+        <div class="confirm-btn" @click="CancelLogout">
+          <text class="confirm-btn-text" style="color: #999999">取消</text>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -95,7 +110,8 @@ export default {
       search_vid_count_max: 20,
       search_vid_count_min: 1
     },
-    scrclass: ""
+    scrclass: "",
+    showLogoutConfirm: false
   },
   GoDonation(){
     router.push({
@@ -204,29 +220,32 @@ export default {
     }
   },
   logout() {
-    prompt.showDialog({
-      title: "退出登录",
-      message: "确定退出当前账号吗？该账号将从账号列表中移除。",
-      buttons: [
-        {text: "取消", color: "#999999"},
-        {text: "退出", color: "#fb7299"}
-      ],
-      success: async (data) => {
-        // 部分引擎 data.index 返回字符串，直接 !== 1 判断会让点了退出也没反应
-        if (Number(data.index) !== 1) return
-        // 登出内部出错也必须跳转（卡在设置页 = 用户看到"点了没反应"）
-        try {
-          // 从多账号列表移除当前账号并彻底登出，重启后落在登录页
-          await global.biliclient.logOutWithList()
-        } catch (e) {
-          global.logger.error(`退出登录失败: ${e && e.toString ? e.toString() : e}`)
-          prompt.showToast({ message: "退出时出现异常，请重试" })
-        }
-        router.clear()
-        router.replace({
-          uri: "pages/app/entry/splash"
-        })
-      }
+    // 只弹出应用内确认层，实际登出在 ConfirmLogout 里做
+    this.showLogoutConfirm = true
+  },
+  CancelLogout() {
+    this.showLogoutConfirm = false
+  },
+  ConfirmLogout() {
+    this.showLogoutConfirm = false
+    // 立即反馈：如果这条 toast 都不出现，说明点击事件本身没触发（与登出逻辑无关）
+    prompt.showToast({ message: "正在退出..." })
+
+    const task = Promise.resolve()
+      .then(() => global.biliclient.logOutWithList())
+      .catch((e) => {
+        global.logger.error(`退出登录失败: ${e && e.toString ? e.toString() : e}`)
+        prompt.showToast({ message: "退出出现异常，请重试" })
+      })
+
+    // 引擎回调不可靠的兜底：登出流程 5 秒内没跑完也强制跳转，绝不卡在设置页
+    const guard = new Promise((resolve) => setTimeout(resolve, 5000))
+
+    Promise.race([task, guard]).then(() => {
+      router.clear()
+      router.replace({
+        uri: "pages/app/entry/splash"
+      })
     })
   },
   UpdateNumView() {
