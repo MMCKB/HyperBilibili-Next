@@ -26,6 +26,11 @@
                 <text class="stat-label">{{ $t("user.likes") }}</text>
             </div>
         </div>
+        <!-- 硬币余额：nav 接口的 money 字段，只有登录账号自己的数据里有 -->
+        <div class="coinbar" if="{{showCoin}}">
+            <image class="coinicon" src="/common/vidtool_coin.png"></image>
+            <text class="cointext">{{ coinText }}</text>
+        </div>
     </div>
 </template>
 
@@ -39,6 +44,8 @@ export default {
     name: "",
     level: "",
     showStat: false,
+    showCoin: false,
+    coinText: "0",
     followingText: "0",
     followerText: "0",
     likesText: "0"
@@ -69,6 +76,13 @@ export default {
         this.followingText = fmt(this.stat.following || 0)
         this.followerText = fmt(this.stat.follower || 0)
         this.likesText = fmt(this.stat.likes || 0)
+      }
+
+      // 硬币余额（money 可能带小数如 334.3，整数时不显示小数位）
+      if(this.accountInfo.money !== undefined && this.accountInfo.money !== null){
+        this.showCoin = true
+        const money = Number(this.accountInfo.money)
+        this.coinText = (money % 1 === 0) ? String(money) : money.toFixed(1)
       }
     }
     catch(error){
