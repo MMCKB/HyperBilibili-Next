@@ -9,8 +9,9 @@
       </div>
       <text style="margin-top: 20px; font-size: 26px; font-weight: bold">{{ $t("login.goToOfficialApp") }}</text>
       <text style="font-size: 20px">{{ $t("login.doScan") }}</text>
-      <!-- 已存账号快捷登录：退出登录后无需重新扫码，直接选回剩余账号 -->
-      <div class="acctbtn" @click="OpenAccountPopup">
+      <!-- 已存账号快捷登录：仅在退出账号后的正常登录页显示；
+           从账号切换页"添加账号"进入的二维码页不显示（那里本来就有账号列表） -->
+      <div class="acctbtn" if="{{mode !== 'addaccount'}}" @click="OpenAccountPopup">
         <text class="acctbtn-text">选择已有账号</text>
       </div>
 
@@ -197,11 +198,12 @@ export default {
   background-color: white;
 }
 
-// 选择已有账号按钮：粉色描边胶囊（与账号切换页"添加账号"同语言）
+// 选择已有账号按钮：粉色描边胶囊
+// 尺寸按 Redmi Watch 5 矩形屏（418×526，designWidth 432）
 .acctbtn {
-  margin-top: 30px;
-  width: 300px;
-  height: 72px;
+  margin-top: 35px;
+  width: 360px;
+  height: 84px;
   border-radius: 90px;
   border: 2px solid rgba(251, 114, 153, 0.6);
   align-items: center;
@@ -209,12 +211,12 @@ export default {
 }
 
 .acctbtn-text {
-  font-size: 26px;
+  font-size: 30px;
   color: #fb7299;
   font-weight: 600;
 }
 
-// 账号选择弹层：卡片整体控制在圆形屏幕内（480 圆屏，对角不越界）
+// 账号选择弹层（矩形屏版：卡片近满宽，列表高、可滚动）
 .acct-mask {
   position: absolute;
   left: 0px;
@@ -227,94 +229,94 @@ export default {
 }
 
 .acct-card {
-  width: 300px;
-  border-radius: 30px;
+  width: 396px;
+  border-radius: 36px;
   background-color: #1c1c1c;
   flex-direction: column;
   align-items: center;
-  padding-top: 25px;
-  padding-bottom: 22px;
+  padding-top: 30px;
+  padding-bottom: 26px;
 }
 
 .acct-card-title {
-  font-size: 28px;
+  font-size: 32px;
   font-weight: 600;
   color: #ffffff;
 }
 
-// 多账号时列表可滚动
+// 多账号时列表可滚动：约容纳 3 个账号条目，更多则滚动
 .acct-scroll {
-  width: 280px;
-  height: 170px;
-  margin-top: 12px;
+  width: 370px;
+  height: 300px;
+  margin-top: 15px;
 }
 
 .acct-item {
-  width: 272px;
-  margin-top: 10px;
-  padding: 10px 14px;
-  border-radius: 24px;
+  width: 362px;
+  margin-top: 12px;
+  padding: 14px 18px;
+  border-radius: 28px;
   background-color: rgba(44, 44, 46, 1);
   flex-direction: row;
   align-items: center;
 }
 
 .acct-item-face {
-  width: 60px;
-  height: 60px;
-  border-radius: 30px;
+  width: 76px;
+  height: 76px;
+  border-radius: 38px;
 }
 
 .acct-item-info {
   flex-direction: column;
-  margin-left: 14px;
+  margin-left: 16px;
   flex-size: 1;
 }
 
 .acct-item-name {
-  font-size: 26px;
+  font-size: 30px;
   color: white;
   font-weight: 600;
 }
 
 .acct-item-mid {
-  font-size: 20px;
+  font-size: 22px;
   color: #999999;
   margin-top: 4px;
 }
 
 .acct-item-arrow {
-  width: 28px;
-  height: 28px;
+  width: 32px;
+  height: 32px;
   object-fit: scale-down;
 }
 
 // 空态：无账号可登录
 .acct-empty {
-  width: 250px;
-  height: 90px;
-  margin-top: 12px;
+  width: 320px;
+  height: 200px;
+  margin-top: 15px;
   justify-content: center;
   align-items: center;
 }
 
 .acct-empty-text {
-  font-size: 24px;
+  font-size: 28px;
   color: #9e9e9e;
 }
 
 .acct-close {
-  width: 250px;
-  height: 66px;
+  width: 330px;
+  height: 80px;
   border-radius: 90px;
   background-color: #333333;
   justify-content: center;
   align-items: center;
-  margin-top: 18px;
+  margin-top: 20px;
 }
 
 .acct-close-text {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 600;
   color: #ffffff;
 }
