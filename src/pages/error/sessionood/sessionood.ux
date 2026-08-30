@@ -14,8 +14,10 @@
 <script>
 import router from "@system.router"
 export default {
-  Relogin(){
-    global.biliclient.logOut()
+  async Relogin(){
+    // logOut 是异步的（清内存 + 删键 + 写文件镜像），必须等完成再走 splash→Jump
+    // 否则启动判定可能读到清理到一半的状态
+    await global.biliclient.logOut()
     router.clear()
     router.replace({
       uri: "pages/app/entry/splash"

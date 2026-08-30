@@ -331,8 +331,19 @@ export const BilibiliClientLoginMethods = {
     },
 
     // 当前激活账号 mid：多账号模式下重启恢复的依据
-    // storage 丢失时从文件镜像找回
+    // 文件镜像优先：本设备 storage 在进程被杀时不可靠（登出后 delete 丢失、残留旧 mid
+    // 会让已退出的账号"复活"），文件写入已验证可靠。storage 仅在文件不存在时兜底
     async getActiveAccountMid(this: any): Promise<string | null> {
+        const fileState = await this.readAccountFile();
+        if (fileState) {
+            // 文件存在即以文件为准（包括 activeMid 为 null = 已登出，同样以此为准）
+            if (fileState.activeMid) {
+                global.logger.log(`激活账号标记（文件镜像）: ${fileState.activeMid}`);
+                return fileState.activeMid;
+            }
+            return null;
+        }
+
         const stored: string | null = await new Promise((resolve) => {
             storage.get({
                 key: 'bilibili_active_mid',
@@ -340,12 +351,9 @@ export const BilibiliClientLoginMethods = {
                 fail: () => resolve(null)
             });
         });
-        if (stored) return stored;
-
-        const fileState = await this.readAccountFile();
-        if (fileState && fileState.activeMid) {
-            global.logger.log(`激活账号标记从文件镜像恢复: ${fileState.activeMid}`);
-            return fileState.activeMid;
+        if (stored) {
+            global.logger.log(`激活账号标记（storage，无文件镜像）: ${stored}`);
+            return stored;
         }
         return null;
     },
@@ -401,32 +409,38 @@ export const BilibiliClientLoginMethods = {
         return true;
     },
 
-    // 登出：从列表移除当前账号
-    // - 还有其它账号：切换到第一个剩余账号（只写存储，账号信息刷新交给启动流程 prepage→login），
-    //   手表上重新扫码需要另一台设备，能切就不逼用户重新登录
-    // - 没有其它账号：彻底登出（清内存态 + 单账号键 + 激活标记 + 空文件镜像）
+    // 登出：从列表移除当前账号，并彻底登出（清内存 Cookie + 单账号键 + 激活标记）
+    // 剩余账号保留在列表里（下次登录后可切换），但不自动登录 ——
+    // 退出后自动登入另一个账号，用户看到的就是"退出没生效"
     async logOutWithList(this: any): Promise<void> {
         const mid = this.accountInfo ? this.accountInfo.mid : null;
         const accounts = await this.getStoredAccountsList();
         const remaining = mid ? accounts.filter(a => String(a.mid) !== String(mid)) : accounts;
         await this.storeAccountsList(remaining);
+        await this.logOut();
+        // 文件镜像：activeMid=null 是"已登出"的权威标记（storage delete 丢失时以此为准）
+        await this.persistAccountFile(null, remaining);
+    },
 
-        if (remaining.length > 0) {
-            const next = remaining[0];
-            // 内存态先切过去（storeAccountData 从 client 取 Cookie 写单账号键）
-            this.sessData = next.sessData;
-            this.biliJct = next.biliJct;
-            this.dedeUserID = next.dedeUserID;
-            this.sid = next.sid;
-            this.accountInfo = { mid: next.mid, uname: next.uname, face: next.face };
-
-            await this.storeAccountData();
-            await this.setActiveAccountMid(String(next.mid));
-            await this.persistAccountFile(String(next.mid), remaining);
-            global.logger.log(`登出当前账号，已切换到 mid=${next.mid}`);
-            return;
+    // 启动跳转判定（splash 后 Jump 调用）：是否存在可恢复的登录态
+    // 不能只看单账号键：登出后该键在部分设备上删除丢失，会把已退出的账号"复活"
+    async hasRestorableAccount(this: any): Promise<boolean> {
+        const fileState = await this.readAccountFile();
+        if (fileState) {
+            // 文件镜像存在：activeMid 为 null 即已登出，直接去登录页
+            if (!fileState.activeMid) return false;
+            const accounts = await this.getStoredAccountsList();
+            return accounts.some((a: any) => String(a.mid) === String(fileState.activeMid));
         }
 
-        await this.logOut();
-    }
+        // 无文件镜像：从未用过新版多账号管理（或文件损坏），退回 storage 判定
+        const activeMid = await this.getActiveAccountMid();
+        if (activeMid) {
+            const accounts = await this.getStoredAccountsList();
+            if (accounts.some((a: any) => String(a.mid) === String(activeMid))) return true;
+        }
+        // 旧版单账号键（会同时被 login() 的兼容路径恢复，判定需与其一致）
+        const accountData = await this.getStoredAccountData();
+        return !!(accountData && accountData.sessData);
+    },
 };

@@ -214,8 +214,14 @@ export default {
       success: async (data) => {
         // 部分引擎 data.index 返回字符串，直接 !== 1 判断会让点了退出也没反应
         if (Number(data.index) !== 1) return
-        // 同时从多账号列表移除：有其它账号时自动切过去，没有则彻底登出
-        await global.biliclient.logOutWithList()
+        // 登出内部出错也必须跳转（卡在设置页 = 用户看到"点了没反应"）
+        try {
+          // 从多账号列表移除当前账号并彻底登出，重启后落在登录页
+          await global.biliclient.logOutWithList()
+        } catch (e) {
+          global.logger.error(`退出登录失败: ${e && e.toString ? e.toString() : e}`)
+          prompt.showToast({ message: "退出时出现异常，请重试" })
+        }
         router.clear()
         router.replace({
           uri: "pages/app/entry/splash"

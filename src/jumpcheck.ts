@@ -1,26 +1,19 @@
-import { storage, router, network } from './tsimports';
+import { router, network } from './tsimports';
 
 export async function Jump() {
-    storage.get({
-        key: "bilibili_account",
-        success: async (bilibili_account) => {
-            if (!bilibili_account || bilibili_account.length < 1) {
-                router.replace({
-                    uri: "pages/app/entry/login"
-                })
-            } else {
-                router.replace({
-                    uri: "pages/app/entry/prepage"
-                })
-            }
-        },
-        // 键不存在（登出后被删除）时部分引擎走 fail 而不是 success：
-        // 不处理的话会卡在启动页，表现为"点了退出没反应"
-        fail: () => {
-            router.replace({
-                uri: "pages/app/entry/login"
-            })
-        }
+    // 判定交给 biliclient 的权威账号状态（文件镜像优先）：
+    // 之前直接读单账号键，退出后该键在部分设备上删除丢失，
+    // 启动会带着残留旧键进 prepage → 主页匿名态，看起来"退出没生效"
+    let hasAccount = false;
+    try {
+        hasAccount = await global.biliclient.hasRestorableAccount();
+    } catch (e) {
+        // 判定异常按未登录处理（登录页可自恢复），宁可重登不可错登
+        global.logger.error(`启动登录态判定失败: ${e && e.toString ? e.toString() : e}`);
+        hasAccount = false;
+    }
+    router.replace({
+        uri: hasAccount ? "pages/app/entry/prepage" : "pages/app/entry/login"
     })
 }
 

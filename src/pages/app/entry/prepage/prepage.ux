@@ -44,8 +44,9 @@ export default {
         break;
     }
   },
-  ReLogin(){
-    global.biliclient.logOut()
+  async ReLogin(){
+    // logOut 是异步的（清内存 + 删键 + 写文件镜像），必须等完成再走 splash→Jump
+    await global.biliclient.logOut()
     router.clear()
     router.replace({
         uri: "pages/app/entry/splash"
