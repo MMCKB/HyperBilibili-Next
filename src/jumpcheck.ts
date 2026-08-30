@@ -4,7 +4,7 @@ export async function Jump() {
     storage.get({
         key: "bilibili_account",
         success: async (bilibili_account) => {
-            if (bilibili_account.length < 1) {
+            if (!bilibili_account || bilibili_account.length < 1) {
                 router.replace({
                     uri: "pages/app/entry/login"
                 })
@@ -13,6 +13,13 @@ export async function Jump() {
                     uri: "pages/app/entry/prepage"
                 })
             }
+        },
+        // 键不存在（登出后被删除）时部分引擎走 fail 而不是 success：
+        // 不处理的话会卡在启动页，表现为"点了退出没反应"
+        fail: () => {
+            router.replace({
+                uri: "pages/app/entry/login"
+            })
         }
     })
 }

@@ -64,23 +64,28 @@ export const BilibiliClientLoginMethods = {
                 return { success: true, message: "登录成功" };
             }
 
-            // 兼容旧版：单账号键（旧版本登录的账号不在多账号列表里）
-            const accountData = await this.getStoredAccountData();
-            if (accountData) {
-                this.sessData = accountData.sessData;
-                this.biliJct = accountData.biliJct;
-                this.dedeUserID = accountData.dedeUserID;
-                this.sid = accountData.sid;
-                global.logger.log('使用存储的账号数据登录成功');
-                global.logger.log('拉账号信息')
-                await this.updateAccountInfo();
-                global.logger.log('拉buvid')
-                await this.updateBUVID();
-                // 迁移：旧账号也写进多账号列表并打上激活标记
-                // 否则下次"添加账号"时会被新账号顶掉丢失
-                await this.commitCurrentAccount();
+            // 兼容旧版：单账号键
+            // 仅在"从未用过新版多账号管理"（无文件镜像）时才作为恢复依据：
+            // 退出登录时 storage.delete 在部分设备上会静默丢失，旧键会让已退出的账号"复活"
+            const fileState = await this.readAccountFile();
+            if (!fileState) {
+                const accountData = await this.getStoredAccountData();
+                if (accountData) {
+                    this.sessData = accountData.sessData;
+                    this.biliJct = accountData.biliJct;
+                    this.dedeUserID = accountData.dedeUserID;
+                    this.sid = accountData.sid;
+                    global.logger.log('使用存储的账号数据登录成功');
+                    global.logger.log('拉账号信息')
+                    await this.updateAccountInfo();
+                    global.logger.log('拉buvid')
+                    await this.updateBUVID();
+                    // 迁移：旧账号也写进多账号列表并打上激活标记
+                    // 否则下次"添加账号"时会被新账号顶掉丢失
+                    await this.commitCurrentAccount();
 
-                return { success: true, message: "登录成功" };
+                    return { success: true, message: "登录成功" };
+                }
             }
         }
         if (send_req) {
@@ -108,14 +113,41 @@ export const BilibiliClientLoginMethods = {
         }
     },
 
-    // 退出登录（清空单账号键与激活标记；账号列表保留，重新登录后仍可切换其它账号）
-    // 文件镜像同步清掉激活标记，否则 storage 清了但文件还在，重启会复活旧激活账号
-    logOut(this: any) {
-        storage.delete({ key: "bilibili_account" });
-        storage.delete({ key: "bilibili_active_mid" });
-        this.getStoredAccountsList().then((accounts: any[]) => {
-            this.persistAccountFile(null, accounts);
-        }).catch(() => { });
+    // 彻底登出：清内存登录态 + 单账号键 + 激活标记 + 空文件镜像
+    // 内存不清的话，进程存活期间全局 client 仍带着旧 Cookie 发请求（表现为"点了退出还是登录态"）
+    async logOut(this: any): Promise<void> {
+        // 清内存中的登录态
+        this.sessData = null;
+        this.biliJct = null;
+        this.dedeUserID = null;
+        this.sid = null;
+        this.accountInfo = null;
+
+        // delete 在部分设备上不可靠：失败时写空值兜底，保证启动判断（jumpcheck）不会命中旧数据
+        await new Promise<void>((resolve) => {
+            storage.delete({
+                key: "bilibili_account",
+                success: () => resolve(),
+                fail: (data: any, code: number) => {
+                    global.logger.error(`删除账号数据失败，错误码 = ${code}，写入空值兜底`);
+                    storage.set({
+                        key: "bilibili_account",
+                        value: "",
+                        success: () => resolve(),
+                        fail: () => resolve()
+                    });
+                }
+            });
+        });
+        await new Promise<void>((resolve) => {
+            storage.delete({
+                key: "bilibili_active_mid",
+                success: () => resolve(),
+                fail: () => resolve()
+            });
+        });
+        // 空文件镜像：login() 据此跳过旧版单账号键兼容路径，已退出的账号不会"复活"
+        await this.persistAccountFile(null, []);
     },
 
     // 从响应头中提取Cookies
@@ -369,13 +401,32 @@ export const BilibiliClientLoginMethods = {
         return true;
     },
 
-    // 登出：从列表移除当前账号，storage 与文件镜像同步清理（防止重启后复活已退出账号）
+    // 登出：从列表移除当前账号
+    // - 还有其它账号：切换到第一个剩余账号（只写存储，账号信息刷新交给启动流程 prepage→login），
+    //   手表上重新扫码需要另一台设备，能切就不逼用户重新登录
+    // - 没有其它账号：彻底登出（清内存态 + 单账号键 + 激活标记 + 空文件镜像）
     async logOutWithList(this: any): Promise<void> {
         const mid = this.accountInfo ? this.accountInfo.mid : null;
         const accounts = await this.getStoredAccountsList();
         const remaining = mid ? accounts.filter(a => String(a.mid) !== String(mid)) : accounts;
         await this.storeAccountsList(remaining);
-        await this.persistAccountFile(null, remaining);
-        this.logOut();
+
+        if (remaining.length > 0) {
+            const next = remaining[0];
+            // 内存态先切过去（storeAccountData 从 client 取 Cookie 写单账号键）
+            this.sessData = next.sessData;
+            this.biliJct = next.biliJct;
+            this.dedeUserID = next.dedeUserID;
+            this.sid = next.sid;
+            this.accountInfo = { mid: next.mid, uname: next.uname, face: next.face };
+
+            await this.storeAccountData();
+            await this.setActiveAccountMid(String(next.mid));
+            await this.persistAccountFile(String(next.mid), remaining);
+            global.logger.log(`登出当前账号，已切换到 mid=${next.mid}`);
+            return;
+        }
+
+        await this.logOut();
     }
 };

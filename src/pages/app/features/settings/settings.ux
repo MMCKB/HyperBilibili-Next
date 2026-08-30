@@ -212,8 +212,9 @@ export default {
         {text: "退出", color: "#fb7299"}
       ],
       success: async (data) => {
-        if (data.index !== 1) return
-        // 同时从多账号列表移除，避免列表残留已退出账号（切换过去会会话失效）
+        // 部分引擎 data.index 返回字符串，直接 !== 1 判断会让点了退出也没反应
+        if (Number(data.index) !== 1) return
+        // 同时从多账号列表移除：有其它账号时自动切过去，没有则彻底登出
         await global.biliclient.logOutWithList()
         router.clear()
         router.replace({
