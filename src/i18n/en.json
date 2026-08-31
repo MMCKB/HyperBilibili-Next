@@ -120,7 +120,7 @@
     },
     "video": {
         "title": "Video",
-        "aisummary": "Video Summary",
+        "videodetail": "Video Details",
         "manifest": "Video List",
         "showLater": "Watch Later",
         "showOnPhone": "Watch on Phone",

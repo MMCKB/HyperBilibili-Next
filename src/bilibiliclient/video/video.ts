@@ -34,11 +34,11 @@ export const BilibiliClientVideoMethods = {
         return response.data.data.favoured;
     },
 
-    // 获取视频AI摘要
+    // 获取视频AI摘要（model_result 含 summary 摘要与 outline 分段大纲）
     async getVideoAISummaryByBVID(this: any, bvid: string, cid: string, up_mid: string) {
         const url = "https://api.bilibili.com/x/web-interface/view/conclusion/get";
         const response = await this.getRequestWbi(url, { bvid, cid, up_mid });
-        return response.data.data.model_result.summary;
+        return response.data.data.model_result;
     },
 
     // 获取根据BVID与CID获取视频MP4流地址

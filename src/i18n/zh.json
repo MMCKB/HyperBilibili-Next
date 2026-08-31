@@ -121,7 +121,7 @@
     },
     "video": {
         "title": "视频",
-        "aisummary": "视频总结",
+        "videodetail": "视频详情",
         "manifest": "视频清单",
         "showLater": "稍后再看",
         "showOnPhone": "手机上看",

@@ -47,9 +47,9 @@
             <progress if="{{sanlianActive}}" class="sanlianring" type="arc" percent="{{sanlianProgress}}"></progress>
           </div>
         </div>
-        <div class="vidtool" @click="AISummary()">
+        <div class="vidtool" @click="ShowVideoDetail()">
           <image class="vidtoolimg" src="/common/vidtool_aisummary.png"></image>
-          <text class="vidtooltext">{{ $t("video.aisummary") }}</text>
+          <text class="vidtooltext">{{ $t("video.videodetail") }}</text>
         </div>
         <div class="vidtool" @click="AddToWatchLater()">
           <image class="vidtoolimg" src="/common/vidtool_watchlater.png"></image>
@@ -344,16 +344,57 @@ export default {
       message: "由于B站风控，该功能暂不可用"
     })
   },
-  async AISummary() {
-    const summary =
-      (await global.biliclient.getVideoAISummaryByBVID(
+  // 视频详情：基础信息 + 简介 + AI总结（含分段大纲）合并一页展示
+  async ShowVideoDetail() {
+    prompt.showToast({message: "正在生成详情...", duration: 1500})
+
+    const duration = Number(this.vid.duration) || 0
+    const minutes = Math.floor(duration / 60)
+    const seconds = Math.floor(duration % 60)
+    const durationStr = `${minutes}:${seconds.toString().padStart(2, "0")}`
+    const upName = this.vid.staff && this.vid.staff.length > 0
+      ? `${this.vid.owner.name} 等${this.vid.staff.length}位UP主`
+      : this.vid.owner.name
+
+    let text =
+      `标题：${this.vid.title || "未知"}\n` +
+      `时长：${durationStr}\n` +
+      `UP主：${upName}\n\n` +
+      `简介：\n${this.vid.desc || "暂无简介"}`
+
+    // AI总结部分：请求失败不阻塞详情展示，页面末尾给出提示
+    try {
+      const modelResult = await global.biliclient.getVideoAISummaryByBVID(
         this.vid.bvid,
         this.vid.cid,
         this.vid.owner.mid
-      )) || "该视频没有摘要，可能是其内容中包含敏感信息或没有可识别的音频"
+      )
+      if (modelResult && modelResult.summary) {
+        text += `\n\n【AI总结】\n${modelResult.summary}`
+        const outline = modelResult.outline || []
+        if (outline.length > 0) {
+          text += "\n\n【分段大纲】"
+          outline.forEach((o) => {
+            const t = Number(o.timestamp) || 0
+            const mm = Math.floor(t / 60)
+            const ss = Math.floor(t % 60)
+            text += `\n${mm}:${ss.toString().padStart(2, "0")} ${o.title || ""}`
+            ;(o.part_outline || []).forEach((p) => {
+              if (p.text) text += `\n· ${p.text}`
+            })
+          })
+        }
+      } else {
+        text += `\n\n【AI总结】\n该视频没有摘要，可能是其内容中包含敏感信息或没有可识别的音频`
+      }
+    } catch (e) {
+      global.logger.error("获取AI总结失败: " + e.toString())
+      text += `\n\n【AI总结】\n获取失败，请稍后再试`
+    }
+
     router.push({
       uri: "pages/tools/textdetail",
-      params: {text: summary}
+      params: {text: text, titletext: "视频详情"}
     })
   },
   async AddToFav() {
