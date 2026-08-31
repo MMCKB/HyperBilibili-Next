@@ -344,6 +344,22 @@ export default {
       message: "由于B站风控，该功能暂不可用"
     })
   },
+  // 视频发布时间格式化（vid.pubdate 为秒级时间戳）
+  // 近期用相对时间，超过一周显示完整日期，跨年补年份
+  formatPubdate(timestamp) {
+    if (!timestamp) return "未知"
+    const now = Math.floor(Date.now() / 1000)
+    const diff = now - timestamp
+    if (diff < 60) return "刚刚"
+    if (diff < 3600) return Math.floor(diff / 60) + "分钟前"
+    if (diff < 86400) return Math.floor(diff / 3600) + "小时前"
+    if (diff < 604800) return Math.floor(diff / 86400) + "天前"
+    const date = new Date(timestamp * 1000)
+    const month = (date.getMonth() + 1).toString().padStart(2, "0")
+    const day = date.getDate().toString().padStart(2, "0")
+    if (date.getFullYear() === new Date().getFullYear()) return month + "-" + day
+    return date.getFullYear() + "-" + month + "-" + day
+  },
   // 视频详情：基础信息 + 简介 + AI总结（含分段大纲）合并一页展示
   async ShowVideoDetail() {
     prompt.showToast({message: "正在生成详情...", duration: 1500})
@@ -355,9 +371,11 @@ export default {
     const upName = this.vid.staff && this.vid.staff.length > 0
       ? `${this.vid.owner.name} 等${this.vid.staff.length}位UP主`
       : this.vid.owner.name
+    const pubdateStr = this.formatPubdate(this.vid.pubdate)
 
     let text =
       `标题：${this.vid.title || "未知"}\n` +
+      `发布时间：${pubdateStr}\n` +
       `时长：${durationStr}\n` +
       `UP主：${upName}\n\n` +
       `简介：\n${this.vid.desc || "暂无简介"}`
