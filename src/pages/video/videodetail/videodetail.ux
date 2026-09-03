@@ -34,12 +34,12 @@
             <text class="vidtooltext">{{ stat_like }}</text>
             <progress if="{{sanlianActive}}" class="sanlianring" type="arc" percent="{{sanlianProgress}}"></progress>
           </div>
-          <div class="vidtool">
+          <div class="vidtool" @click="CoinClick">
             <image class="vidtoolimg" src="{{coinsrc}}"></image>
             <text class="vidtooltext">{{ stat_coin }}</text>
             <progress if="{{sanlianActive}}" class="sanlianring" type="arc" percent="{{sanlianProgress}}"></progress>
           </div>
-          <div class="vidtool">
+          <div class="vidtool" @click="StarClick">
             <image class="vidtoolimg" src="{{starsrc}}"></image>
             <text class="vidtooltext">
               {{ stat_favorite }}
@@ -296,6 +296,27 @@ export default {
   CoinClick() {
     // 打开投币选择面板（22娘，可选投1个或2个币）
     this.coinpickermode = true
+  },
+  async StarClick() {
+    // 已收藏则取消收藏（从默认收藏夹移除），未收藏则收藏到默认收藏夹
+    if (this.stared) {
+      var unstarResult = await global.biliclient.unstarVideoFromDefaultFavFolderByBVID(this.vid.bvid)
+      const unstarMessage =
+        unstarResult === 0 ? "已取消收藏" : `取消收藏失败，原因：${unstarResult}`
+      prompt.showToast({
+        message: unstarMessage,
+        duration: unstarResult === 0 ? 2000 : 4000
+      })
+    } else {
+      var starResult = await global.biliclient.starVideoToDefaultFavFolderByBVID(this.vid.bvid)
+      const starMessage =
+        starResult === 0 ? "收藏成功" : `收藏失败，原因：${starResult}`
+      prompt.showToast({
+        message: starMessage,
+        duration: starResult === 0 ? 2000 : 4000
+      })
+    }
+    this.UpdateVideoToolbarStatus()
   },
   ExitCoinPicker() {
     this.coinpickermode = false
