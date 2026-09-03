@@ -71,9 +71,16 @@ export default {
     this.anims.loading.start()
 
     this.user = await global.biliclient.getUserInfoByUID(this.uid)
-    this.stat = await global.biliclient.getUserStatByUID(this.uid)
-    const upstat = await global.biliclient.getUserUpstatByUID(this.uid)
-    this.stat.likes = upstat.likes
+    const stat = await global.biliclient.getUserStatByUID(this.uid)
+    // 获赞数单独取：直接改 stat 的属性不会触发子组件 watcher，必须整体替换对象
+    let likes = 0
+    try{
+      const upstat = await global.biliclient.getUserUpstatByUID(this.uid)
+      likes = (upstat && upstat.likes) ? upstat.likes : 0
+    }catch(e){
+      global.logger.error("load upstat failed:", e.toString())
+    }
+    this.stat = { ...stat, likes: likes }
     this.navnum = await global.biliclient.getUserNavnumByUID(this.uid)
     this.masterpiece = await global.biliclient.getUserMasterPieceByUID(this.uid)
     this.dynamiclist = await global.biliclient.getUserDynamicListByUID(this.uid)
@@ -115,11 +122,17 @@ export default {
           message: this.followed ? this.$t("user.followSuccess") : this.$t("user.unfollowSuccess"),
           duration: 1500
         })
-        // 刷新粉丝统计
+        // 刷新粉丝统计（同样整体替换对象以触发子组件更新）
         try{
-          this.stat = await global.biliclient.getUserStatByUID(this.uid)
-          const upstat2 = await global.biliclient.getUserUpstatByUID(this.uid)
-          this.stat.likes = upstat2.likes
+          const stat2 = await global.biliclient.getUserStatByUID(this.uid)
+          let likes2 = 0
+          try{
+            const upstat2 = await global.biliclient.getUserUpstatByUID(this.uid)
+            likes2 = (upstat2 && upstat2.likes) ? upstat2.likes : 0
+          }catch(e2){
+            global.logger.error("refresh upstat failed:", e2.toString())
+          }
+          this.stat = { ...stat2, likes: likes2 }
         }catch(e){
           global.logger.error("refresh stat failed:", e.toString())
         }

@@ -115,6 +115,9 @@
             "pages/app/features/mypage/accountswitch": {
                 "component": "accountswitch"
             },
+            "pages/app/features/mypage/leveldetail": {
+                "component": "leveldetail"
+            },
             "pages/folders/favfolders": {
                 "component": "favfolders"
             },

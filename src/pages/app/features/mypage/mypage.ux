@@ -10,7 +10,7 @@
         <image class="switchaccountbtn_icon" src="/common/switch.png"></image>
         <text class="switchaccountbtn_text">切换账号</text>
       </div>
-      <user-info account-info="{{accountInfo}}" stat="{{stat}}" @viewfollowings="GoFollowings" @viewfollowers="GoFollowers"></user-info>
+      <user-info account-info="{{accountInfo}}" stat="{{stat}}" level-entry="true" @viewfollowings="GoFollowings" @viewfollowers="GoFollowers" @viewlevel="GoLevelDetail"></user-info>
       <div class="btnbase" style="margin-top: 40px" @click="GoMyFavFolders()">
         <image class="btnimg" src="/common/mypage_star.png"></image>
         <text class="btntext">{{ $t("mypage.favourite") }}</text>
@@ -83,6 +83,14 @@ export default {
       uri: "pages/app/features/mypage/accountswitch"
     })
   },
+  GoLevelDetail(){
+    router.push({
+      uri: "pages/app/features/mypage/leveldetail",
+      params: {
+        uid: global.biliclient.accountInfo.mid
+      }
+    })
+  },
   GoFollowings(){
     router.push({
       uri: "pages/user/userlist",
@@ -104,9 +112,16 @@ export default {
   async LoadMyStat(){
     try{
       const myUid = global.biliclient.accountInfo.mid
-      this.stat = await global.biliclient.getUserStatByUID(myUid)
-      const upstat = await global.biliclient.getUserUpstatByUID(myUid)
-      this.stat.likes = upstat.likes
+      const stat = await global.biliclient.getUserStatByUID(myUid)
+      // 获赞数单独取：直接改 stat 的属性不会触发子组件 watcher，必须整体替换对象
+      let likes = 0
+      try{
+        const upstat = await global.biliclient.getUserUpstatByUID(myUid)
+        likes = (upstat && upstat.likes) ? upstat.likes : 0
+      }catch(e){
+        global.logger.error("Error loading my upstat:", e.toString())
+      }
+      this.stat = { ...stat, likes: likes }
     }catch(error){
       global.logger.error("Error loading my stat:", error.toString())
     }

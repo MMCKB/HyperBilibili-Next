@@ -175,6 +175,12 @@
         "featureDisabled": "关闭",
         "featureEnabled": "开启"
     },
+    "leveldetail": {
+        "title": "等级详情",
+        "currentExp": "当前经验",
+        "need": "距离升级还需",
+        "maxLevel": "已达最高等级"
+    },
     "playerAppearance": {
         "title": "播放器外观",
         "preview": "效果预览",

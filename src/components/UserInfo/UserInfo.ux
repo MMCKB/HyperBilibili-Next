@@ -7,8 +7,12 @@
         <text class="{{name_text_class}}">{{ name }}</text>
         <div class="tagbar" style="margin-top: 5px">
             <image class="tagimg" src="/common/bililevel/lv{{level}}.png" style="height: 20px"></image>
+            <!-- 等级入口按钮：进入等级详情页 -->
+            <div class="levelentrybtn" if="{{levelEntry}}" @click="ViewLevel">
+                <text class="levelentrybtn-text">›</text>
+            </div>
             <image class="tagimg" if="{{is_vip}}" style="margin-left: 10px"
-                src="/common/bilivip/{{accountInfo.vip_label.label_theme}}.png"></image>
+                src="/common/bilivip/{{vip_label_theme}}.png"></image>
             <image class="tagimg" if="{{is_senior_member}}" style="margin-left: 10px" src="/common/senior_member.png">
             </image>
         </div>
@@ -36,10 +40,11 @@
 
 <script>
 export default {
-  props: ["accountInfo", "stat"],
+  props: ["accountInfo", "stat", "levelEntry"],
   data: {
     name_text_class: "name",
     is_vip: false,
+    vip_label_theme: 1,
     is_senior_member: false,
     name: "",
     level: "",
@@ -56,10 +61,21 @@ export default {
   ViewFollowers() {
     this.$emit("viewfollowers")
   },
+  ViewLevel() {
+    this.$emit("viewlevel")
+  },
   UpdateShow() {
     try{
-      this.is_vip = !!this.accountInfo.vip_pay_type
-      this.name_text_class = this.is_vip ? "vipname" : this.name_text_class
+      // 大会员标识兼容两种数据源：
+      // 我的页（nav 接口）：vip_pay_type / vip_label.label_theme
+      // 他人主页（space acc/info 接口）：vip.vipStatus / vip.label.label_theme
+      const spaceVip = this.accountInfo.vip || {}
+      this.is_vip = !!this.accountInfo.vip_pay_type || spaceVip.vipStatus === 1
+      this.vip_label_theme =
+        (this.accountInfo.vip_label && this.accountInfo.vip_label.label_theme) ||
+        (spaceVip.label && spaceVip.label.label_theme) ||
+        1
+      this.name_text_class = this.is_vip ? "vipname" : "name"
 
       this.is_senior_member = !!this.accountInfo.is_senior_member
 

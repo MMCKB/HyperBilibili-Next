@@ -1,0 +1,105 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="true">
+      <title-bar title="leveldetail.title"></title-bar>
+
+      <!-- 霓虹渐变边框卡片：外层渐变背景作边框，内层深色卡片 -->
+      <div class="cardborder" if="{{loaded}}">
+        <div class="card">
+          <!-- 未满级：当前等级(小) → 箭头 → 下一等级(大) -->
+          <div class="levelrow" if="{{!isMaxLevel}}">
+            <image class="curimg" src="/common/bililevel/lv{{currentLevel}}.png"></image>
+            <image class="arrowimg" src="/common/changepage_right.png"></image>
+            <image class="nextimg" src="/common/bililevel/lv{{nextLevel}}.png"></image>
+          </div>
+          <!-- 已满级：当前等级(大)居中，旁边无文字 -->
+          <div class="levelrow" if="{{isMaxLevel}}">
+            <image class="nextimg" src="/common/bililevel/lv{{currentLevel}}.png"></image>
+          </div>
+
+          <!-- 经验条 -->
+          <div class="expbarbg">
+            <div class="expbarfill" style="width: {{expPercent}}%;"></div>
+          </div>
+          <text class="exppercent">{{ expPercent }}%</text>
+
+          <text class="exptext" if="{{!isMaxLevel}}">{{ $t("leveldetail.currentExp") }} {{ currentExp }} / {{ nextExp }}</text>
+          <text class="exptext" if="{{isMaxLevel}}">{{ $t("leveldetail.currentExp") }} {{ currentExp }}</text>
+
+          <text class="expsubtext" if="{{!isMaxLevel}}">{{ $t("leveldetail.need") }} {{ expToNext }}</text>
+          <text class="expsubtext" if="{{isMaxLevel}}">{{ $t("leveldetail.maxLevel") }}</text>
+        </div>
+      </div>
+
+      <text style="margin-top: 25px"></text>
+    </scroll>
+  </div>
+</template>
+
+<script>
+export default {
+  public: {
+    uid: 0
+  },
+  private: {
+    loaded: false,
+    currentLevel: 0,
+    nextLevel: 1,
+    isMaxLevel: false,
+    currentExp: 0,
+    nextExp: 0,
+    expToNext: 0,
+    expPercent: 0,
+    scrclass: ""
+  },
+  async LoadLevelInfo() {
+    try {
+      let info
+      const myUid = String(global.biliclient.accountInfo.mid)
+      if (String(this.uid) === myUid) {
+        // 自己：nav 数据自带 level_info（current_level/current_min/current_exp/next_exp）
+        info = global.biliclient.accountInfo
+      } else {
+        // 他人：space acc/info 同样返回 level_info
+        info = await global.biliclient.getUserInfoByUID(this.uid)
+      }
+
+      const li = (info && info.level_info) || {}
+      const currentLevel = Number(li.current_level) || 0
+      const currentMin = Number(li.current_min) || 0
+      const currentExp = Number(li.current_exp) || 0
+      const nextExp = Number(li.next_exp) || 0
+
+      this.currentLevel = currentLevel
+      this.nextLevel = currentLevel + 1
+      // 满级判定：无下一级经验，或已是最高级（等级图片资源到 lv9）
+      this.isMaxLevel = !(nextExp > 0) || currentLevel >= 9
+      this.currentExp = currentExp
+      this.nextExp = nextExp
+      this.expToNext = nextExp > currentExp ? nextExp - currentExp : 0
+
+      // 经验进度：当前等级区间内占比（current_min → next_exp）
+      let percent = 0
+      if (this.isMaxLevel) {
+        percent = 100
+      } else if (nextExp > currentMin) {
+        percent = Math.floor(((currentExp - currentMin) / (nextExp - currentMin)) * 100)
+      }
+      this.expPercent = Math.max(0, Math.min(100, percent))
+      this.loaded = true
+    } catch (error) {
+      global.logger.error("Error loading level info:", error.toString())
+    }
+  },
+  onInit() {
+    this.LoadLevelInfo()
+  }
+}
+</script>
+
+<style lang="less">
+@import '@less/global.less';
+@import './leveldetail.less';
+</style>
