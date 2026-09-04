@@ -54,7 +54,7 @@ src = Image.open("/workspace/src/common/settings_version.png").convert("RGBA")
 W, H = src.size
 SP = src.load()
 
-TITLE_BAND = (35, 74, 70, 320)   # y0 y1 x0 x1
+TITLE_BAND = (35, 74, 70, 285)   # y0 y1 x0 x1（x≤285：文字止于 275，避开右侧箭头）
 
 # 版本号区域：文字实际在 y77-93 / x110-246（含抗锯齿），
 # 上下锚点行 y75 / y95 在 x<260 范围内均为干净背景 → 整带垂直插值替换
@@ -261,6 +261,89 @@ for name, c1, c2 in COMBOS:
         im.save(tdir + f)
     print("inapp", name, "ok")
 
+# ================= 21_rainbow 多彩主题 =================
+RN = "21_rainbow"
+
+# --- 彩虹 banner：背景横向彩虹 + 标题逐字彩虹 ---
+im = src.copy()
+px = im.load()
+erase_band(px, TITLE_BAND, 85)
+vy0, vy1, vx0, vx1 = VER_BAND
+for x in range(vx0, vx1 + 1):
+    pt, pb = px[x, VER_TOP], px[x, VER_BOT]
+    for y in range(vy0, vy1 + 1):
+        t = (y - VER_TOP) / (VER_BOT - VER_TOP)
+        px[x, y] = (
+            round(pt[0] + (pb[0] - pt[0]) * t),
+            round(pt[1] + (pb[1] - pt[1]) * t),
+            round(pt[2] + (pb[2] - pt[2]) * t),
+            255,
+        )
+# 背景：辉光区（x180→右缘）扫过整圈色相，暗部低饱和不变
+for y in range(H):
+    for x in range(W):
+        p = px[x, y]
+        if p[3] > 0:
+            hue = ((x - 180) / 185 * 360) % 360
+            px[x, y] = shift_hue(p, hue) + (p[3],)
+# 标题：按 x 位置取彩虹色（红→橙→黄→绿→青→蓝→紫）
+ty0, ty1, tx0, tx1 = TITLE_BAND
+for y in range(ty0, ty1 + 1):
+    for x in range(tx0, tx1 + 1):
+        op = SP[x, y]
+        if op[3] <= 40:
+            continue
+        a = clamp((lum(op) - 85) / 70, 0, 1)
+        if a <= 0:
+            continue
+        hue = (x - 70) / (285 - 70) * 300
+        r, g, b = colorsys.hsv_to_rgb(hue / 360, 0.85, 1.0)
+        col = (round(r * 255), round(g * 255), round(b * 255))
+        bp = px[x, y]
+        px[x, y] = (
+            round(bp[0] * (1 - a) + col[0] * a),
+            round(bp[1] * (1 - a) + col[1] * a),
+            round(bp[2] * (1 - a) + col[2] * a),
+            255,
+        )
+im.save(OUT + "banner_" + RN + ".png")
+print("banner_" + RN, "ok")
+
+# --- 彩虹图标：沿原渐变方向 t→色相（红→…→品红），白色小电视保留 ---
+im = ico.copy()
+px = im.load()
+for (x, y), t in TMAP.items():
+    w = WMAP[(x, y)]
+    if w >= 1:
+        continue
+    r, g, b = colorsys.hsv_to_rgb((t * 300) / 360, 0.88, 1.0)
+    nb = (r * 255, g * 255, b * 255)
+    op = IP[x, y]
+    px[x, y] = (
+        round(op[0] * w + nb[0] * (1 - w)),
+        round(op[1] * w + nb[1] * (1 - w)),
+        round(op[2] * w + nb[2] * (1 - w)),
+        op[3],
+    )
+im.save(OUT + "icon_" + RN + ".png")
+print("icon_" + RN, "ok")
+
+# --- 彩虹应用内图标：12 个图标色相均布 360° ---
+tdir = OUT + "inapp/" + RN + "/"
+os.makedirs(tdir, exist_ok=True)
+for j, f in enumerate(INAPP):
+    hue = j * (360 / len(INAPP))
+    im = Image.open("/workspace/src/common/" + f).convert("RGBA")
+    px = im.load()
+    w, h = im.size
+    for y in range(h):
+        for x in range(w):
+            p = px[x, y]
+            if p[3] > 0:
+                px[x, y] = shift_hue(p, hue) + (p[3],)
+    im.save(tdir + f)
+print("inapp", RN, "ok")
+
 # ================= 汇总预览图 =================
 from PIL import ImageDraw, ImageFont
 
@@ -273,7 +356,7 @@ try:
 except Exception:
     font = ImageFont.load_default()
 
-names = [n for n, _, _ in COMBOS]
+names = [n for n, _, _ in COMBOS] + [RN]
 # 布局：每个主题一块 = 标签 + [banner + 图标] 行 + 应用内图标行
 IS, IGAP = 55, 10
 inapp_w = len(INAPP) * IS + (len(INAPP) - 1) * IGAP
