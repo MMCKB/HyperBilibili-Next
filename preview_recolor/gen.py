@@ -14,6 +14,11 @@ COMBOS = [
     ("3_sunset",    "#FF9E4D", "#6FB9FF"),
     ("4_teal",      "#3EC8F5", "#43E5A0"),
     ("5_electric",  "#5B9DFF", "#FFD75E"),
+    ("6_sakura",    "#FF9EC4", "#B9A7FF"),
+    ("7_aurora",    "#34E39B", "#7C5CFF"),
+    ("8_vapor",     "#8A7CFF", "#FF8A54"),
+    ("9_ocean",     "#2E6BFF", "#25D5E8"),
+    ("10_matrix",   "#1FFFA0", "#12A5FF"),
 ]
 
 def hx(s):
@@ -238,7 +243,7 @@ except Exception:
 names = [n for n, _, _ in COMBOS]
 # 布局：每个主题一行 = 1 个 banner + 1 个 icon
 row_h = max(bh, ih) + LABEL_H + GAP
-sheet = Image.new("RGB", (PAD * 2 + bw + GAP + iw, PAD + 5 * row_h + PAD), BG)
+sheet = Image.new("RGB", (PAD * 2 + bw + GAP + iw, PAD + len(names) * row_h + PAD), BG)
 d = ImageDraw.Draw(sheet)
 for i, n in enumerate(names):
     y0 = PAD + i * row_h
