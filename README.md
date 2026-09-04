@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="docs/logoDEV.png" width="192" alt="logo">
+</p>
+
 # HyperBilibili-Next
 
 > 运行在 Xiaomi Vela OS 上的第三方哔哩哔哩客户端。原来的工具箱功能已拆分为独立应用 [Box-Vela](https://github.com/MMCKB/Box-Vela)
@@ -6,13 +10,7 @@
 [![GitHub Release](https://img.shields.io/github/v/release/MMCKB/HyperBilibili-Next)](https://github.com/MMCKB/HyperBilibili-Next/releases)
 [![License](https://img.shields.io/github/license/MMCKB/HyperBilibili-Next)](LICENSE)
 [![GitHub Stars](https://img.shields.io/github/stars/MMCKB/HyperBilibili-Next)](https://github.com/MMCKB/HyperBilibili-Next/stargazers)
-[![GitHub Forks](https://img.shields.io/github/forks/MMCKB/HyperBilibili-Next)](https://github.com/MMCKB/HyperBilibili-Next/network/members)
-
-## 应用图标
-
-<p align="center">
-  <img src="docs/logoDEV.png" width="192" alt="HyperBilibili-Next 应用图标">
-</p>
+[![GitHub Forks](https://img.shields.io/github/forks/MMCKB/HyperBilibili-Next/network/members)]
 
 ## 原项目
 
