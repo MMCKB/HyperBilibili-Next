@@ -1,9 +1,11 @@
-/* 霓虹渐变边框：外层渐变背景 + padding 充当边框厚度 */
+/* 霓虹渐变边框：外层背景作边框，内层深色卡片。
+   渐变由 JS 以 Vela 官方 JSON 动态样式注入（见 leveldetail.ux 的 borderStyle）；
+   此处 background-color 为兜底：设备不支持 JSON 渐变时显示单色哔哩粉 */
 .cardborder {
     width: 370px;
     border-radius: 33px;
     padding: 3px;
-    background: linear-gradient(to bottom right, #ff4d4d, #ff9500, #ffd60a, #34d399, #38bdf8, #a78bfa);
+    background-color: #fb7299;
     margin-top: 10px;
 }
 

@@ -6,7 +6,7 @@
       <title-bar title="leveldetail.title"></title-bar>
 
       <!-- 霓虹渐变边框卡片：外层渐变背景作边框，内层深色卡片 -->
-      <div class="cardborder" if="{{loaded}}">
+      <div class="cardborder" if="{{loaded}}" style="{{borderStyle}}">
         <div class="card">
           <!-- 未满级：当前等级(小) → 箭头 → 下一等级(大) -->
           <div class="levelrow" if="{{!isMaxLevel}}">
@@ -52,7 +52,30 @@ export default {
     nextExp: 0,
     expToNext: 0,
     expPercent: 0,
-    scrclass: ""
+    scrclass: "",
+    // 霓虹渐变边框（Vela 不支持 CSS 字符串渐变，须用官方 JSON 动态样式格式）
+    borderStyle: {}
+  },
+  // 构建彩虹渐变背景（红→橙→黄→绿→蓝→紫）；若设备不支持则回退到 less 里的哔哩粉纯色
+  BuildBorderStyle() {
+    this.borderStyle = {
+      background: JSON.stringify({
+        values: [
+          {
+            type: "linearGradient",
+            directions: ["to", "right"],
+            values: [
+              "#ff4d4d 0%",
+              "#ff9500 20%",
+              "#ffd60a 40%",
+              "#34d399 60%",
+              "#38bdf8 80%",
+              "#a78bfa 100%"
+            ]
+          }
+        ]
+      })
+    }
   },
   async LoadLevelInfo() {
     try {
@@ -94,6 +117,7 @@ export default {
     }
   },
   onInit() {
+    this.BuildBorderStyle()
     this.LoadLevelInfo()
   }
 }
