@@ -28,8 +28,6 @@ interface SettingsInterface {
     maxlength: number;
     traditional: boolean;
     keyboardtheme: string;
-    doubletapshiftlock: boolean;
-    autocapitalize: boolean;
   };
 }
 
@@ -55,9 +53,7 @@ export let SETTINGS: SettingsInterface = {
     vibratemode: "short",
     maxlength: 5,
     traditional: false,
-    keyboardtheme: "dark",
-    doubletapshiftlock: false,
-    autocapitalize: false
+    keyboardtheme: "dark"
   }
 };
 

@@ -166,13 +166,7 @@
         "candidates": "Candidate count",
         "candidatesDescription": "Candidates shown per default row",
         "candidatesThree": "3 candidates",
-        "candidatesFive": "5 candidates",
-        "shiftLock": "Double-tap Shift lock",
-        "shiftLockDescription": "Double-tap ↑ in English full keyboard to lock uppercase; tap once to unlock",
-        "autoCapitalize": "Auto-capitalize English",
-        "autoCapitalizeDescription": "Capitalize the next English letter after switching languages or pressing Enter",
-        "featureDisabled": "Off",
-        "featureEnabled": "On"
+        "candidatesFive": "5 candidates"
     },
     "leveldetail": {
         "title": "Level Details",

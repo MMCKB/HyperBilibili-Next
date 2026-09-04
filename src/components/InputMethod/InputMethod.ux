@@ -349,7 +349,6 @@ function getT9PinyinGroups(digits, traditional) {
   return SimpleInputMethod.getT9PinyinGroups(digits, traditional) || [];
 }
 // 方屏中文 T9 中每个字母组只对应一个数字。按 ABC、DEF、GHI 即得到 234。
-const RECT_SHIFT_DOUBLE_TAP_WINDOW = 500;
 const T9_GROUP_TO_DIGIT = {
   abc: "2",
   def: "3",
@@ -379,9 +378,6 @@ function normalizeVibrateMode(value) {
 function normalizeCandidateCount(value, fallback) {
   const count = parseInt(value);
   return count > 0 ? count : fallback;
-}
-function normalizeFeatureEnabled(value) {
-  return value === true || value === "true";
 }
 function normalizeKeyboardTheme(value) {
   if (value === "white" || value === "blue-gray") {
@@ -450,10 +446,6 @@ export default {
     keyboardtheme: {
       default: "dark",
     },
-    // 英文双击 Shift 锁定大写由快应用设置页控制，默认关闭。
-    doubletapshiftlock: {
-      default: false,
-    },
   },
   data: {
     cval: "",
@@ -496,10 +488,6 @@ export default {
     rectThemeText: "rgb(255,255,255)",
     rectThemeProgress: "#262626",
     rectThemeAccent: "rgb(13,132,255)",
-    // 方屏英文输入辅助只读取快应用属性，不保存或回写设置。
-    rectDoubleTapShiftLock: false,
-    rectShiftLocked: false,
-    rectLastShiftTapAt: 0,
     // 针对screenShape为rect的设备，会自动获取screenWidth并绑定到根div
     // 这样便能同时适配n67和o65甚至是后续设备，但实际效果可能受designWidth影响
     screenWidth: 336,
@@ -546,7 +534,6 @@ export default {
     this.rectVibrateMode = normalizeVibrateMode(this.vibratemode);
     this.rectCandidateCount = initialCandidateCount;
     this.rectTraditionalInput = normalizeTraditional(this.traditional);
-    this.rectDoubleTapShiftLock = normalizeFeatureEnabled(this.doubletapshiftlock);
     this.applyRectTheme(this.keyboardtheme);
     this.$watch("hide", "watchHidePropsChange");
     this.$watch("maxlength", "watchMaxLengthPropsChange");
@@ -554,7 +541,6 @@ export default {
     this.$watch("vibratemode", "watchVibratemodePropsChange");
     this.$watch("traditional", "watchTraditionalPropsChange");
     this.$watch("keyboardtheme", "watchKeyboardthemePropsChange");
-    this.$watch("doubletapshiftlock", "watchDoubletapshiftlockPropsChange");
   },
   addAllTxt(txt) {
     this.$emit("complete", { content: txt });
@@ -688,25 +674,6 @@ export default {
     this.resetReslutList();
     this.$emit("cursor", { action: action });
   },
-  handleRectShiftToggle(nextUpper) {
-    if (this.screentype !== "rect" || !this.rectDoubleTapShiftLock) {
-      this.rectShiftLocked = false;
-      this.rectLastShiftTapAt = 0;
-      this.upperFlag = nextUpper;
-      return;
-    }
-    const now = Date.now();
-    const isDoubleTap = this.rectLastShiftTapAt > 0 && now - this.rectLastShiftTapAt <= RECT_SHIFT_DOUBLE_TAP_WINDOW;
-    this.rectLastShiftTapAt = now;
-    if (isDoubleTap) {
-      this.rectShiftLocked = true;
-      this.rectLastShiftTapAt = 0;
-      this.upperFlag = true;
-      return;
-    }
-    this.rectShiftLocked = false;
-    this.upperFlag = nextUpper;
-  },
   commitEnglishCharacter(text) {
     if (this.upperFlag) {
       this.addAllTxt(text.toUpperCase());
@@ -798,10 +765,10 @@ export default {
         this.rectNumFromSwitch = false;
         break;
       case "switchUpper":
-        this.handleRectShiftToggle(true);
+        this.upperFlag = true;
         break;
       case "switchLow":
-        this.handleRectShiftToggle(false);
+        this.upperFlag = false;
         break;
       default:
         if (this.isRectChineseT9() && T9_GROUP_TO_DIGIT[sign]) {
@@ -988,13 +955,6 @@ export default {
   },
   watchKeyboardthemePropsChange(newV, oldV) {
     this.applyRectTheme(newV);
-  },
-  watchDoubletapshiftlockPropsChange(newV, oldV) {
-    this.rectDoubleTapShiftLock = normalizeFeatureEnabled(newV);
-    if (!this.rectDoubleTapShiftLock) {
-      this.rectShiftLocked = false;
-      this.rectLastShiftTapAt = 0;
-    }
   },
   onVibrate() {
     const currentMode = this.screentype === "rect" ? this.rectVibrateMode : this.vibratemode;
