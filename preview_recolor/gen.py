@@ -19,6 +19,16 @@ COMBOS = [
     ("8_vapor",     "#8A7CFF", "#FF8A54"),
     ("9_ocean",     "#2E6BFF", "#25D5E8"),
     ("10_matrix",   "#1FFFA0", "#12A5FF"),
+    ("11_coral",    "#FF7059", "#FFC96B"),
+    ("12_grape",    "#8B5CF6", "#63D3FF"),
+    ("13_mint",     "#6EF3C5", "#9BD7FF"),
+    ("14_rosegold", "#F4C2A1", "#E8788F"),
+    ("15_lime",     "#D4F76A", "#43E97B"),
+    ("16_cherry",   "#FF4E6A", "#FFD5A8"),
+    ("17_sky",      "#64B5FF", "#B9F0FF"),
+    ("18_honey",    "#FFC53D", "#FF8A3D"),
+    ("19_amethyst", "#C084FC", "#F0A6FF"),
+    ("20_inferno",  "#FF3D3D", "#FFD43D"),
 ]
 
 def hx(s):
@@ -225,8 +235,31 @@ for name, c1, c2 in COMBOS:
     print("icon_" + name, "ok")
 
 import os
-for f in sorted(os.listdir(OUT)):
-    print(f, os.path.getsize(OUT + f), "bytes")
+
+# ================= 应用内设置图标（55x55，统一粉色 → 按主题主色偏移） =================
+INAPP = [
+    "settings_freshtype.png", "settings_homevidcount.png", "settings_searchvidcount.png",
+    "settings_enablefullanim.png", "settings_commentpictures.png", "settings_startuppage.png",
+    "settings_playerappearance.png", "settings_keyboard.png", "settings_removetmp.png",
+    "settings_logout.png", "donation.png", "settings_about.png",
+]
+
+for name, c1, c2 in COMBOS:
+    primary = hx(c1)
+    ph = colorsys.rgb_to_hsv(primary[0]/255, primary[1]/255, primary[2]/255)[0] * 360
+    tdir = OUT + "inapp/" + name + "/"
+    os.makedirs(tdir, exist_ok=True)
+    for f in INAPP:
+        im = Image.open("/workspace/src/common/" + f).convert("RGBA")
+        px = im.load()
+        w, h = im.size
+        for y in range(h):
+            for x in range(w):
+                p = px[x, y]
+                if p[3] > 0:
+                    px[x, y] = shift_hue(p, ph) + (p[3],)
+        im.save(tdir + f)
+    print("inapp", name, "ok")
 
 # ================= 汇总预览图 =================
 from PIL import ImageDraw, ImageFont
@@ -241,26 +274,46 @@ except Exception:
     font = ImageFont.load_default()
 
 names = [n for n, _, _ in COMBOS]
-# 布局：每个主题一行 = 1 个 banner + 1 个 icon
-row_h = max(bh, ih) + LABEL_H + GAP
-sheet = Image.new("RGB", (PAD * 2 + bw + GAP + iw, PAD + len(names) * row_h + PAD), BG)
+# 布局：每个主题一块 = 标签 + [banner + 图标] 行 + 应用内图标行
+IS, IGAP = 55, 10
+inapp_w = len(INAPP) * IS + (len(INAPP) - 1) * IGAP
+sw = max(PAD * 2 + bw + GAP + iw, PAD * 2 + inapp_w)
+row_h = LABEL_H + max(bh, ih) + GAP + IS + GAP
+sheet = Image.new("RGB", (sw, PAD + len(names) * row_h + PAD), BG)
 d = ImageDraw.Draw(sheet)
+
+def flat(img):
+    if img.mode == "RGBA":
+        bgc = Image.new("RGB", img.size, BG)
+        bgc.paste(img, (0, 0), img)
+        return bgc
+    return img.convert("RGB")
+
 for i, n in enumerate(names):
     y0 = PAD + i * row_h
     d.text((PAD, y0), f"{i+1}. {n}", fill=(200, 205, 215), font=font)
-    yimg = y0 + LABEL_H
-    b = Image.open(OUT + "banner_" + n + ".png")
-    if b.mode == "RGBA":
-        bgc = Image.new("RGB", b.size, BG)
-        bgc.paste(b, (0, 0), b)
-        b = bgc
-    sheet.paste(b, (PAD, yimg))
-    ic = Image.open(OUT + "icon_" + n + ".png")
-    if ic.mode == "RGBA":
-        bgc = Image.new("RGB", ic.size, BG)
-        bgc.paste(ic, (0, 0), ic)
-        ic = bgc
-    sheet.paste(ic, (PAD + bw + GAP, yimg))
+    y1 = y0 + LABEL_H
+    sheet.paste(flat(Image.open(OUT + "banner_" + n + ".png")), (PAD, y1))
+    sheet.paste(flat(Image.open(OUT + "icon_" + n + ".png")), (PAD + bw + GAP, y1))
+    y2 = y1 + max(bh, ih) + GAP
+    for j, f in enumerate(INAPP):
+        x = PAD + j * (IS + IGAP)
+        sheet.paste(flat(Image.open(OUT + "inapp/" + n + "/" + f)), (x, y2))
     print("sheet row", n, "ok")
 sheet.save(OUT + "preview_sheet.png")
 print("preview_sheet.png", sheet.size)
+
+# ================= 应用内图标专用总览（20 主题 × 12 图标，原生 55px） =================
+LBL_W = 136
+sw2 = PAD + LBL_W + inapp_w + PAD
+rh2 = IS + 14
+sheet2 = Image.new("RGB", (sw2, PAD + len(names) * rh2 + PAD), BG)
+d2 = ImageDraw.Draw(sheet2)
+for i, n in enumerate(names):
+    y0 = PAD + i * rh2
+    d2.text((PAD, y0 + IS - 18), f"{i+1}. {n}", fill=(200, 205, 215), font=font)
+    for j, f in enumerate(INAPP):
+        x = PAD + LBL_W + j * (IS + IGAP)
+        sheet2.paste(flat(Image.open(OUT + "inapp/" + n + "/" + f)), (x, y0))
+sheet2.save(OUT + "inapp_sheet.png")
+print("inapp_sheet.png", sheet2.size)
