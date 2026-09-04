@@ -10,3 +10,5 @@ src/buildinfo.ts
 **/.DS_Store
 /artifacts
 Box-Vela/
+asset_backup/
+preview_recolor/
