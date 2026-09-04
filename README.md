@@ -8,6 +8,12 @@
 [![GitHub Stars](https://img.shields.io/github/stars/MMCKB/HyperBilibili-Next)](https://github.com/MMCKB/HyperBilibili-Next/stargazers)
 [![GitHub Forks](https://img.shields.io/github/forks/MMCKB/HyperBilibili-Next)](https://github.com/MMCKB/HyperBilibili-Next/network/members)
 
+## 应用图标
+
+<p align="center">
+  <img src="docs/logoDEV.png" width="192" alt="HyperBilibili-Next 应用图标">
+</p>
+
 ## 原项目
 
 [![Original Repository](https://img.shields.io/badge/Original-Searchstars/HyperBilibili-blue)](https://github.com/Searchstars/HyperBilibili)
