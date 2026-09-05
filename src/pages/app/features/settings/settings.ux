@@ -2,7 +2,7 @@
 
 <template>
   <div class="page">
-    <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="true">
+    <scroll class="scroll zoom-enter {{scrclass}}" scroll-y="true" bounces="true">
       <switch-bar title="settings.title"></switch-bar>
       <img src="/common/settings_version.png" @click="GoAbout"></img>
       <div class="setbase" onclick="ClickCountSet('fresh_type')">

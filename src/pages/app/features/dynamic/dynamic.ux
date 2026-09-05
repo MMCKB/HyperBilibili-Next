@@ -5,7 +5,7 @@
 <template>
   <div class="page">
     <image style="position: absolute; left: 0px" src="{{getBgImg}}" static></image>
-    <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="true">
+    <scroll class="scroll zoom-enter {{scrclass}}" scroll-y="true" bounces="true">
       <switch-bar title="dynamic.title" static></switch-bar>
       <div class="send-btn" @click="OpenSendDynamic">
         <text class="send-btn-text">{{ $t("dynamic.send") }}</text>

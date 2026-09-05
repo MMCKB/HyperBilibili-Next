@@ -41,3 +41,26 @@
         opacity: 1;
     }
 }
+
+// 打开应用式缩放进入：新页从中心放大展开（数值递增，normal 播放）
+// 用于功能页（首页/动态/我的/设置/缓存）与卡片详情页（视频/动态）
+@keyframes zoom-enter {
+    0% {
+        transform: scale(0.3);
+        opacity: 0;
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+// 卡片按压反馈（定义递增 0.9→1 规避数值自减 bug，reverse 播放实际 1→0.9 缩小）
+@keyframes card-press {
+    0% {
+        transform: scale(0.9);
+    }
+    100% {
+        transform: scale(1);
+    }
+}

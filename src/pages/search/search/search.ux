@@ -127,6 +127,19 @@ export default {
   onInit() {
     global.animengine.defaults.loading.CreateLoadingAnimation(this)
   },
+  // 返回：输入面板打开时先收起面板，否则走全局返回逻辑（回功能区）
+  onBackPress() {
+    if (this.input_mode) {
+      this.input_mode = false
+      return true
+    }
+    global.ui.OnBackPressTriggered()
+    return true
+  },
+  onReady() {
+    // switch-bar 的 onInit 会覆盖页面的 onBackPress，这里再覆盖回来
+    this.$options.onBackPress = () => this.onBackPress()
+  },
   async onShow(){
     this.GetHotWords()
     await this.LoadHistory()

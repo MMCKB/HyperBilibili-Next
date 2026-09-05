@@ -1,7 +1,7 @@
 <import name="online-image" src="@components/BetterOnlineImage/BetterOnlineImage.ux"></import>
 
 <template>
-  <div class="comp-root" @click="GoDetail">
+  <div class="comp-root {{pressClass}}" @click="GoDetail">
     <div class="user">
       <image class="userface" src="{{dyn.modules.module_author.face}}@65w_65h" alt="/common/fullgray.png"></image>
       <div class="userinfo">
@@ -32,7 +32,9 @@ export default {
     }
   },
   data: {
-    pubAction: "未知"
+    pubAction: "未知",
+    pressClass: "",
+    pressing: false
   },
   generatePubAction() {
     if (this.dyn.modules.module_author.pub_action) return this.dyn.modules.module_author.pub_action
@@ -87,13 +89,21 @@ export default {
     }
   },
   GoDetail() {
-    router.push({
-      uri: "pages/app/features/dynamic/detail",
-      params: {
-        dyn: this.dyn,
-        pubAction: this.generatePubAction()
-      }
-    })
+    // 按压缩放反馈：先播卡片按压动画，再进入动态详情（详情页 zoom-enter 放大展开）
+    if (this.pressing) return
+    this.pressing = true
+    this.pressClass = "card-press"
+    setTimeout(() => {
+      router.push({
+        uri: "pages/app/features/dynamic/detail",
+        params: {
+          dyn: this.dyn,
+          pubAction: this.generatePubAction()
+        }
+      })
+      this.pressClass = ""
+      this.pressing = false
+    }, 180)
   },
   onInit(){
     this.pubAction = this.generatePubAction()

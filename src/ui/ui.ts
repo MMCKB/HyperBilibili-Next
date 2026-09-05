@@ -46,7 +46,8 @@ export function InitPage(vm){
 
 // 功能区（arealist）子页面：从功能区进入时是栈底页（router.clear + replace）
 // 直接 router.back() 会退出应用，改为返回功能区，lastpage 用于高亮对应按钮
-const MENU_BACK_PAGES = ["dynamic", "savedcontent", "mypage", "settings"]
+// search 同理：由功能区下滑进入（replace），返回时回功能区而不是退出应用
+const MENU_BACK_PAGES = ["dynamic", "savedcontent", "mypage", "settings", "search"]
 
 export function OnBackPressTriggered(){
     GlobalActions.UpdateCurrentPageName()

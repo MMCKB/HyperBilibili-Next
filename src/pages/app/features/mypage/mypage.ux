@@ -3,7 +3,7 @@
 
 <template>
   <div class="page">
-    <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
+    <scroll scroll-y="true" class="scroll zoom-enter {{scrclass}}" bounces="true">
       <switch-bar title="mypage.title"></switch-bar>
       <!-- 切换账号：文档流内小按钮，位于时间/标题下方，不遮挡内容 -->
       <div class="switchaccountbtn" @click="GoAccountSwitch">

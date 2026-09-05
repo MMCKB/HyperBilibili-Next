@@ -6,7 +6,7 @@
 
 <template>
   <div class="page">
-    <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
+    <scroll scroll-y="true" class="scroll zoom-enter {{scrclass}}" bounces="true">
       <title-bar title="video.title"></title-bar>
       <online-image if="{{renderingCover}}" src="{{vid.pic}}@319w_150h" margin-top="30px" lock-size="true" width="320px"
         height="150px" loading-anim="true" @loaded="GenBlur"></online-image>

@@ -34,6 +34,24 @@
     animation-direction: reverse;
 }
 
+// 打开应用式缩放进入：覆盖 .scroll 默认滑入动画
+// （定义序在 .scroll 之后、退场/回归类之前：首次进入播缩放，
+//   返回时 scrclass 的 backanim/frombackanim 覆盖它，右滑返回逻辑不变）
+.zoom-enter {
+    animation-name: zoom-enter;
+    animation-timing-function: ease;
+    animation-duration: 500ms;
+    animation-direction: normal;
+}
+
+// 卡片按压反馈：reverse 播放实现 1→0.9 缩小
+.card-press {
+    animation-name: card-press;
+    animation-timing-function: ease;
+    animation-duration: 240ms;
+    animation-direction: reverse;
+}
+
 .scroll-backanim {
     animation-name: backpage-scroll;
     animation-timing-function: ease;

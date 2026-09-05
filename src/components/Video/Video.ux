@@ -2,7 +2,7 @@
 
 <template>
   <div class="vid">
-    <div class="loadedbox" @click="OpenVideo(video.bvid)" if="{{loadComp}}">
+    <div class="loadedbox {{pressClass}}" @click="OpenVideo(video.bvid)" if="{{loadComp}}">
       <div style="{{vidinfo_style}}" class="vidinfo">
         <div class="vidpicture">
           <image class="vidpicture_img" style="width: {{vidpicture_style.width}} height: {{vidpicture_style.height}}"
@@ -38,7 +38,9 @@ export default {
     },
     onlineimg_width: "160",
     onlineimg_height: "100",
-    loadComp: false
+    loadComp: false,
+    pressClass: "",
+    pressing: false
   },
   computed: {
     stat_view() {
@@ -46,10 +48,18 @@ export default {
     }
   },
   OpenVideo(bvid) {
-    router.push({
-      uri: "pages/video/videodetail",
-      params: {bvid}
-    })
+    // 按压缩放反馈：先播卡片按压动画，再进入视频详情（详情页 zoom-enter 放大展开）
+    if (this.pressing) return
+    this.pressing = true
+    this.pressClass = "card-press"
+    setTimeout(() => {
+      router.push({
+        uri: "pages/video/videodetail",
+        params: {bvid}
+      })
+      this.pressClass = ""
+      this.pressing = false
+    }, 180)
   },
   // 在线图片展示大小（UI层）
   SetOnlineImageSize(width, height) {

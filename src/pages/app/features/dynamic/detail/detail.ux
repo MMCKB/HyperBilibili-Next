@@ -5,7 +5,7 @@
 
 <template>
   <div class="page">
-    <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
+    <scroll scroll-y="true" class="scroll zoom-enter {{scrclass}}" bounces="true">
       <title-bar title="dynamic.detail.title"></title-bar>
       <div class="user">
         <image class="userface" onclick="OpenUser(dyn.modules.module_author.mid)" src="{{dyn.modules.module_author.face}}@75w_75h" alt="/common/fullgray.png"></image>
