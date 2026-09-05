@@ -2,7 +2,7 @@
 <import name="default-button" src="@components/DefaultButton/DefaultButton.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page card-enter {{scrclass}}">
     <title-bar title="专栏缓存"></title-bar>
     <image src="/common/articlesave_tips.png"></image>
     <default-button margin-top="20px" text="阅读更多信息" @click="ReadMore"></default-button>
@@ -18,6 +18,9 @@ export default {
   public: {
     cvtitle: "",
     cvid: ""
+  },
+  private: {
+    scrclass: ""
   },
   ReadMore(){
     router.push({

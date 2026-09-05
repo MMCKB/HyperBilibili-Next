@@ -2,7 +2,7 @@
 <import name="html-renderer" src="@components/HtmlRenderer/HtmlRenderer.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page card-enter {{scrclass}}">
     <title-bar title="专栏阅读" static></title-bar>
     <image style="position: absolute; margin-top: 245px" if="{{anims.show_loading}}" src="{{anims.loading_src.value}}"></image>
     <div if="{{showarticle}}" class="articlebox">
@@ -38,6 +38,7 @@ export default {
     article_html: ""
   },
   private: {
+    scrclass: "",
     article: {},
     article_content: {},
     showarticle: false,

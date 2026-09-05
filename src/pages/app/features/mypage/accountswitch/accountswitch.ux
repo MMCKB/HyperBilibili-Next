@@ -2,7 +2,7 @@
 
 <template>
   <div class="page">
-    <scroll scroll-y="true" class="scroll" bounces="true">
+    <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
       <title-bar title="{{titletext}}"></title-bar>
 
       <!-- 当前账号 -->
@@ -53,6 +53,7 @@ import prompt from "@system.prompt"
 
 export default {
   private: {
+    scrclass: "",
     titletext: "切换账号",
     currentAccount: {},
     otherAccounts: []

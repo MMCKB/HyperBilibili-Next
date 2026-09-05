@@ -24,6 +24,16 @@
     animation-direction: reverse;
 }
 
+// 纯动画类：供无 .scroll 结构的页面根容器复用卡片入场动画
+// （不携带任何布局属性，避免破坏页面自身结构；
+//   定义在退场/回归类之前，同用时由后者覆盖动画属性）
+.card-enter {
+    animation-name: openpage-scroll;
+    animation-timing-function: ease;
+    animation-duration: 500ms;
+    animation-direction: reverse;
+}
+
 .scroll-backanim {
     animation-name: backpage-scroll;
     animation-timing-function: ease;
@@ -35,7 +45,7 @@
     animation-name: fromback-scroll;
     animation-timing-function: ease;
     animation-duration: 500ms;
-    animation-direction: reverse;
+    animation-direction: normal;
 }
 
 text {

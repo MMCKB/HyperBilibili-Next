@@ -1,5 +1,5 @@
 <template>
-  <stack class="player-container">
+  <stack class="player-container card-enter {{scrclass}}">
     <!-- 缓存提示页面 -->
     <div if="{{ showCacheTips }}" class="cache-tips-page">
       <scroll class="cache-tips-scroll" scroll-y="true">
@@ -141,6 +141,7 @@
   export default {
     props: { playlistId: { default: null }, startIndex: { default: 0 }, tracks: { default: null }, bvid: { default: null }, cachedAudioUri: { default: null }, cachedTitle: { default: null }, cachedCoverUrl: { default: null }, cachedAuthor: { default: null } },
     data: {
+      scrclass: "",
       index: 0,
       songList: [],
       currSong: { al: {}, ar: [{}] },
@@ -349,6 +350,8 @@
     },
     onInit() {
       const that = this;
+      // 注册进全局 UI 池：返回时才能拿到卡片退场/底层页回归动画
+      global.ui.InitPage(this);
       that.loadPlayerToolbarAppearance();
       that.isPlaying = false;
       that.playerState.isPlaying = false;
@@ -933,7 +936,11 @@
       });
     },
     goBack() {
-      router.back();
+      global.ui.OnBackPressTriggered();
+    },
+    onBackPress() {
+      global.ui.OnBackPressTriggered();
+      return true;
     },
     toastLog(message) {
       if (!message) return;
@@ -1208,7 +1215,7 @@
       audio.stop();
       that.isPlaying = false;
       that.playerState.isPlaying = false;
-      router.back();
+      global.ui.OnBackPressTriggered();
     },
     onVolumeChange(e) {
       const that = this;

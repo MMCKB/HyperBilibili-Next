@@ -2,7 +2,7 @@
 <import name="default-button" src="@components/DefaultButton/DefaultButton.ux"></import>
 
 <template>
-  <div class="page">
+  <div class="page card-enter">
     <image style="position: absolute; margin-top: 300px" if="{{anims.show_loading}}" src="{{anims.loading_src.value}}"></image>
     <text style="font-weight: 600; margin-top: 45px; font-size: 40px">{{ $t("eularead.title") }}</text>
     <text style="font-weight: 600; margin-top: 15px; font-size: 24px; width: 75%">{{ $t("eularead.sectitle") }}</text>

@@ -1,33 +1,43 @@
-// 以下任何涉及到负移动的动画（例如openpage-scroll）
-// 都需要使用animation-direction: reverse进行播放
-// 这是由于傻逼vela快应用框架不支持keyframes数值自减导致的
+// 卡片式页面过渡：页面如同一叠卡片
+// - 入场：新页以 0.72 缩放卡片态从右侧滑入、放大、渐显
+// - 返回退场：当前页缩小、滑向右侧、渐隐
+// - 底层页回归：从 0.72 卡片态原地放大复原
+//
+// 注意：vela 快应用框架 keyframes 不支持负向移动，
+// 涉及"反向运动"的一律写成正向数值再用 animation-direction: reverse 播放
 
-// 需要reverse
+// 入场（需 reverse 播放：实际从 100% 卡片态播放到 0% 满屏态）
 @keyframes openpage-scroll {
     0% {
         transform: translateX(0px) scale(1);
+        opacity: 1;
     }
     100% {
-        transform: translateX(500px) scale(0.75);
+        transform: translateX(500px) scale(0.72);
+        opacity: 0;
     }
 }
 
-// 需要reverse
-@keyframes fromback-scroll {
-    0% {
-        transform: translateY(232px) scale(1);
-    }
-    100% {
-        transform: translateY(0px) scale(0.75);
-    }
-}
-
-// 无需reverse
+// 返回退场（无需 reverse：满屏态 → 卡片态滑出渐隐）
 @keyframes backpage-scroll {
     0% {
         transform: translateX(0px) scale(1);
+        opacity: 1;
     }
     100% {
-        transform: translateX(500px) scale(0.75);
+        transform: translateX(500px) scale(0.72);
+        opacity: 0;
+    }
+}
+
+// 底层页回归（数值全部递增，无需 reverse：卡片态 → 满屏态）
+@keyframes fromback-scroll {
+    0% {
+        transform: translateX(0px) scale(0.72);
+        opacity: 0.55;
+    }
+    100% {
+        transform: translateX(0px) scale(1);
+        opacity: 1;
     }
 }

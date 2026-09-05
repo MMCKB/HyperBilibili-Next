@@ -1,5 +1,5 @@
 <template>
-    <div class="page">
+    <div class="page card-enter">
         <image style="position: absolute; width: 100%; height: 100%" src="{{current_src}}" @click="StepClick"></image>
     </div>
 </template>
