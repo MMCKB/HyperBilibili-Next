@@ -22,6 +22,21 @@
         disabled="{{cantClear}}"></default-button>
       <text style="margin-top: 30px"></text>
     </scroll>
+    <!-- 清除确认弹层（应用内自绘）
+         不用 prompt.showDialog：该系统弹窗在本机引擎上点按钮后 success 回调不触发，
+         表现为"点了确定没反应"，缓存内容/视频音频将永远无法被选中清理 -->
+    <div class="confirm-mask" if="{{showConfirm}}">
+      <div class="confirm-card">
+        <text class="confirm-title">清除确认</text>
+        <text class="confirm-msg">{{ confirmMsg }}</text>
+        <div class="confirm-btn confirm-btn-primary" @click="ConfirmSelect">
+          <text class="confirm-btn-text">清除</text>
+        </div>
+        <div class="confirm-btn" @click="CancelSelect">
+          <text class="confirm-btn-text" style="color: #999999">取消</text>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -46,6 +61,12 @@ export default {
       videoAudio: "#434343",
       others: "#222222"
     },
+    // 自绘确认弹层状态（confirmType: 待确认的清理类别）
+    showConfirm: false,
+    confirmType: "",
+    confirmMsg: "",
+    // 已缓存条目引用的本地封面文件（扫描时归入"缓存内容"，避免被当作临时图片清理）
+    savedCoverUrls: {},
     scrclass: ""
   },
   RefreshPage() {
@@ -71,7 +92,7 @@ export default {
       const imgTemp = this.tmps.find((t) => t.alias === "imgs")
       if (imgTemp) {
         imgTemp.list.forEach((uri) => {
-          tasks.push(asyncFile.delete({uri}))
+          tasks.push(asyncFile.delete({uri}).catch(() => {}))
         })
       }
     }
@@ -80,15 +101,21 @@ export default {
       const logTemp = this.tmps.find((t) => t.alias === "logs")
       if (logTemp) {
         logTemp.list.forEach((uri) => {
-          tasks.push(asyncFile.delete({uri}))
+          tasks.push(asyncFile.delete({uri}).catch(() => {}))
         })
       }
     }
+
+    let deletedVideoAudioBvids = []
 
     if (this.clearControl.sc) {
       const contents = await global.savedcontent.SavedContentManager.listAllContent()
       for (const ct of contents) {
         await global.savedcontent.SavedContentManager.deleteContent(ct.id)
+      }
+      // 缓存内容全部清除，下载记录一并清空（其大小/状态已无对应文件）
+      if (global.downloadrecords) {
+        await global.downloadrecords.DownloadRecordManager.clearAll()
       }
     }
 
@@ -97,7 +124,23 @@ export default {
       const videoAudioContents = contents.filter((ct) => ct.type === 'videoAudio')
       for (let i = 0; i < videoAudioContents.length; i++) {
         const ct = videoAudioContents[i]
+        deletedVideoAudioBvids.push(ct.bvid)
         await global.savedcontent.SavedContentManager.deleteContent(ct.id)
+      }
+      // 对应视频的下载记录同步删除
+      if (global.downloadrecords && deletedVideoAudioBvids.length > 0) {
+        await global.downloadrecords.DownloadRecordManager.removeByBvids(deletedVideoAudioBvids)
+      }
+    }
+
+    // 视频音频孤儿文件清扫：扫描到的 m4s 可能没有缓存记录（下载后校验失败/流程中断），
+    // 只删记录会留下这些文件，导致清理后重新扫描仍显示占用
+    if (this.clearControl.sc || this.clearControl.videoAudio) {
+      const vaTemp = this.tmps.find((t) => t.alias === "videoAudio")
+      if (vaTemp) {
+        vaTemp.list.forEach((uri) => {
+          tasks.push(asyncFile.delete({uri}).catch(() => {}))
+        })
       }
     }
 
@@ -122,44 +165,25 @@ export default {
         break
       case "sc":
         if (!this.clearControl.sc) {
-          prompt.showDialog({
-            message:
-              "清除缓存内容即意味着清除您之前缓存的专栏、音频等内容，且该操作不可逆。确定要继续吗？",
-            success: (data) => {
-              this.clearControl.sc = true
-              this.typeColors.sc = this.clearControl.sc ? "#FF7DA8" : "#434343"
-              this.cantClear = !(
-                this.clearControl.imgs ||
-                this.clearControl.logs ||
-                this.clearControl.sc ||
-                this.clearControl.videoAudio
-              )
-            }
-          })
+          // 自绘确认弹层（系统对话框按钮回调不触发）
+          this.confirmType = "sc"
+          this.confirmMsg =
+            "清除缓存内容即意味着清除您之前缓存的专栏、音频等内容，且该操作不可逆。确定要继续吗？"
+          this.showConfirm = true
         } else {
           this.clearControl.sc = false
-          this.typeColors.sc = this.clearControl.sc ? "#FF7DA8" : "#434343"
+          this.typeColors.sc = "#434343"
         }
         break
       case "videoAudio":
         if (!this.clearControl.videoAudio) {
-          prompt.showDialog({
-            message:
-              "清除视频音频将删除所有已缓存的视频音频文件，且该操作不可逆。确定要继续吗？",
-            success: (data) => {
-              this.clearControl.videoAudio = true
-              this.typeColors.videoAudio = this.clearControl.videoAudio ? "#FF7DA8" : "#434343"
-              this.cantClear = !(
-                this.clearControl.imgs ||
-                this.clearControl.logs ||
-                this.clearControl.sc ||
-                this.clearControl.videoAudio
-              )
-            }
-          })
+          this.confirmType = "videoAudio"
+          this.confirmMsg =
+            "清除视频音频将删除所有已缓存的视频音频文件，且该操作不可逆。确定要继续吗？"
+          this.showConfirm = true
         } else {
           this.clearControl.videoAudio = false
-          this.typeColors.videoAudio = this.clearControl.videoAudio ? "#FF7DA8" : "#434343"
+          this.typeColors.videoAudio = "#434343"
         }
         break
     }
@@ -167,12 +191,38 @@ export default {
     this.cantClear = !(this.clearControl.imgs || this.clearControl.logs || this.clearControl.sc || this.clearControl.videoAudio)
     global.logger.log("[ClearTmp.SelectHandler] cantClear: ", this.cantClear)
   },
+  ConfirmSelect() {
+    const type = this.confirmType
+    this.showConfirm = false
+    this.confirmType = ""
+    if (type === "sc") {
+      this.clearControl.sc = true
+      this.typeColors.sc = "#FF7DA8"
+    } else if (type === "videoAudio") {
+      this.clearControl.videoAudio = true
+      this.typeColors.videoAudio = "#FF7DA8"
+    }
+    this.cantClear = !(this.clearControl.imgs || this.clearControl.logs || this.clearControl.sc || this.clearControl.videoAudio)
+  },
+  CancelSelect() {
+    this.showConfirm = false
+    this.confirmType = ""
+  },
   BytesToMB(bytes) {
     return (bytes / (1024 * 1024)).toFixed(2)
   },
   async getSavedContentList() {
     try {
       const contents = await global.savedcontent.SavedContentManager.listAllContent()
+      // 收集缓存条目引用的本地封面文件，扫描时归入"缓存内容"而非"临时图片"，
+      // 避免清理临时图片后已缓存视频的封面丢失
+      const savedCoverUrls = {}
+      contents.forEach((content) => {
+        if (content.coverUrl && content.coverUrl.indexOf("internal://files/") === 0) {
+          savedCoverUrls[content.coverUrl] = true
+        }
+      })
+      this.savedCoverUrls = savedCoverUrls
       const ret = await Promise.all(
         contents.map(async (content) => {
           try {
@@ -223,7 +273,15 @@ export default {
       for (const file of fileList) {
         const {uri, length, _labelIsSavedContent} = file
 
-        if (/\.(jpg|png|avif|gif)/i.test(uri)) {
+        if (this.savedCoverUrls[uri]) {
+          // 缓存条目的本地封面：计入"缓存内容"，不参与临时图片清理
+          totalStats.savedContent.count++
+          totalStats.savedContent.size += length
+        } else if (/\.m4s$/i.test(uri)) {
+          totalStats.videoAudio.count++
+          totalStats.videoAudio.size += length
+          totalStats.videoAudio.list.push(uri)
+        } else if (/\.(jpg|png|avif|gif)/i.test(uri)) {
           totalStats.images.count++
           totalStats.images.size += length
           totalStats.images.list.push(uri)
@@ -231,10 +289,6 @@ export default {
           totalStats.logs.count++
           totalStats.logs.size += length
           totalStats.logs.list.push(uri)
-        } else if (/\.m4s$/i.test(uri)) {
-          totalStats.videoAudio.count++
-          totalStats.videoAudio.size += length
-          totalStats.videoAudio.list.push(uri)
         } else if (_labelIsSavedContent) {
           totalStats.savedContent.count++
           totalStats.savedContent.size += length

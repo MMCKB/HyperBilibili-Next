@@ -1,0 +1,50 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="online-image" src="@components/BetterOnlineImage/BetterOnlineImage.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="true">
+      <title-bar title="savedcontent.downloadDetail"></title-bar>
+
+      <!-- 上方：视频封面 -->
+      <div class="detail">
+        <online-image if="{{record.coverUrl}}" src="{{record.coverUrl}}" width="320px" height="150px"
+          border-radius="15px" margin-top="15px" lock-size="true" loading-anim="true"></online-image>
+        <div class="detail-cover-empty" else></div>
+
+        <!-- 下方：两个统计区块（左：最快网速，右：占用大小） -->
+        <div class="detail-stats">
+          <div class="statbox">
+            <text class="stat-label">最快网速</text>
+            <text class="stat-value">{{ record.speedText }}</text>
+          </div>
+          <div class="statbox statbox-right">
+            <text class="stat-label">占用大小</text>
+            <text class="stat-value">{{ record.sizeText }}</text>
+          </div>
+        </div>
+
+        <text class="detail-status" style="color: {{ record.statusColor }}">{{ record.statusText }}</text>
+        <text class="detail-title">{{ record.title }}</text>
+        <text class="detail-author" if="{{ record.author }}">{{ record.author }}</text>
+      </div>
+      <text style="margin-top: 30px"></text>
+    </scroll>
+  </div>
+</template>
+
+<script>
+export default {
+  data: {
+    record: null
+  },
+  private: {
+    scrclass: ""
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./detail.less";
+</style>

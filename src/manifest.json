@@ -178,6 +178,12 @@
             "pages/app/features/savedcontent": {
                 "component": "savedcontent"
             },
+            "pages/app/features/savedcontent/downloadrecords": {
+                "component": "downloadrecords"
+            },
+            "pages/app/features/savedcontent/downloadrecords/detail": {
+                "component": "detail"
+            },
             "pages/debug/componentstest": {
                 "component": "componentstest"
             },

@@ -101,7 +101,9 @@
         "showDetail": "View Details"
     },
     "savedcontent": {
-        "title": "Saved Content"
+        "title": "Saved Content",
+        "downloadRecords": "Downloads",
+        "downloadDetail": "Download Detail"
     },
     "search": {
         "title": "Search",

@@ -981,7 +981,17 @@
       }
       const filename = `${that.videoBvid || 'video'}_audio.m4s`;
       that.toastLog('开始下载视频音频');
-     
+      // 记录本次缓存下载并启动网速采样
+      if (global.downloadrecords) {
+        global.downloadrecords.DownloadRecordManager.startRecord(
+          that.videoBvid || '',
+          (that.currSong && that.currSong.name) || '未知视频',
+          (that.currSong && that.currSong.al && that.currSong.al.picUrl) || '',
+          (that.currSong && that.currSong.ar && that.currSong.ar[0] && that.currSong.ar[0].name) || '未知作者',
+          filename
+        );
+      }
+
       request.download({
         url: audioUrl,
         header: that.buildVideoAudioDownloadHeaders(),
@@ -992,15 +1002,24 @@
             token: res.token,
             success: function(result) {
               if (requestId !== that.currentRequestId) {
+                if (global.downloadrecords) {
+                  global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'interrupted');
+                }
                 return;
               }
               that.toastLog('下载完成，校验文件');
               that.validateM4sFile(result.uri).then((isValid) => {
                 if (!isValid) {
+                  if (global.downloadrecords) {
+                    global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
+                  }
                   that.toastLog('校验失败，回退直链');
                   that.currSong.url = audioUrl;
                   that.playCurrentSong();
                   return;
+                }
+                if (global.downloadrecords) {
+                  global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'success', result.uri);
                 }
                 that.toastLog('校验成功，准备播放');
                 that.currSong.url = result.uri;
@@ -1009,12 +1028,18 @@
                   that.playCurrentSong();
                 }, 300);
               }).catch((error) => {
+                if (global.downloadrecords) {
+                  global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
+                }
                 that.toastLog('校验异常，回退直链');
                 that.currSong.url = audioUrl;
                 that.playCurrentSong();
               });
             },
             fail: function(error) {
+              if (global.downloadrecords) {
+                global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
+              }
               that.toastLog('下载失败');
               that.handlePlaybackError('视频音频下载失败');
             }
@@ -1024,9 +1049,13 @@
           that.toastLog('下载任务创建失败');
           const errorText = error && (error.message || error);
           if (errorText && String(errorText).includes('invalid header')) {
+            // 头部无效将重试：记录保持进行中，由重试流程结束
             that.toastLog('头部无效，重试无头部');
             that.retryDownloadVideoAudioWithoutHeaders(audioUrl, filename, requestId);
             return;
+          }
+          if (global.downloadrecords) {
+            global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
           }
           that.handlePlaybackError('视频音频下载失败');
         }
@@ -1051,15 +1080,24 @@
             token: res.token,
             success: function(result) {
               if (requestId !== that.currentRequestId) {
+                if (global.downloadrecords) {
+                  global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'interrupted');
+                }
                 return;
               }
               that.toastLog('无头部下载完成');
               that.validateM4sFile(result.uri).then((isValid) => {
                 if (!isValid) {
+                  if (global.downloadrecords) {
+                    global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
+                  }
                   that.toastLog('校验失败，回退直链');
                   that.currSong.url = audioUrl;
                   that.playCurrentSong();
                   return;
+                }
+                if (global.downloadrecords) {
+                  global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'success', result.uri);
                 }
                 that.currSong.url = result.uri;
                 that.saveVideoAudioToSavedContent(result.uri);
@@ -1067,18 +1105,27 @@
                   that.playCurrentSong();
                 }, 300);
               }).catch((error) => {
+                if (global.downloadrecords) {
+                  global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
+                }
                 that.toastLog('校验异常，回退直链');
                 that.currSong.url = audioUrl;
                 that.playCurrentSong();
               });
             },
             fail: function(error) {
+              if (global.downloadrecords) {
+                global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
+              }
               that.toastLog('无头部下载失败');
               that.handlePlaybackError('视频音频下载失败');
             }
           });
         },
         fail: function(error) {
+          if (global.downloadrecords) {
+            global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
+          }
           that.toastLog('无头部创建失败');
           that.handlePlaybackError('视频音频下载失败');
         }

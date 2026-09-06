@@ -102,7 +102,9 @@
         "showDetail": "查看详情"
     },
     "savedcontent": {
-        "title": "已缓存"
+        "title": "已缓存",
+        "downloadRecords": "下载记录",
+        "downloadDetail": "下载详情"
     },
     "search": {
         "title": "搜索",

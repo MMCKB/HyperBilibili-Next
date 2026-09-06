@@ -1,6 +1,36 @@
 @import '@less/defs.less';
 @import '@less/color.less';
 
+// 下载记录入口按钮：与列表条目同宽的圆角卡片
+.recordentry {
+    width: 90%;
+    height: 100px;
+    margin-top: 20px;
+    border-radius: 15px;
+    background-color: rgba(255, 255, 255, 0.1);
+    flex-direction: row;
+    align-items: center;
+    padding: 0px 25px;
+}
+
+.recordentry-icon {
+    width: 45px;
+    height: 45px;
+    object-fit: scale-down;
+}
+
+.recordentry-text {
+    flex: 1;
+    font-size: 28px;
+    color: #ffffff;
+    margin-left: 15px;
+}
+
+.recordentry-arrow {
+    width: 30px;
+    height: 30px;
+}
+
 .video-audio-item {
     width: 90%;
     height: 120px;

@@ -127,13 +127,22 @@ export default {
   onInit() {
     global.animengine.defaults.loading.CreateLoadingAnimation(this)
   },
-  // 返回：输入面板打开时先收起面板，否则走全局返回逻辑（回功能区）
+  // 返回：输入面板打开时先收起面板；否则播放退场动画后清栈回到首页
+  // （搜索页由功能区下滑进入，栈底还压着功能区和首页，直接 back 会回到功能区，
+  //   这里清栈 replace 首页，与功能区 GoPage 打开首页的方式一致）
   onBackPress() {
     if (this.input_mode) {
       this.input_mode = false
       return true
     }
-    global.ui.OnBackPressTriggered()
+    this.scrclass = "scroll-backanim"
+    setTimeout(() => {
+      this.scrclass = ""
+      router.clear()
+      router.replace({
+        uri: "pages/app/features/main"
+      })
+    }, 150)
     return true
   },
   onReady() {

@@ -1,0 +1,109 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="true">
+      <title-bar title="savedcontent.downloadRecords"></title-bar>
+
+      <!-- 记录列表：每条显示标题、时间与下载状态 -->
+      <div class="records">
+        <text if="{{records.length < 1}}" class="empty-tip">暂无下载记录</text>
+        <div class="record-item" for="{{records}}" @click="OpenDetail($item)">
+          <div class="record-info">
+            <text class="record-title">{{ $item.title }}</text>
+            <text class="record-meta">{{ $item.timeText }}</text>
+          </div>
+          <text class="record-status" style="color: {{ $item.statusColor }}">{{ $item.statusText }}</text>
+        </div>
+      </div>
+      <text style="margin-top: 30px"></text>
+    </scroll>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+export default {
+  private: {
+    scrclass: "",
+    records: []
+  },
+  FormatSpeed(bytesPerSec) {
+    if (!bytesPerSec || bytesPerSec <= 0) return "—"
+    if (bytesPerSec >= 1024 * 1024) return (bytesPerSec / 1024 / 1024).toFixed(2) + " MB/s"
+    if (bytesPerSec >= 1024) return (bytesPerSec / 1024).toFixed(1) + " KB/s"
+    return Math.round(bytesPerSec) + " B/s"
+  },
+  FormatSize(bytes) {
+    if (!bytes || bytes <= 0) return "—"
+    if (bytes >= 1024 * 1024) return (bytes / 1024 / 1024).toFixed(2) + " MB"
+    if (bytes >= 1024) return (bytes / 1024).toFixed(1) + " KB"
+    return bytes + " B"
+  },
+  FormatTime(ts) {
+    if (!ts) return ""
+    const d = new Date(ts)
+    const pad = (n) => (n < 10 ? "0" + n : "" + n)
+    return (d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes())
+  },
+  StatusTextOf(status) {
+    switch (status) {
+      case "success": return "成功"
+      case "fail": return "失败"
+      case "interrupted": return "中断"
+      default: return "下载中"
+    }
+  },
+  StatusColorOf(status) {
+    switch (status) {
+      case "success": return "#62D26F"
+      case "fail": return "#FF6060"
+      case "interrupted": return "#FFB13D"
+      default: return "#58A6FF"
+    }
+  },
+  LoadRecords() {
+    let list = []
+    if (global.downloadrecords) {
+      list = global.downloadrecords.DownloadRecordManager.listRecords()
+    }
+    const mapped = []
+    for (let i = 0; i < list.length; i++) {
+      const r = list[i]
+      mapped.push({
+        id: r.id,
+        bvid: r.bvid,
+        title: r.title,
+        coverUrl: r.coverUrl,
+        author: r.author,
+        status: r.status,
+        statusText: this.StatusTextOf(r.status),
+        statusColor: this.StatusColorOf(r.status),
+        speedText: this.FormatSpeed(r.maxSpeed),
+        sizeText: this.FormatSize(r.size),
+        timeText: this.FormatTime(r.startTime)
+      })
+    }
+    this.records.splice(0, this.records.length, ...mapped)
+  },
+  OpenDetail(item) {
+    router.push({
+      uri: "pages/app/features/savedcontent/downloadrecords/detail",
+      params: {
+        record: item
+      }
+    })
+  },
+  onInit() {
+    this.LoadRecords()
+  },
+  onShow() {
+    this.LoadRecords()
+  }
+}
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+@import "./downloadrecords.less";
+</style>

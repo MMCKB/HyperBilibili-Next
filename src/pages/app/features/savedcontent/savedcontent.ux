@@ -6,6 +6,11 @@
     <image style="position: absolute; left: 0px" src="{{getBgImg}}"></image>
     <scroll class="zoomscroll {{scrclass}}" scroll-y="true" bounces="true">
       <switch-bar title="savedcontent.title" static></switch-bar>
+      <div class="recordentry" @click="GoDownloadRecords" static>
+        <image class="recordentry-icon" src="/common/icon/download.png" static></image>
+        <text class="recordentry-text" static>{{ $t("savedcontent.downloadRecords") }}</text>
+        <image class="recordentry-arrow" src="/common/arrow_right.png" static></image>
+      </div>
       <div style="flex-direction: column; align-items: center; width: 100%" for="{{content}}">
         <div if="{{$item.type == 'article' ? true : false}}"
           style="flex-direction: column; align-items: center; width: 100%"
@@ -56,6 +61,11 @@ export default {
         offline: true,
         article_html: html
       }
+    })
+  },
+  GoDownloadRecords() {
+    router.push({
+      uri: "pages/app/features/savedcontent/downloadrecords"
     })
   },
   PlayVideoAudio(item) {

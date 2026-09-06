@@ -12,6 +12,7 @@ import * as settings from "./settings"
 import * as jumpcheck from "./jumpcheck"
 import * as htmlparser from "./htmlparser"
 import * as savedcontent from "./savedcontent"
+import * as downloadrecords from "./downloadrecords"
 import * as bgimg from "./bgimg"
 import * as usertracker from "./usertracker"
 import logger from "./logger/logger"
@@ -44,6 +45,10 @@ export default {
     console.log("appinit > initSavedContentManager")
     await savedcontent.SavedContentManager.initialize()
     global.savedcontent = savedcontent
+
+    console.log("appinit > initDownloadRecordManager")
+    await downloadrecords.DownloadRecordManager.initialize()
+    global.downloadrecords = downloadrecords
 
     console.log("appinit > initDeviceInfo")
     global.DEVICE_INFO = await tools.getDeviceInformation()
