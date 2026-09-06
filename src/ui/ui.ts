@@ -46,8 +46,9 @@ export function InitPage(vm){
 
 // 功能区（arealist）子页面：从功能区进入时是栈底页（router.clear + replace）
 // 直接 router.back() 会退出应用，改为返回功能区，lastpage 用于高亮对应按钮
-// search 同理：由功能区下滑进入（replace），返回时回功能区而不是退出应用
-const MENU_BACK_PAGES = ["dynamic", "savedcontent", "mypage", "settings", "search"]
+// 注意：搜索页不在此列——它由功能区 router.push 进入，栈底留着存活的功能区页，
+// 走下方通用返回路径即可，返回时功能区播放 frombackanim 复原动画
+const MENU_BACK_PAGES = ["dynamic", "savedcontent", "mypage", "settings"]
 
 export function OnBackPressTriggered(){
     GlobalActions.UpdateCurrentPageName()

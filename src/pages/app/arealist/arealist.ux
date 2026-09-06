@@ -83,9 +83,13 @@ export default {
         )
         this.anims.ChangePageFX.start()
         setTimeout(() => {
-            router.replace({
+            // push 而非 replace：保留功能区页在栈底，搜索页返回时走通用返回路径，
+            // 功能区可收到 frombackanim 复原动画（replace 会销毁栈底页，返回将无动画）
+            router.push({
                 uri: "pages/search/search"
             })
+            // 功能区不再被销毁，收起进入特效，避免返回后残影
+            this.showChangePageFX = false
         },700)
     },
     onInit(){
