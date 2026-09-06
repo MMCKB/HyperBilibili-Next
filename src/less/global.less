@@ -11,31 +11,44 @@
     height: @screenHeight;
 }
 
-// 入场缩放动画直接定义在 .scroll 上，不要用第二个类去覆盖：
-// 挂载时多类的同名动画属性冲突，设备上 .scroll 优先，缩放不会播放；
-// 而返回时动态追加的 scrclass（backanim/frombackanim）能正常覆盖，
-// 所以右滑返回的卡片退场/底层复原逻辑不受影响
-.scroll {
+// 布局属性：.scroll（卡片式）与 .zoomscroll（缩放式）共用
+.scroll,
+.zoomscroll {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: @screenWidth;
     height: @screenHeight;
+}
 
+// 默认：卡片式入场（绝大多数页面）
+.scroll {
+    animation-name: openpage-scroll;
+    animation-timing-function: ease;
+    animation-duration: 500ms;
+    animation-direction: reverse;
+}
+
+// 缩放入场：打开应用式（仅 首页/动态/我的/设置/缓存/视频详情/动态详情）
+// 注意：不能用第二个类去覆盖 .scroll 的动画——挂载时多类的同名动画属性
+// 冲突，设备上 .scroll 优先，缩放不会播放；必须让页面根节点单独用本类。
+// 返回时动态追加的 scrclass（backanim/frombackanim）定义在本类之后，
+// 能正常覆盖，右滑返回的卡片退场/底层复原逻辑不受影响
+.zoomscroll {
     animation-name: zoom-open;
     animation-timing-function: ease;
     animation-duration: 500ms;
     animation-direction: normal;
 }
 
-// 纯动画类：供无 .scroll 结构的页面根容器复用缩放入场动画
+// 纯动画类：供无 scroll 结构的页面根容器复用卡片入场动画
 // （不携带任何布局属性，避免破坏页面自身结构；
 //   定义在退场/回归类之前，同用时由后者覆盖动画属性）
 .card-enter {
-    animation-name: zoom-open;
+    animation-name: openpage-scroll;
     animation-timing-function: ease;
     animation-duration: 500ms;
-    animation-direction: normal;
+    animation-direction: reverse;
 }
 
 .scroll-backanim {

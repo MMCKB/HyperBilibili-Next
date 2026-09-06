@@ -1,12 +1,25 @@
 // 页面过渡动画语言：
-// - 入场：打开应用式缩放，新页从中心放大展开、渐显
+// - 默认入场：卡片式，新页以 0.72 卡片态从右侧滑入、放大、渐显
+// - 缩放入场（仅指定页面）：打开应用式，从中心放大展开、渐显
 // - 返回退场：当前页缩小成卡片、滑向右侧、渐隐
 // - 底层页回归：从 0.72 卡片态原地放大复原
 //
 // 注意：vela 快应用框架 keyframes 不支持负向移动，
 // 涉及"反向运动"的一律写成正向数值再用 animation-direction: reverse 播放
 
-// 入场：打开应用式缩放（数值递增，normal 播放）
+// 卡片式入场（需 reverse 播放：实际从 100% 卡片态播放到 0% 满屏态）
+@keyframes openpage-scroll {
+    0% {
+        transform: translateX(0px) scale(1);
+        opacity: 1;
+    }
+    100% {
+        transform: translateX(500px) scale(0.72);
+        opacity: 0;
+    }
+}
+
+// 打开应用式缩放入场（数值递增，normal 播放）
 // transform 写法与 fromback-scroll 保持一致（translateX(0px) + scale + opacity）
 @keyframes zoom-open {
     0% {
