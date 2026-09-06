@@ -16,18 +16,27 @@
         " @click="NextPN()">
                 <image src="/common/changepage_right.png"></image>
             </div>
+            <!-- 发评论按钮：与翻页按钮同样尺寸（40x40）、同间距，仅评论区页传入 showReplyBtn 时显示 -->
+            <div if="{{showReplyBtn}}" @click="NewReply()"
+                style="margin-left: 17px; width: 40px; height: 40px; align-items: center; justify-content: center">
+                <image src="/common/replycontrol_reply.png"
+                    style="width: 28px; height: 28px; object-fit: scale-down"></image>
+            </div>
         </div>
     </div>
 </template>
 
 <script>
 export default {
-  props: ["current_pn"],
+  props: ["current_pn", "showReplyBtn"],
   BackPN() {
     this.$emit("backpn")
   },
   NextPN() {
     this.$emit("nextpn")
+  },
+  NewReply() {
+    this.$emit("newreply")
   }
 }
 </script>

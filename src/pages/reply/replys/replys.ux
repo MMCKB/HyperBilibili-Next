@@ -19,11 +19,9 @@
         </list-item>
       </list>
     </scroll>
-    <!-- 翻页器为组件自身绝对定位（左下），发评论按钮独立定位在其右侧同一行，避免重叠 -->
-    <floating-page-changer current_pn="{{current_pn}}" @backpn="BackPN" @nextpn="NextPN"></floating-page-changer>
-    <div class="newreplybtn" if="{{!secmode}}" @click="OpenNewReply">
-      <image class="newreplybtn_img" src="/common/replycontrol_reply.png"></image>
-    </div>
+    <!-- 翻页器为组件自身绝对定位，发评论按钮内嵌在翻页器行内右侧（同尺寸按钮） -->
+    <floating-page-changer current_pn="{{current_pn}}" show-reply-btn="{{!secmode}}" @backpn="BackPN" @nextpn="NextPN"
+      @newreply="OpenNewReply"></floating-page-changer>
     <full-screen-input if="{{replymode}}" @send="SendReply" @exit="ExitInput"></full-screen-input>
   </div>
 </template>
