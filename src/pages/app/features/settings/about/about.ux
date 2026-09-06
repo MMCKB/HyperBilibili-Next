@@ -95,7 +95,12 @@ export default {
       uri: "pages/tools/textdetail",
       params: {
         titletext: "构建信息",
-        text: `Builder: ${buildinfo.BUILD_USER}   \nBuild Time: ${buildinfo.BUILD_TIME}   \nCommit Hash: ${buildinfo.GIT_COMMIT_HASH}`
+        text: `版本: v${buildinfo.VERSION_NAME} (code ${buildinfo.VERSION_CODE})   \n` +
+          `分支: ${buildinfo.GIT_BRANCH || "unknown"}   \n` +
+          `Commit: ${buildinfo.GIT_COMMIT_HASH_SHORT}   \n` +
+          `构建来源: ${buildinfo.BUILD_SOURCE}   \n` +
+          `Builder: ${buildinfo.BUILD_USER}   \n` +
+          `Build Time: ${buildinfo.BUILD_TIME}`
       }
     })
   },
