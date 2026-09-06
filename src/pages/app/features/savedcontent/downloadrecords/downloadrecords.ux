@@ -75,6 +75,8 @@ export default {
         bvid: r.bvid,
         title: r.title,
         coverUrl: r.coverUrl,
+        // 封面为本地缓存文件时直接用 image 渲染（online-image 只支持远程 URL）
+        coverLocal: !!(r.coverUrl && r.coverUrl.indexOf("internal://") === 0),
         author: r.author,
         status: r.status,
         statusText: this.StatusTextOf(r.status),

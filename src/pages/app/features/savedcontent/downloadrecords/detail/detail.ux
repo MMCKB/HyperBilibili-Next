@@ -6,9 +6,10 @@
     <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="true">
       <title-bar title="savedcontent.downloadDetail"></title-bar>
 
-      <!-- 上方：视频封面 -->
+      <!-- 上方：视频封面（本地缓存文件直接渲染，远程 URL 走 online-image 下载） -->
       <div class="detail">
-        <online-image if="{{record.coverUrl}}" src="{{record.coverUrl}}" width="320px" height="150px"
+        <image if="{{record.coverLocal}}" class="detail-cover" src="{{record.coverUrl}}"></image>
+        <online-image elif="{{record.coverUrl}}" src="{{record.coverUrl}}" width="320px" height="150px"
           border-radius="15px" margin-top="15px" lock-size="true" loading-anim="true"></online-image>
         <div class="detail-cover-empty" else></div>
 
@@ -35,7 +36,7 @@
 
 <script>
 export default {
-  data: {
+  public: {
     record: null
   },
   private: {
