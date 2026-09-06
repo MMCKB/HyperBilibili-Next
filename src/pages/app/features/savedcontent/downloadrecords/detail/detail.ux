@@ -7,7 +7,7 @@
       <title-bar title="savedcontent.downloadDetail"></title-bar>
 
       <!-- 上方：视频封面（本地缓存文件直接渲染，远程 URL 走 online-image 下载） -->
-      <div class="detail">
+      <div class="detail" if="{{loaded}}">
         <image if="{{record.coverLocal}}" class="detail-cover" src="{{record.coverUrl}}"></image>
         <online-image elif="{{record.coverUrl}}" src="{{record.coverUrl}}" width="320px" height="150px"
           border-radius="15px" margin-top="15px" lock-size="true" loading-anim="true"></online-image>
@@ -29,6 +29,7 @@
         <text class="detail-title">{{ record.title }}</text>
         <text class="detail-author" if="{{ record.author }}">{{ record.author }}</text>
       </div>
+      <text if="{{!loaded}}" class="detail-missing">记录不存在或已被清理</text>
       <text style="margin-top: 30px"></text>
     </scroll>
   </div>
@@ -37,10 +38,66 @@
 <script>
 export default {
   public: {
-    record: null
+    recordId: ""
   },
   private: {
-    scrclass: ""
+    scrclass: "",
+    loaded: false,
+    record: {}
+  },
+  FormatSpeed(bytesPerSec) {
+    if (!bytesPerSec || bytesPerSec <= 0) return "—"
+    if (bytesPerSec >= 1024 * 1024) return (bytesPerSec / 1024 / 1024).toFixed(2) + " MB/s"
+    if (bytesPerSec >= 1024) return (bytesPerSec / 1024).toFixed(1) + " KB/s"
+    return Math.round(bytesPerSec) + " B/s"
+  },
+  FormatSize(bytes) {
+    if (!bytes || bytes <= 0) return "—"
+    if (bytes >= 1024 * 1024) return (bytes / 1024 / 1024).toFixed(2) + " MB"
+    if (bytes >= 1024) return (bytes / 1024).toFixed(1) + " KB"
+    return bytes + " B"
+  },
+  StatusTextOf(status) {
+    switch (status) {
+      case "success": return "成功"
+      case "fail": return "失败"
+      case "interrupted": return "中断"
+      default: return "下载中"
+    }
+  },
+  StatusColorOf(status) {
+    switch (status) {
+      case "success": return "#62D26F"
+      case "fail": return "#FF6060"
+      case "interrupted": return "#FFB13D"
+      default: return "#58A6FF"
+    }
+  },
+  // 按 id 从 manager 查询实时记录（params 只传 id，避免传对象在引擎上丢失字段）
+  LoadRecord() {
+    let r = null
+    if (global.downloadrecords && this.recordId) {
+      r = global.downloadrecords.DownloadRecordManager.getRecordById(this.recordId)
+    }
+    if (!r) {
+      this.loaded = false
+      return
+    }
+    this.record = {
+      title: r.title,
+      coverUrl: r.coverUrl,
+      // 封面为本地缓存文件时直接用 image 渲染（online-image 只支持远程 URL）
+      coverLocal: !!(r.coverUrl && r.coverUrl.indexOf("internal://") === 0),
+      author: r.author,
+      statusText: this.StatusTextOf(r.status),
+      statusColor: this.StatusColorOf(r.status),
+      speedText: this.FormatSpeed(r.maxSpeed),
+      sizeText: this.FormatSize(r.size)
+    }
+    this.loaded = true
+  },
+  onInit() {
+    this.LoadRecord()
   }
 }
 </script>

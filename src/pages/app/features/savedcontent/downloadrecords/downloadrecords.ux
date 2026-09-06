@@ -92,7 +92,9 @@ export default {
     router.push({
       uri: "pages/app/features/savedcontent/downloadrecords/detail",
       params: {
-        record: item
+        // 只传 id：router params 传复杂对象在引擎上不可靠（字段丢失/为 null），
+        // 详情页按 id 从 manager 查询实时数据
+        recordId: item.id
       }
     })
   },

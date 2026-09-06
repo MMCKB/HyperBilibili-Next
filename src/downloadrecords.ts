@@ -80,7 +80,8 @@ function stopSampler(): void {
 function startSampler(filename: string, recordId: string): void {
     stopSampler()
     const record = records.find(r => r.id === recordId)
-    if (!record) return
+    // 记录已结束（下载极快时 finishRecord 先于本函数执行）：不再采样，防止空转
+    if (!record || record.status !== "downloading") return
 
     const state = {
         filename,
@@ -91,18 +92,24 @@ function startSampler(filename: string, recordId: string): void {
         startedAt: Date.now()
     }
     state.timer = setInterval(async () => {
+        const current = records.find(r => r.id === recordId)
+        // 记录已被结束：停止采样器（回调持不到外部引用，需按 id 重新查找）
+        if (!current || current.status !== "downloading") {
+            stopSampler()
+            return
+        }
         try {
             const info = await asyncFile.get({ uri: `internal://files/${filename}` })
             const now = Date.now()
             const bytes = (info && info.length) || 0
             if (state.lastTime > 0 && bytes > state.lastBytes) {
                 const speed = (bytes - state.lastBytes) / ((now - state.lastTime) / 1000)
-                if (speed > record.maxSpeed) {
-                    record.maxSpeed = Math.round(speed)
+                if (speed > current.maxSpeed) {
+                    current.maxSpeed = Math.round(speed)
                 }
             }
             if (bytes > 0) {
-                record.size = bytes
+                current.size = bytes
             }
             state.lastBytes = bytes
             state.lastTime = now
@@ -191,13 +198,24 @@ export class DownloadRecordManager {
         record.status = status
         record.endTime = Date.now()
 
-        try {
-            const info = await asyncFile.get({ uri: finalUri || `internal://files/${filename}` })
-            if (info && info.length) {
-                record.size = info.length
+        // 读取最终文件大小：下载完成瞬间文件可能尚未可见，失败时延迟重试一次
+        const targetUri = finalUri || `internal://files/${filename}`
+        let size = 0
+        for (let attempt = 0; attempt < 2 && size <= 0; attempt++) {
+            try {
+                const info = await asyncFile.get({ uri: targetUri })
+                if (info && info.length) {
+                    size = info.length
+                }
+            } catch (e) {
+                // 文件不存在（失败/中断）时保留采样到的大小
             }
-        } catch (e) {
-            // 文件不存在（失败/中断）时保留采样到的大小
+            if (size <= 0) {
+                await new Promise<void>(resolve => setTimeout(resolve, 300))
+            }
+        }
+        if (size > 0) {
+            record.size = size
         }
 
         // 全程无有效采样时回退为平均速度
@@ -213,6 +231,11 @@ export class DownloadRecordManager {
 
     static listRecords(): DownloadRecord[] {
         return [...records]
+    }
+
+    static getRecordById(id: string): DownloadRecord | null {
+        const record = records.find(r => r.id === id)
+        return record || null
     }
 
     // 清空全部记录（清理"缓存内容"时调用）
