@@ -13,10 +13,12 @@
       <image style="position: absolute; margin-top: 245px" if="{{anims.show_loading}}" src="{{anims.loading_src.value}}"></image>
       <list class="replylist">
         <list-item type="replies"
-          style="width: 100%; justify-content: center; margin-top: 10px; min-height: {{PlaceHolderShowCheck($item.rpid)}}"
+          style="width: 100%; justify-content: center; margin-top: 10px"
           for="{{replies}}">
           <reply secmode={{secmode}} reply="{{$item}}" @show-tools="ShowTools" @reply="Reply"></reply>
         </list-item>
+        <!-- 尾部占位：为底部悬浮翻页器留出滚动空间（替代原先拉高最后一条评论的 min-height 方案） -->
+        <list-item type="bottom-spacer" style="height: 115px"></list-item>
       </list>
     </scroll>
     <!-- 翻页器为组件自身绝对定位，发评论按钮内嵌在翻页器行内右侧（同尺寸按钮） -->
@@ -162,9 +164,6 @@ export default {
       : {type: this.type, oid: this.oid, reply: evt.detail.reply}
 
     router.push({uri, params})
-  },
-  PlaceHolderShowCheck(rpid) {
-    return rpid === this.replies[this.replies.length - 1]?.rpid ? "315px" : "200px"
   },
   NextPN() {
     if (this.current_pn < this.maxpn) {
