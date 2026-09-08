@@ -2,10 +2,11 @@
 
 <template>
     <div class="page">
-      <text style="margin-top: 233px" if="ShowBigPictureTips">{{ $t("picturedetail.bigImageTip") }}</text>
+      <!-- 大图提示必须是绝对定位覆盖层：留在文档流里会把绝对定位的滚动区顶下去，页面只剩一半 -->
+      <text class="big-image-tip" if="ShowBigPictureTips">{{ $t("picturedetail.bigImageTip") }}</text>
       <scroll class="scroll {{scrclass}}" scroll-x="true" scroll-y="true" @scroll="onScroll" bounces="true" id="scroll">
           <div style="{{container_style}}">
-            <image style="{{img_style}}" src="{{img_uri}}" id="img"></image>
+            <image style="{{img_style}}" src="{{img_uri}}" id="img" oncomplete="onImageComplete"></image>
           </div>
       </scroll>
       <title-bar title="图片预览"></title-bar>
@@ -18,7 +19,6 @@
 </template>
 
 <script>
-import device from "@system.device"
 export default {
   public: {
     img_uri: "/common/logo.png"
@@ -88,29 +88,39 @@ export default {
   onScroll(args) {
     //global.logger.log(args);
   },
-  onReady() {
-    this.$element("img").getBoundingClientRect({
-      success: (rect) => {
-        global.logger.log("image loaded: ", rect);
-        this.base_height = rect.height;
-        this.base_width = rect.width;
-        if(rect.width > 800 && rect.height > 800){
-          this.ShowBigPictureTips = true
-        }
-        setTimeout(() => {
+  onInit() {
+    // 设备信息在 app 启动时已缓存到 global.DEVICE_INFO（TitleBar 等组件均同步使用），
+    // 同步取用，避免与图片测量产生竞态
+    this.deviceInfo = global.DEVICE_INFO
+  },
+  // 图片加载完成后才测量尺寸：onReady 时网络图片通常还没加载完，
+  // 测到 0 会把图片宽高设成 0px，导致首次打开不显示（退出重进命中缓存才显示）
+  onImageComplete() {
+    this.MeasureImage(0)
+  },
+  MeasureImage(attempt) {
+    // 延迟一帧，等布局按图片原始尺寸刷新后再测量
+    setTimeout(() => {
+      this.$element("img").getBoundingClientRect({
+        success: (rect) => {
+          global.logger.log("image loaded: ", rect);
+          // 布局尚未刷新完时可能测到 0，延时重试
+          if ((!rect.width || !rect.height) && attempt < 10) {
+            this.MeasureImage(attempt + 1)
+            return
+          }
+          this.base_height = rect.height;
+          this.base_width = rect.width;
+          if (rect.width > 800 && rect.height > 800) {
+            this.ShowBigPictureTips = true
+          }
           this.UpdateImageStyle({
             progress: this.initialSliderValue
           });
           this.show_toolbar = true;
-        }, 500);
-      }
-    });
-    device.getInfo({
-      success: (info) => {
-        global.logger.log(info);
-        this.deviceInfo = info;
-      }
-    });
+        }
+      });
+    }, 100)
   }
 }
 
@@ -123,6 +133,17 @@ export default {
   height: 100%;
   position: absolute;
   width: 100%;
+  top: 0;
+  left: 0;
+}
+
+// 大图提示：绝对定位覆盖层，不占布局空间
+.big-image-tip {
+  position: absolute;
+  top: 233px;
+  left: 0;
+  width: 100%;
+  text-align: center;
 }
 
 .scroll_toolbar {

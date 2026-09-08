@@ -16,9 +16,8 @@
           style="width: 100%; justify-content: center; margin-top: 10px"
           for="{{replies}}">
           <reply secmode={{secmode}} reply="{{$item}}" @show-tools="ShowTools" @reply="Reply"></reply>
+          <div style="height: {{SpacerHeight($item.rpid)}}"></div>
         </list-item>
-        <!-- 尾部占位：为底部悬浮翻页器留出滚动空间（替代原先拉高最后一条评论的 min-height 方案） -->
-        <list-item type="bottom-spacer" style="height: 115px"></list-item>
       </list>
     </scroll>
     <!-- 翻页器为组件自身绝对定位，发评论按钮内嵌在翻页器行内右侧（同尺寸按钮） -->
@@ -164,6 +163,12 @@ export default {
       : {type: this.type, oid: this.oid, reply: evt.detail.reply}
 
     router.push({uri, params})
+  },
+  // 最后一条评论的跟随占位高度：为底部悬浮翻页器留出滚动空间
+  // （放在 list-item 内部的空 div，不改变 list 单一 type 结构，也不拉高评论卡片本身）
+  SpacerHeight(rpid) {
+    const last = this.replies[this.replies.length - 1]
+    return last && rpid === last.rpid ? "115px" : "0px"
   },
   NextPN() {
     if (this.current_pn < this.maxpn) {
