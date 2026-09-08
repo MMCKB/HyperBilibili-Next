@@ -13,10 +13,9 @@
       <image style="position: absolute; margin-top: 245px" if="{{anims.show_loading}}" src="{{anims.loading_src.value}}"></image>
       <list class="replylist">
         <list-item type="replies"
-          style="width: 100%; justify-content: center; margin-top: 10px"
+          style="width: 100%; justify-content: center; margin-top: 10px; min-height: {{PlaceHolderShowCheck($item.rpid)}}"
           for="{{replies}}">
           <reply secmode={{secmode}} reply="{{$item}}" @show-tools="ShowTools" @reply="Reply"></reply>
-          <div style="height: {{SpacerHeight($item.rpid)}}"></div>
         </list-item>
       </list>
     </scroll>
@@ -164,11 +163,10 @@ export default {
 
     router.push({uri, params})
   },
-  // 最后一条评论的跟随占位高度：为底部悬浮翻页器留出滚动空间
-  // （放在 list-item 内部的空 div，不改变 list 单一 type 结构，也不拉高评论卡片本身）
-  SpacerHeight(rpid) {
-    const last = this.replies[this.replies.length - 1]
-    return last && rpid === last.rpid ? "115px" : "0px"
+  // 调回以前的方案：list-item 必须带 min-height，list 才能正确计算每项高度（去掉后整个评论区不显示）；
+  // 最后一条撑到 315px，为底部悬浮翻页器留出滚动空间
+  PlaceHolderShowCheck(rpid) {
+    return rpid === this.replies[this.replies.length - 1]?.rpid ? "315px" : "200px"
   },
   NextPN() {
     if (this.current_pn < this.maxpn) {
