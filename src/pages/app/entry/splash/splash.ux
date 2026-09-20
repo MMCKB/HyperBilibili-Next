@@ -48,6 +48,12 @@ export default {
       this.anims.splash_out.start()
       setTimeout(async() => {
         if((await this.$app.$def.jumpcheck.NetworkCheck())){
+          // 等待设置加载完成：框架不等待 app onCreate 的 async 完成，
+          // 冷启动 IO 慢时此处可能早于 loadSettings 返回，读到出厂默认值
+          // （agreedAllAgreements=false）会误跳协议页
+          if(global.settingsReady){
+            await global.settingsReady
+          }
           if(!global.settings.SETTINGS.agreedAllAgreements){
             router.replace({
               uri: "pages/app/entry/eularead"

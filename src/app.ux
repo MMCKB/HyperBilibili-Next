@@ -39,8 +39,13 @@ export default {
     global.animengine = animengine
 
     console.log("appinit > loadSettings")
-    await settings.loadSettings()
+    // 先挂载模块对象再加载：避免冷启动 IO 慢时页面读到 undefined 的 global.settings
+    // （SETTINGS 通过模块 live binding 更新，加载完成后各页面读到的即是已加载值）
     global.settings = settings
+    // 框架调用 onCreate 后不会等待 async 完成，页面渲染与此处初始化是并发的；
+    // 把 loadSettings 的 Promise 挂到全局，splash 等待它再判断协议同意状态
+    global.settingsReady = settings.loadSettings()
+    await global.settingsReady
 
     console.log("appinit > initSavedContentManager")
     await savedcontent.SavedContentManager.initialize()

@@ -57,35 +57,54 @@ export let SETTINGS: SettingsInterface = {
   }
 };
 
-export function loadSettings(): Promise<void> {
-  return new Promise((resolve) => {
+// storage.get 的 Promise 封装：fail 时 reject 错误码
+// （Vela 通用错误码：300=I/O 错误 200=系统错误 202=参数错误）
+function readSettingsFromStorage(): Promise<string> {
+  return new Promise((resolve, reject) => {
     storage.get({
       key: 'settings',
       success: function (data) {
-        if (data) {
-          try {
-            const storedSettings = JSON.parse(data);
-            SETTINGS = {
-              ...SETTINGS,
-              ...storedSettings,
-              inputMethodSettings: {
-                ...SETTINGS.inputMethodSettings,
-                ...(storedSettings.inputMethodSettings || {})
-              }
-            };
-          } catch (error) {
-            global.logger.log('Failed to parse stored settings');
-          }
-        }
-        global.logger.log('Settings loaded:', SETTINGS);
-        resolve();
+        resolve(data);
       },
       fail: function (data, code) {
-        global.logger.log(`Failed to load settings, code = ${code}`);
-        resolve();
+        reject(code);
       }
     });
   });
+}
+
+export async function loadSettings(): Promise<void> {
+  // 冷启动时 storage.get 偶发 I/O 失败（错误码 300），若静默放弃会让
+  // SETTINGS 保持出厂默认（agreedAllAgreements=false），已同意协议的
+  // 用户会被误带回协议页。这里重试两次对抗偶发失败。
+  // 注意：key 不存在时按文档走 success 返回空字符串，不会进 fail，
+  // 因此重试不会把"首次使用"误判为失败。
+  for (let attempt = 1; attempt <= 3; attempt++) {
+    try {
+      const data = await readSettingsFromStorage();
+      if (data) {
+        try {
+          const storedSettings = JSON.parse(data);
+          SETTINGS = {
+            ...SETTINGS,
+            ...storedSettings,
+            inputMethodSettings: {
+              ...SETTINGS.inputMethodSettings,
+              ...(storedSettings.inputMethodSettings || {})
+            }
+          };
+        } catch (error) {
+          global.logger.log('Failed to parse stored settings');
+        }
+      }
+      global.logger.log('Settings loaded:', SETTINGS);
+      return;
+    } catch (code) {
+      global.logger.log(`Failed to load settings, code = ${code}, attempt ${attempt}/3`);
+    }
+  }
+  // 三次全部失败：保持出厂默认继续运行（协议页可自恢复，不阻断启动）
+  global.logger.log('Settings load finally failed after retries, keeping defaults');
 }
 
 export function saveSettings(params: Partial<SettingsInterface>): void {
