@@ -1,7 +1,5 @@
 <template>
   <div>
-    <!-- 游客模式：无账号时跳过登录直接匿名浏览（添加账号模式下不显示） -->
-    <text class="guestbtn" if="{{mode !== 'addaccount'}}" @click="EnterGuestMode">游客模式></text>
     <text style="position: absolute; color: rgba(0, 0, 0, 0)">{{ anims.pagediv_mgt.value }}</text>
     <div class="page" style="margin-top: {{ anims.pagediv_mgt.value }}px">
       <text style="font-weight: bold; margin-top: 35px">{{ $t("login.scanToLogin") }}</text>
@@ -41,6 +39,9 @@
         </div>
       </div>
     </div>
+    <!-- 游客模式：渲染于全屏 .page 容器之后，否则被其遮挡导致点击无效；
+         账号弹层打开时隐藏，避免按钮浮在遮罩之上 -->
+    <text class="guestbtn {{guestRectClass}}" if="{{mode !== 'addaccount' && !showAcctPopup}}" @click="EnterGuestMode">游客模式></text>
   </div>
 </template>
 
@@ -51,6 +52,7 @@ import router from "@system.router"
 export default {
   props: ["mode"],
   private: {
+    guestRectClass: "",
     qr_value: "",
     show_qr: false,
     qrpoll_interval: null,
@@ -177,6 +179,11 @@ export default {
     this.qrpoll_interval = setInterval(() => this.PollQR(), 1500)
   },
   onReady() {
+    // 游客按钮字号跟随首页右上角时钟：矩形屏 30px，圆屏 25px
+    if (global.DEVICE_INFO && global.DEVICE_INFO.screenShape == "rect") {
+      this.guestRectClass = "guestbtn-rect"
+    }
+
     const {pagediv_mgt, loading_img_src} = this.anims
 
     this.anims.pagediv = new global.animengine.DomAnim(
@@ -210,14 +217,19 @@ export default {
   background-color: white;
 }
 
-// 右上角游客模式入口
+// 右上角游客模式入口：字号/字重/颜色与首页时钟（TimeView）一致
+// 颜色不单独声明，继承全局 text 白色，与时钟同源
 .guestbtn {
   position: absolute;
   top: 25px;
   right: 30px;
-  font-size: 26px;
-  color: #9e9e9e;
-  font-weight: 500;
+  font-size: 25px;
+  font-weight: 600;
+}
+
+// 矩形屏首页时钟字号为 30px（TimeView .rect-txt）
+.guestbtn-rect {
+  font-size: 30px;
 }
 
 // 选择已有账号按钮：粉色描边胶囊
