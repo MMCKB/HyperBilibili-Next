@@ -55,6 +55,10 @@
           <image class="vidtoolimg" src="/common/vidtool_watchlater.png"></image>
           <text class="vidtooltext">{{ $t("video.showLater") }}</text>
         </div>
+        <div class="vidtool" @click="WatchOnPhone()">
+          <image class="vidtoolimg" src="/common/dmpage_sendbtn.png"></image>
+          <text class="vidtooltext">在手机上看</text>
+        </div>
       </scroll>
       <default-button text="video.sendReply" margin-top="20px" @click="Reply"></default-button>
       <image src="/common/featurebtn_replyarea.png" style="margin-top: 15px" @click="GoReplyArea()"></image>
@@ -63,6 +67,21 @@
       @exit="ExitInput"></full-screen-input>
     <!-- 投币选择面板（22娘，可选投1个或2个币） -->
     <coin-picker if="{{coinpickermode}}" @select="DoCoin" @close="ExitCoinPicker"></coin-picker>
+    <!-- 在手机上看：展示视频页链接二维码，手机B站APP扫码即可跳转观看 -->
+    <div if="{{watchonphone_mode}}" class="phoneqr">
+      <div class="phoneqr-header">
+        <text class="phoneqr-title">在手机上看</text>
+        <div class="phoneqr-closebtn" @click="ClosePhoneQR">
+          <image class="phoneqr-closebtn-img" src="/common/textinput_back.png"></image>
+        </div>
+      </div>
+      <div class="phoneqr-whitebox">
+        <qrcode value="{{phone_qr_url}}" show="{{watchonphone_mode}}" style="width: 210px; height: 210px"></qrcode>
+      </div>
+      <text class="phoneqr-tip">用手机B站APP扫码</text>
+      <text class="phoneqr-tip2">继续观看本视频</text>
+      <text class="phoneqr-cancel" @click="ClosePhoneQR">取消</text>
+    </div>
   </div>
 </template>
 
@@ -86,6 +105,9 @@ export default {
     starsrc: "/common/vidtool_star.png",
     replymode: false,
     coinpickermode: false,
+    // 在手机上看：二维码弹层
+    watchonphone_mode: false,
+    phone_qr_url: "",
     renderingCover: false,
     scrclass: "",
     // 一键三连蓄力环状态
@@ -149,6 +171,14 @@ export default {
       global.logger.error("[AddToWatchLater] error:", error.toString())
       prompt.showToast({ message: "添加失败", duration: 2000 })
     }
+  },
+  // 在手机上看：生成B站视频页链接二维码，手机APP扫码跳转继续观看
+  WatchOnPhone() {
+    this.phone_qr_url = "https://www.bilibili.com/video/" + this.bvid
+    this.watchonphone_mode = true
+  },
+  ClosePhoneQR() {
+    this.watchonphone_mode = false
   },
   async OpenPlayer() {
     const exists = await global.savedcontent.SavedContentManager.checkVideoAudioExists(this.bvid)
@@ -368,21 +398,17 @@ export default {
       message: "由于B站风控，该功能暂不可用"
     })
   },
-  // 视频发布时间格式化（vid.pubdate 为秒级时间戳）
-  // 近期用相对时间，超过一周显示完整日期，跨年补年份
+  // 视频发布时间格式化（vid.pubdate 为秒级时间戳），精确到 年月日 时分秒
   formatPubdate(timestamp) {
     if (!timestamp) return "未知"
-    const now = Math.floor(Date.now() / 1000)
-    const diff = now - timestamp
-    if (diff < 60) return "刚刚"
-    if (diff < 3600) return Math.floor(diff / 60) + "分钟前"
-    if (diff < 86400) return Math.floor(diff / 3600) + "小时前"
-    if (diff < 604800) return Math.floor(diff / 86400) + "天前"
     const date = new Date(timestamp * 1000)
-    const month = (date.getMonth() + 1).toString().padStart(2, "0")
-    const day = date.getDate().toString().padStart(2, "0")
-    if (date.getFullYear() === new Date().getFullYear()) return month + "-" + day
-    return date.getFullYear() + "-" + month + "-" + day
+    const Y = date.getFullYear()
+    const M = (date.getMonth() + 1).toString().padStart(2, "0")
+    const D = date.getDate().toString().padStart(2, "0")
+    const h = date.getHours().toString().padStart(2, "0")
+    const m = date.getMinutes().toString().padStart(2, "0")
+    const s = date.getSeconds().toString().padStart(2, "0")
+    return `${Y}-${M}-${D} ${h}:${m}:${s}`
   },
   // 视频详情：基础信息 + 简介 + AI总结（含分段大纲）合并一页展示
   async ShowVideoDetail() {
@@ -396,10 +422,12 @@ export default {
       ? `${this.vid.owner.name} 等${this.vid.staff.length}位UP主`
       : this.vid.owner.name
     const pubdateStr = this.formatPubdate(this.vid.pubdate)
+    const viewCountStr = this.$app.$def.tools.formatNumber(this.vid.stat.view)
 
     let text =
       `标题：${this.vid.title || "未知"}\n` +
       `发布时间：${pubdateStr}\n` +
+      `播放量：${viewCountStr}\n` +
       `时长：${durationStr}\n` +
       `UP主：${upName}\n\n` +
       `简介：\n${this.vid.desc || "暂无简介"}`

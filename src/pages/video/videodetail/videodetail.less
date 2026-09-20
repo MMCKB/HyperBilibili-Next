@@ -78,3 +78,74 @@
     color: #fb7299;
     layer-color: rgba(251, 114, 153, 0.25);
 }
+
+// 在手机上看：二维码弹层（布局参照投币面板）
+.phoneqr {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: #000000;
+    flex-direction: column;
+    align-items: center;
+}
+
+.phoneqr-header {
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 85px;
+    margin-top: 15px;
+}
+
+.phoneqr-title {
+    font-size: 26px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.phoneqr-closebtn {
+    position: absolute;
+    left: 20px;
+    width: 50px;
+    height: 50px;
+    justify-content: center;
+    align-items: center;
+}
+
+.phoneqr-closebtn-img {
+    width: 35px;
+    height: 35px;
+    object-fit: scale-down;
+}
+
+// 二维码需白底才能被扫描
+.phoneqr-whitebox {
+    margin-top: 35px;
+    width: 233px;
+    height: 233px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 5%;
+    background-color: #ffffff;
+}
+
+.phoneqr-tip {
+    font-size: 22px;
+    font-weight: 600;
+    color: #d0d0d0;
+    margin-top: 30px;
+}
+
+.phoneqr-tip2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: #d0d0d0;
+    margin-top: 8px;
+}
+
+.phoneqr-cancel {
+    font-size: 20px;
+    color: #888888;
+    margin-top: 30px;
+}

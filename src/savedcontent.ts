@@ -60,23 +60,6 @@ export class SavedContentManager {
     global.logger.log("loaded SavedContent StorageIndex", storageIndex)
   }
 
-  // 存储内容
-  static async storeContent(title: string, data: string, type: string): Promise<string | void> {
-    try {
-      const id = generateUUID();
-      const fileUri = `${baseUri}${id}.txt`;
-
-      await asyncFile.writeText({ uri: fileUri, text: data });
-
-      storageIndex.push({ id, title, type, fileUri });
-      await saveStorageIndex();
-
-      return id;
-    } catch (e) {
-      global.logger.error(`[SavedContentManager] storeContent Error: ${e.toString()}`);
-    }
-  }
-
   // 存储视频音频（直接引用已存在的文件）
   static async storeVideoAudio(title: string, audioUri: string, coverUrl: string, author: string, bvid: string): Promise<string | void> {
     try {
@@ -104,26 +87,6 @@ export class SavedContentManager {
   static async checkVideoAudioExists(bvid: string): Promise<boolean> {
     const exists = storageIndex.some(item => item.bvid === bvid && item.type === 'videoAudio');
     return exists;
-  }
-
-  // 根据 id 或 title 读取内容
-  static async getContent(identifier: string): Promise<string | null> {
-    try {
-      const content = storageIndex.find(item => item.id === identifier || item.title === identifier);
-      if (!content) return null;
-
-      // 读取文件内容
-      const fileExists = await asyncFile.access({ uri: content.fileUri });
-      if (!fileExists) {
-        global.logger.log(`[SavedContentManager] 文件不存在：${content.fileUri}`);
-        return null;
-      }
-
-      return await asyncFile.readText({ uri: content.fileUri });
-    } catch (e) {
-      global.logger.error(`[SavedContentManager] getContent Error: ${e.toString()}`);
-      return null;
-    }
   }
 
   // 读取所有存储内容的 id 和 title 列表

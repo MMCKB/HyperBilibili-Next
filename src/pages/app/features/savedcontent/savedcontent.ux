@@ -1,5 +1,4 @@
 <import name="switch-bar" src="@components/SwitchBar/SwitchBar.ux"></import>
-<import name="articleshow" src="@components/Article/Article.ux"></import>
 
 <template>
   <div class="page">
@@ -12,11 +11,6 @@
         <image class="recordentry-arrow" src="/common/arrow_right.png" static></image>
       </div>
       <div style="flex-direction: column; align-items: center; width: 100%" for="{{content}}">
-        <div if="{{$item.type == 'article' ? true : false}}"
-          style="flex-direction: column; align-items: center; width: 100%"
-          onclick="OpenArticle($item.id)" static>
-          <articleshow article="{{$item}}"></articleshow>
-        </div>
         <div if="{{$item.type == 'videoAudio' ? true : false}}"
           class="video-audio-item"
           onclick="PlayVideoAudio($item)" static>
@@ -51,17 +45,6 @@ export default {
     } catch (e) {
       global.logger.error("[savedcontent.PatchContent] Patch Error: " + e.toString())
     }
-  },
-  async OpenArticle(id) {
-    const html = await global.savedcontent.SavedContentManager.getContent(id)
-    router.push({
-      uri: "pages/article/articleshow",
-      params: {
-        cvid: "",
-        offline: true,
-        article_html: html
-      }
-    })
   },
   GoDownloadRecords() {
     router.push({
