@@ -1,0 +1,116 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="default-button" src="@components/DefaultButton/DefaultButton.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll class="scroll {{scrclass}}" scroll-y="true" bounces="true">
+      <title-bar title="chatAppearance.title"></title-bar>
+
+      <div class="preview-panel">
+        <text class="section-title">{{ $t("chatAppearance.preview") }}</text>
+        <div class="preview-background">
+          <!-- 预览复刻聊天页底部悬浮输入条：输入胶囊 + 发送按钮 -->
+          <div class="bar-preview" style="background-color: {{toolbarBackgroundColor}}; border-radius: {{toolbarRadius}}px;">
+            <div class="preview-pill">
+              <text class="preview-pill-text">{{ $t("chatAppearance.previewPill") }}</text>
+            </div>
+            <div class="preview-send"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-heading">
+          <text class="setting-title">{{ $t("chatAppearance.opacity") }}</text>
+          <text class="setting-value">{{ toolbarOpacity }}%</text>
+        </div>
+        <div class="slider-wrapper">
+          <slider class="appearance-slider" min="0" max="100" step="1" value="{{ toolbarOpacity }}" onchange="onOpacityChange"></slider>
+        </div>
+        <div class="adjust-buttons">
+          <div class="adjust-button" onclick="adjustOpacity(-1)"><text class="adjust-button-text">−</text></div>
+          <div class="adjust-button" onclick="adjustOpacity(1)"><text class="adjust-button-text">+</text></div>
+        </div>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-heading">
+          <text class="setting-title">{{ $t("chatAppearance.radius") }}</text>
+          <text class="setting-value">{{ toolbarRadius }}px</text>
+        </div>
+        <div class="slider-wrapper">
+          <slider class="appearance-slider" min="0" max="50" step="1" value="{{ toolbarRadius }}" onchange="onRadiusChange"></slider>
+        </div>
+        <div class="adjust-buttons">
+          <div class="adjust-button" onclick="adjustRadius(-1)"><text class="adjust-button-text">−</text></div>
+          <div class="adjust-button" onclick="adjustRadius(1)"><text class="adjust-button-text">+</text></div>
+        </div>
+      </div>
+
+      <default-button @click="restoreDefaults" primary="true" margin-top="20px" text="chatAppearance.restoreDefaults"></default-button>
+      <text style="margin-top: 30px"></text>
+    </scroll>
+  </div>
+</template>
+
+<script>
+export default {
+  private: {
+    toolbarOpacity: 94,
+    toolbarRadius: 48,
+    toolbarBackgroundColor: "rgba(38, 38, 38, 0.94)",
+    scrclass: ""
+  },
+  clampValue(value, min, max, fallback) {
+    const numericValue = Number(value);
+    if (isNaN(numericValue)) {
+      return fallback;
+    }
+    return Math.max(min, Math.min(max, Math.round(numericValue)));
+  },
+  updatePreview() {
+    this.toolbarOpacity = this.clampValue(this.toolbarOpacity, 0, 100, 94);
+    this.toolbarRadius = this.clampValue(this.toolbarRadius, 0, 50, 48);
+    // 悬浮条底色保持聊天页原有色相 #262626，仅透明度可调
+    this.toolbarBackgroundColor = `rgba(38, 38, 38, ${this.toolbarOpacity / 100})`;
+  },
+  saveAppearance() {
+    this.updatePreview();
+    global.settings.saveSettings({
+      chatToolbarOpacity: this.toolbarOpacity,
+      chatToolbarRadius: this.toolbarRadius
+    });
+  },
+  onOpacityChange(event) {
+    this.toolbarOpacity = event.progress;
+    this.saveAppearance();
+  },
+  onRadiusChange(event) {
+    this.toolbarRadius = event.progress;
+    this.saveAppearance();
+  },
+  adjustOpacity(delta) {
+    this.toolbarOpacity = Number(this.toolbarOpacity) + delta;
+    this.saveAppearance();
+  },
+  adjustRadius(delta) {
+    this.toolbarRadius = Number(this.toolbarRadius) + delta;
+    this.saveAppearance();
+  },
+  restoreDefaults() {
+    this.toolbarOpacity = 94;
+    this.toolbarRadius = 48;
+    this.saveAppearance();
+  },
+  onInit() {
+    this.toolbarOpacity = global.settings.SETTINGS.chatToolbarOpacity;
+    this.toolbarRadius = global.settings.SETTINGS.chatToolbarRadius;
+    this.updatePreview();
+  }
+}
+</script>
+
+<style lang="less">
+@import '@less/global.less';
+@import './chatappearance.less';
+</style>

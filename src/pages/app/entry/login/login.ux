@@ -1,5 +1,7 @@
 <template>
   <div>
+    <!-- 游客模式：无账号时跳过登录直接匿名浏览（添加账号模式下不显示） -->
+    <text class="guestbtn" if="{{mode !== 'addaccount'}}" @click="EnterGuestMode">游客模式></text>
     <text style="position: absolute; color: rgba(0, 0, 0, 0)">{{ anims.pagediv_mgt.value }}</text>
     <div class="page" style="margin-top: {{ anims.pagediv_mgt.value }}px">
       <text style="font-weight: bold; margin-top: 35px">{{ $t("login.scanToLogin") }}</text>
@@ -128,6 +130,16 @@ export default {
   CloseAcctPopup() {
     this.showAcctPopup = false
   },
+  // 游客模式：不登录直接进主页匿名浏览（推荐流等接口无需登录）
+  // 重启后仍会回到登录页（无账号可恢复，游客态不持久化）
+  EnterGuestMode() {
+    // 停掉扫码轮询，防止游客浏览期间后台轮询继续跑
+    this.loginDone = true
+    clearInterval(this.qrpoll_interval)
+    global.animengine.clearPageAnims("loginPage")
+    prompt.showToast({message: "游客模式：私信、收藏等账号功能不可用", duration: 2000})
+    router.replace({uri: "pages/app/features/main"})
+  },
   // 选中账号直接登录：等同账号切换页的 SwitchAccount
   async PickAccount(mid) {
     this.showAcctPopup = false
@@ -196,6 +208,16 @@ export default {
   justify-content: center;
   border-radius: 5%;
   background-color: white;
+}
+
+// 右上角游客模式入口
+.guestbtn {
+  position: absolute;
+  top: 25px;
+  right: 30px;
+  font-size: 26px;
+  color: #9e9e9e;
+  font-weight: 500;
 }
 
 // 选择已有账号按钮：粉色描边胶囊

@@ -19,16 +19,18 @@
         </text>
       </div>
       
-      <!-- 类型导航条 -->
+      <!-- 类型导航条：点击分类文字可直接切页 -->
       <div class="typebar" style.static="margin-top: 13px" if="{{!overview_mode}}">
-        <text class="typetext" style="color: {{typebar_colors.c1}};">{{ $t("searchresult.all") }}</text>
-        <text class="typetext" style="color: {{typebar_colors.c2}}; margin-left: 20px;">{{ $t("searchresult.video") }}</text>
-        <text class="typetext" style="color: {{typebar_colors.c3}}; margin-left: 20px;">{{ $t("searchresult.user") }}</text>
-        <text class="typetext" style="color: {{typebar_colors.c4}}; margin-left: 20px;">{{ $t("searchresult.article") }}</text>
+        <text class="typetext" style="color: {{typebar_colors.c1}};" onclick="SwitchType(0)">{{ $t("searchresult.all") }}</text>
+        <text class="typetext" style="color: {{typebar_colors.c2}}; margin-left: 20px;" onclick="SwitchType(1)">{{ $t("searchresult.video") }}</text>
+        <text class="typetext" style="color: {{typebar_colors.c3}}; margin-left: 20px;" onclick="SwitchType(2)">{{ $t("searchresult.user") }}</text>
+        <text class="typetext" style="color: {{typebar_colors.c4}}; margin-left: 20px;" onclick="SwitchType(3)">{{ $t("searchresult.article") }}</text>
       </div>
-      
-      <!-- 分页 swiper：仅在加载结束后显示 -->
-      <swiper indicator="false" @change="UpdateTypeBarColors" class="swipermain" style.static="margin-top: 15px" if="{{!anims.show_loading}}">
+
+      <!-- 分页 swiper：仅在加载结束后显示
+           loop=false 关闭循环模式：分类页到边即停，
+           消除"任何横移都必然翻页"的误滑，两侧边缘成为无效缓冲区 -->
+      <swiper id="typeswiper" indicator="false" loop="false" @change="UpdateTypeBarColors" class="swipermain" style.static="margin-top: 15px" if="{{!anims.show_loading}}">
         <!-- 第一页：综合结果 -->
         <div class="swiper_box">
           <scroll class="swiper_container" scroll-y="true" if="{{typebar_if.c1}}" @scroll="ScrollOverviewCheck">
@@ -146,6 +148,14 @@ export default {
   },
   SearchBarClick() {
     router.back()
+  },
+  SwitchType(index) {
+    // 点击分类文字切页（loading 中 swiper 未渲染，此时点击忽略）
+    var swiper = this.$element("typeswiper")
+    if (!swiper) return
+    swiper.swipeTo({ index: index })
+    // swipeTo 会触发 @change 同步高亮；此处再显式调用一次，防止部分固件不回调
+    this.UpdateTypeBarColors({ index: index })
   },
   ScrollOverviewCheck(ret) {
     // 当滚动不在顶部时，进入概要模式

@@ -57,7 +57,8 @@
         </div>
       </div>
     </scroll>
-    <sendbox input_text="{{input_text}}" @clickinput="OpenInput" @clicksend="SendMsg" @clickemoji="OpenEmojiPicker" style="position: absolute">
+    <sendbox input_text="{{input_text}}" bar_bg="{{sendboxBg}}" bar_radius="{{sendboxRadius}}"
+      @clickinput="OpenInput" @clicksend="SendMsg" @clickemoji="OpenEmojiPicker" style="position: absolute">
     </sendbox>
     <full-screen-input style="position: absolute" if="{{inputmode}}" initial-text="{{input_text}}" @send="FinishInput"
       @exit="ExitInput"></full-screen-input>
@@ -90,7 +91,10 @@ export default {
       show_loading: false
     },
     input_text: "",
-    scrclass: ""
+    scrclass: "",
+    // 底部悬浮输入条外观（设置-聊天页外观），默认与原固定样式一致
+    sendboxBg: "#262626ef",
+    sendboxRadius: 48
   },
   async SendMsg() {
     // 发送消息
@@ -228,6 +232,14 @@ export default {
     clearInterval(this.messageUpdateInterval)
   },
   onInit() {
+    // 应用聊天页外观设置（与播放器外观同构：透明度 + 圆角）
+    const opacity = Number(global.settings.SETTINGS.chatToolbarOpacity)
+    const radius = Number(global.settings.SETTINGS.chatToolbarRadius)
+    const clampedOpacity = isNaN(opacity) ? 94 : Math.max(0, Math.min(100, opacity))
+    const clampedRadius = isNaN(radius) ? 48 : Math.max(0, Math.min(50, radius))
+    this.sendboxBg = `rgba(38, 38, 38, ${clampedOpacity / 100})`
+    this.sendboxRadius = clampedRadius
+
     global.animengine.defaults.loading.CreateLoadingAnimation(this)
     this.anims.loading.start()
   }

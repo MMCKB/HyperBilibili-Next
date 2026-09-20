@@ -13,6 +13,9 @@ interface SettingsInterface {
   startupPage: string;
   playerToolbarOpacity: number;
   playerToolbarRadius: number;
+  // 聊天页（dmpage）底部悬浮输入条外观，默认值对应当前固定样式
+  chatToolbarOpacity: number;
+  chatToolbarRadius: number;
 
   // 下面的设置项将不在设置页面中展示
   agreedAllAgreements: boolean;
@@ -42,6 +45,9 @@ export let SETTINGS: SettingsInterface = {
   startupPage: "主页",
   playerToolbarOpacity: 30,
   playerToolbarRadius: 30,
+  // #262626ef ≈ 94% 不透明度，原圆角 48px
+  chatToolbarOpacity: 94,
+  chatToolbarRadius: 48,
 
   agreedAllAgreements: false, // 是否已同意所有协议（用户协议 隐私协议 etc.）
   enableUserTracker: true,

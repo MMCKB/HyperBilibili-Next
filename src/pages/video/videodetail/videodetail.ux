@@ -253,7 +253,8 @@ export default {
     }
     this.sanlianFired = true
     const results = await Promise.all([
-      global.biliclient.LikeVideo(this.vid.bvid, 1).catch(() => null),
+      // 已点赞时跳过点赞请求（重复点赞接口会报错），视为成功
+      this.liked ? Promise.resolve({code: 0}) : global.biliclient.LikeVideo(this.vid.bvid, 1).catch(() => null),
       global.biliclient.CoinVideo(this.vid.bvid, 1).catch(() => null),
       global.biliclient.starVideoToDefaultFavFolderByBVID(this.vid.bvid).catch(() => false)
     ])
@@ -284,11 +285,13 @@ export default {
       this.suppressLikeClick = false
       return
     }
-    var result = await global.biliclient.LikeVideo(this.vid.bvid, 1)
-    const message =
-      result.code === 0 ? "点赞成功" : `点赞失败，错误代码：${result.code} 原因：${result.message}`
+    // 已点赞则取消点赞（B站接口 like=2 为取消），未点赞则点赞（like=1）
+    const action = this.liked ? 2 : 1
+    const result = await global.biliclient.LikeVideo(this.vid.bvid, action)
+    const successMessage = action === 2 ? "已取消点赞" : "点赞成功"
+    const failMessage = `${action === 2 ? "取消点赞失败" : "点赞失败"}，错误代码：${result.code} 原因：${result.message}`
     prompt.showToast({
-      message,
+      message: result.code === 0 ? successMessage : failMessage,
       duration: result.code === 0 ? 2000 : 4000
     })
     this.UpdateVideoToolbarStatus()

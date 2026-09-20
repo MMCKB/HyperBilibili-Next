@@ -40,6 +40,11 @@
         <text class="setext_small">{{ $t("settings.playerAppearance") }}</text>
         <image class="arrow" src="/common/arrow_right.png"></image>
       </div>
+      <div class="setbase" @click="GoChatAppearance()">
+        <image class="seticon" src="/common/dm_icon.png"></image>
+        <text class="setext_small">{{ $t("settings.chatAppearance") }}</text>
+        <image class="arrow" src="/common/arrow_right.png"></image>
+      </div>
       <div class="setbase" @click="GoKeyboardSettings()">
         <image class="seticon" src="/common/settings_keyboard.png"></image>
         <text class="setext_small">{{ $t("settings.keyboardSettings") }}</text>
@@ -131,6 +136,11 @@ export default {
   GoPlayerAppearance() {
     router.push({
       uri: "pages/app/features/settings/playerappearance"
+    })
+  },
+  GoChatAppearance() {
+    router.push({
+      uri: "pages/app/features/settings/chatappearance"
     })
   },
   GoKeyboardSettings() {

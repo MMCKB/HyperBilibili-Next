@@ -1,5 +1,5 @@
 <template>
-    <div class="sendbox">
+    <div class="sendbox" style="background-color: {{bar_bg}}; border-radius: {{bar_radius}}px">
         <div class="textbox" @click="GoInput">
             <text class="textbox_text">{{input_text || "点此输入文字"}}</text>
         </div>
@@ -12,8 +12,11 @@
 
 <script>
 export default {
-  props: ["input_text"],
+  props: ["input_text", "bar_bg", "bar_radius"],
   onInit(){
+    // 外观 props 缺省时保持原有固定样式
+    if (!this.bar_bg) this.bar_bg = "#262626ef"
+    if (!this.bar_radius) this.bar_radius = 48
     this.$watch("input_text","onInputTextChanged")
   },
   GoInput(){

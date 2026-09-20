@@ -143,6 +143,7 @@
         "about": "关于应用",
         "debug": "调试",
         "playerAppearance": "播放器外观",
+        "chatAppearance": "聊天页外观",
         "keyboardSettings": "键盘设置"
     },
     "keyboardSettings": {
@@ -182,6 +183,14 @@
         "preview": "效果预览",
         "opacity": "背景不透明度",
         "radius": "工具栏圆角",
+        "restoreDefaults": "恢复默认"
+    },
+    "chatAppearance": {
+        "title": "聊天页外观",
+        "preview": "效果预览",
+        "previewPill": "点此输入文字",
+        "opacity": "背景不透明度",
+        "radius": "悬浮条圆角",
         "restoreDefaults": "恢复默认"
     },
     "opensoftware": {

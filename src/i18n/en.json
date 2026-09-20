@@ -142,6 +142,7 @@
         "about": "About the App",
         "debug": "Debug",
         "playerAppearance": "Player Appearance",
+        "chatAppearance": "Chat Appearance",
         "keyboardSettings": "Keyboard Settings"
     },
     "keyboardSettings": {
@@ -181,6 +182,14 @@
         "preview": "Preview",
         "opacity": "Background Opacity",
         "radius": "Toolbar Corner Radius",
+        "restoreDefaults": "Restore Defaults"
+    },
+    "chatAppearance": {
+        "title": "Chat Appearance",
+        "preview": "Preview",
+        "previewPill": "Tap to type",
+        "opacity": "Background Opacity",
+        "radius": "Floating Bar Corner Radius",
         "restoreDefaults": "Restore Defaults"
     },
     "debug": {
