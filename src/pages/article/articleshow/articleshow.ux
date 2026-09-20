@@ -32,7 +32,10 @@
 <script>
 export default {
   public: {
-    cvid: "cv1"
+    cvid: "cv1",
+    offline: false,
+    // 仅在离线模式（直读本地html）时需要传入该参数
+    article_html: ""
   },
   private: {
     scrclass: "",
@@ -65,7 +68,13 @@ export default {
     // 预留加载delay以避免页面切换的卡顿
     setTimeout(async() => {
       try{
-        const article_html = await global.biliclient.getArticle(this.cvid)
+        let article_html = ""
+        if(this.offline){
+          article_html = this.article_html
+        }
+        else{
+          article_html = await global.biliclient.getArticle(this.cvid)
+        }
 
         const article = this.$app.$def.articletools.parseArticlePageHtml(article_html)
         this.article.readInfo = article.readInfo // 原地更新 减少开辟内存空间

@@ -172,6 +172,9 @@
             "pages/article/articleshow": {
                 "component": "articleshow"
             },
+            "pages/article/articlesave": {
+                "component": "articlesave"
+            },
             "pages/app/features/savedcontent": {
                 "component": "savedcontent"
             },

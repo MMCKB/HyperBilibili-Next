@@ -39,9 +39,6 @@
         </div>
       </div>
     </div>
-    <!-- 游客模式：渲染于全屏 .page 容器之后，否则被其遮挡导致点击无效；
-         账号弹层打开时隐藏，避免按钮浮在遮罩之上 -->
-    <text class="guestbtn {{guestRectClass}}" if="{{mode !== 'addaccount' && !showAcctPopup}}" @click="EnterGuestMode">游客模式></text>
   </div>
 </template>
 
@@ -52,7 +49,6 @@ import router from "@system.router"
 export default {
   props: ["mode"],
   private: {
-    guestRectClass: "",
     qr_value: "",
     show_qr: false,
     qrpoll_interval: null,
@@ -132,16 +128,6 @@ export default {
   CloseAcctPopup() {
     this.showAcctPopup = false
   },
-  // 游客模式：不登录直接进主页匿名浏览（推荐流等接口无需登录）
-  // 重启后仍会回到登录页（无账号可恢复，游客态不持久化）
-  EnterGuestMode() {
-    // 停掉扫码轮询，防止游客浏览期间后台轮询继续跑
-    this.loginDone = true
-    clearInterval(this.qrpoll_interval)
-    global.animengine.clearPageAnims("loginPage")
-    prompt.showToast({message: "游客模式：私信、收藏等账号功能不可用", duration: 2000})
-    router.replace({uri: "pages/app/features/main"})
-  },
   // 选中账号直接登录：等同账号切换页的 SwitchAccount
   async PickAccount(mid) {
     this.showAcctPopup = false
@@ -179,11 +165,6 @@ export default {
     this.qrpoll_interval = setInterval(() => this.PollQR(), 1500)
   },
   onReady() {
-    // 游客按钮字号跟随首页右上角时钟：矩形屏 30px，圆屏 25px
-    if (global.DEVICE_INFO && global.DEVICE_INFO.screenShape == "rect") {
-      this.guestRectClass = "guestbtn-rect"
-    }
-
     const {pagediv_mgt, loading_img_src} = this.anims
 
     this.anims.pagediv = new global.animengine.DomAnim(
@@ -215,21 +196,6 @@ export default {
   justify-content: center;
   border-radius: 5%;
   background-color: white;
-}
-
-// 右上角游客模式入口：字号/字重/颜色与首页时钟（TimeView）一致
-// 颜色不单独声明，继承全局 text 白色，与时钟同源
-.guestbtn {
-  position: absolute;
-  top: 25px;
-  right: 30px;
-  font-size: 25px;
-  font-weight: 600;
-}
-
-// 矩形屏首页时钟字号为 30px（TimeView .rect-txt）
-.guestbtn-rect {
-  font-size: 30px;
 }
 
 // 选择已有账号按钮：粉色描边胶囊
