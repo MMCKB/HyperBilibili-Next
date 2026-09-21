@@ -3,7 +3,6 @@
 <import name="default-button" src="@components/DefaultButton/DefaultButton.ux"></import>
 <import name="online-image" src="@components/BetterOnlineImage/BetterOnlineImage.ux"></import>
 <import name="coin-picker" src="@components/CoinPicker/CoinPicker.ux"></import>
-<import name="time-view" src="@components/TimeView/TimeView.ux"></import>
 
 <template>
   <div class="page">
@@ -68,28 +67,6 @@
       @exit="ExitInput"></full-screen-input>
     <!-- 投币选择面板（22娘，可选投1个或2个币） -->
     <coin-picker if="{{coinpickermode}}" @select="DoCoin" @close="ExitCoinPicker"></coin-picker>
-    <!-- 在手机上看：页面内弹层（if 显隐切换，不走路由，进出无任何过渡动画）；
-         头部与 TitleBar 同款视觉：返回键 + 标题 + 右上角时钟 -->
-    <div if="{{watchonphone_mode}}" class="phoneqr">
-      <div if="{{!useRowLayout}}" class="phoneqr-titlewrap">
-        <time-view style="position: absolute"></time-view>
-        <div class="phoneqr-titlebar" @click="ClosePhoneQR">
-          <image src="/common/icons8-back-100.png" style="width: 30px; height: 30px; margin-right: 5px"></image>
-          <text style="font-size: 32px; font-weight: normal; margin-top: 3px">在手机上看</text>
-        </div>
-      </div>
-      <div if="{{useRowLayout}}" class="phoneqr-titlewrap phoneqr-row">
-        <div class="phoneqr-titlebar phoneqr-barrow" style="{{barRowStyle}}" @click="ClosePhoneQR">
-          <image src="/common/icons8-back-100.png" style="width: 30px; height: 30px; margin-right: 5px"></image>
-          <text style="font-size: 32px; font-weight: normal">在手机上看</text>
-          <time-view style="position: relative"></time-view>
-        </div>
-      </div>
-      <div class="phoneqr-whitebox">
-        <qrcode value="{{phone_qr_url}}" show="{{watchonphone_mode}}" style="width: 210px; height: 210px"></qrcode>
-      </div>
-      <text class="phoneqr-tip">用手机B站扫码观看本视频</text>
-    </div>
   </div>
 </template>
 
@@ -113,11 +90,6 @@ export default {
     starsrc: "/common/vidtool_star.png",
     replymode: false,
     coinpickermode: false,
-    // 在手机上看：页面内弹层（if 显隐切换，进出无过渡动画）
-    watchonphone_mode: false,
-    phone_qr_url: "",
-    barRowStyle: {},
-    useRowLayout: false,
     renderingCover: false,
     scrclass: "",
     // 一键三连蓄力环状态
@@ -147,26 +119,6 @@ export default {
     global.logger.log("[videodetail] load bvid: " + this.bvid)
     this.GetVideoDetail()
     this.UpdateVideoToolbarStatus()
-
-    // 弹层标题栏矩形屏适配（同 TitleBar 逻辑）
-    const deviceInfo = global.DEVICE_INFO
-    if (deviceInfo.screenShape == "rect") {
-      this.barRowStyle["width"] = `${deviceInfo.screenWidth}px`
-      this.useRowLayout = true
-    }
-  },
-  onReady() {
-    // TitleBar 组件在 onInit 阶段已把 onBackPress 绑定为全局返回动画；
-    // 此处覆盖：弹层打开时系统返回/右滑先关弹层（返回上一级），其余走原逻辑。
-    // onReady 晚于组件 onInit，覆盖必定生效
-    this.$options.onBackPress = () => {
-      if (this.watchonphone_mode) {
-        this.watchonphone_mode = false
-        return true
-      }
-      global.ui.OnBackPressTriggered()
-      return true
-    }
   },
   onDestroy() {
     this.SanlianClearTimer()
@@ -202,13 +154,15 @@ export default {
       prompt.showToast({ message: "添加失败", duration: 2000 })
     }
   },
-  // 在手机上看：if 显隐切换弹层（不走路由，router push/back 均带系统转场动画）
+  // 在手机上看：跳转独立页展示视频链接二维码，手机APP扫码观看
+  // 独立路由页走标准 scroll/scrclass 动画机制，进出动画与其他页一致
   WatchOnPhone() {
-    this.phone_qr_url = "https://www.bilibili.com/video/" + this.bvid
-    this.watchonphone_mode = true
-  },
-  ClosePhoneQR() {
-    this.watchonphone_mode = false
+    router.push({
+      uri: "pages/video/watchonphone",
+      params: {
+        bvid: this.bvid
+      }
+    })
   },
   async OpenPlayer() {
     const exists = await global.savedcontent.SavedContentManager.checkVideoAudioExists(this.bvid)

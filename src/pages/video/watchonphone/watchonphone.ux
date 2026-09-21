@@ -1,0 +1,52 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
+      <title-bar title="在手机上看"></title-bar>
+      <!-- 白底二维码：扫描需要 -->
+      <div class="qrbox">
+        <qrcode value="{{qr_url}}" show="{{qr_show}}" style="width: 210px; height: 210px"></qrcode>
+      </div>
+      <text class="qrtip">用手机B站扫码观看本视频</text>
+      <text style="margin-top: 50px"></text>
+    </scroll>
+  </div>
+</template>
+
+<script>
+export default {
+  public: {
+    bvid: ""
+  },
+  private: {
+    scrclass: "",
+    qr_url: "",
+    qr_show: true
+  },
+  onInit() {
+    this.qr_url = "https://www.bilibili.com/video/" + this.bvid
+  }
+}
+</script>
+
+<style lang="less">
+@import '@less/global.less';
+
+.qrbox {
+  margin-top: 60px;
+  width: 233px;
+  height: 233px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 5%;
+  background-color: #ffffff;
+}
+
+.qrtip {
+  font-size: 22px;
+  font-weight: 600;
+  color: #d0d0d0;
+  margin-top: 30px;
+}
+</style>
