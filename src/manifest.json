@@ -97,9 +97,6 @@
             "pages/video/videodetail": {
                 "component": "videodetail"
             },
-            "pages/video/watchonphone": {
-                "component": "watchonphone"
-            },
             "pages/video/player": {
                 "component": "player"
             },
