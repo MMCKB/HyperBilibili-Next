@@ -53,28 +53,3 @@
 .vidtoolimg {
     width: 62px;
 }
-
-// 一键三连区：三个按钮并排，各自拥有独立蓄力环
-.sanlianzone {
-    flex-direction: row;
-}
-
-// 蓄力环：每个按钮一个，B站粉，同步转圈（1 秒一圈），layer 为淡粉轨道
-// 只包住图标区域（约 62px），不包含下方的数字文字
-.vidtool {
-    position: relative;
-}
-
-.sanlianring {
-    position: absolute;
-    left: 2px;
-    top: -10px;
-    width: 80px;
-    height: 80px;
-    radius: 37px;
-    stroke-width: 6px;
-    start-angle: 270deg;
-    total-angle: 360deg;
-    color: #fb7299;
-    layer-color: rgba(251, 114, 153, 0.25);
-}

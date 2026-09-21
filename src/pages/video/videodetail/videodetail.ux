@@ -27,25 +27,19 @@
           <image class="vidtoolimg" src="/common/vidtool_generatemanifest.png"></image>
           <text class="vidtooltext">听视频</text>
         </div>
-        <!-- 一键三连区：长按点赞，三个按钮各自一个独立粉色圆环同步转圈蓄力，松开回退/转满触发 -->
-        <div class="sanlianzone">
-          <div class="vidtool" @click="LikeClick" @touchstart="SanlianStart" @touchend="SanlianEnd" @touchcancel="SanlianEnd">
-            <image class="vidtoolimg" src="{{likesrc}}"></image>
-            <text class="vidtooltext">{{ stat_like }}</text>
-            <progress if="{{sanlianActive}}" class="sanlianring" type="arc" percent="{{sanlianProgress}}"></progress>
-          </div>
-          <div class="vidtool" @click="CoinClick">
-            <image class="vidtoolimg" src="{{coinsrc}}"></image>
-            <text class="vidtooltext">{{ stat_coin }}</text>
-            <progress if="{{sanlianActive}}" class="sanlianring" type="arc" percent="{{sanlianProgress}}"></progress>
-          </div>
-          <div class="vidtool" @click="StarClick">
-            <image class="vidtoolimg" src="{{starsrc}}"></image>
-            <text class="vidtooltext">
-              {{ stat_favorite }}
-            </text>
-            <progress if="{{sanlianActive}}" class="sanlianring" type="arc" percent="{{sanlianProgress}}"></progress>
-          </div>
+        <div class="vidtool" @click="LikeClick">
+          <image class="vidtoolimg" src="{{likesrc}}"></image>
+          <text class="vidtooltext">{{ stat_like }}</text>
+        </div>
+        <div class="vidtool" @click="CoinClick">
+          <image class="vidtoolimg" src="{{coinsrc}}"></image>
+          <text class="vidtooltext">{{ stat_coin }}</text>
+        </div>
+        <div class="vidtool" @click="StarClick">
+          <image class="vidtoolimg" src="{{starsrc}}"></image>
+          <text class="vidtooltext">
+            {{ stat_favorite }}
+          </text>
         </div>
         <div class="vidtool" @click="ShowVideoDetail()">
           <image class="vidtoolimg" src="/common/vidtool_aisummary.png"></image>
@@ -91,15 +85,7 @@ export default {
     replymode: false,
     coinpickermode: false,
     renderingCover: false,
-    scrclass: "",
-    // 一键三连蓄力环状态
-    sanlianActive: false,
-    sanlianProgress: 0,
-    sanlianTimerId: null,
-    sanlianStartTime: 0,
-    sanlianFired: false,
-    // 长按三连后抑制随之而来的 click，避免误触发单次点赞
-    suppressLikeClick: false
+    scrclass: ""
   },
   computed: {
     stat_view() {
@@ -119,9 +105,6 @@ export default {
     global.logger.log("[videodetail] load bvid: " + this.bvid)
     this.GetVideoDetail()
     this.UpdateVideoToolbarStatus()
-  },
-  onDestroy() {
-    this.SanlianClearTimer()
   },
   WIPTips() {
     prompt.showToast({
@@ -214,91 +197,7 @@ export default {
     this.coinsrc = this.coined ? "/common/vidtool_coined.png" : "/common/vidtool_coin.png"
     this.starsrc = this.stared ? "/common/vidtool_stared.png" : "/common/vidtool_star.png"
   },
-  // ---------- 一键三连（B站官方式长按蓄力环） ----------
-  // 按住点赞按钮：粉色圆环绕三按钮转圈（1 秒一圈），依次点亮点赞/投币/收藏图标；
-  // 中途松开全部回退；转满一圈才发起请求，随后提示"三连成功！"
-  SanlianStart() {
-    if (this.sanlianActive) {
-      return
-    }
-    this.sanlianActive = true
-    this.sanlianFired = false
-    this.sanlianProgress = 0
-    this.sanlianStartTime = Date.now()
-    // 按下即点亮点赞图标（与B站官方一致）
-    this.likesrc = "/common/vidtool_liked.png"
-    this.sanlianTimerId = setInterval(() => {
-      // 1000ms 映射到 100%
-      const p = Math.min(100, Math.floor((Date.now() - this.sanlianStartTime) / 10))
-      this.sanlianProgress = p
-      if (p >= 34) {
-        this.coinsrc = "/common/vidtool_coined.png"
-      }
-      if (p >= 67) {
-        this.starsrc = "/common/vidtool_stared.png"
-      }
-      if (p >= 100) {
-        this.SanlianFire()
-      }
-    }, 40)
-  },
-  // 松开/触摸被取消：未蓄满则回退到真实状态；已触发则等状态刷新复位
-  SanlianEnd() {
-    this.SanlianClearTimer()
-    const elapsed = Date.now() - this.sanlianStartTime
-    this.sanlianActive = false
-    this.sanlianProgress = 0
-    if (!this.sanlianFired) {
-      this.UpdateToolBarIconSrc()
-    }
-    // 按住超过 300ms 的松开视为长按：抑制随后派发的 click，避免误触发单次点赞
-    if (elapsed >= 300) {
-      this.suppressLikeClick = true
-      setTimeout(() => {
-        this.suppressLikeClick = false
-      }, 400)
-    }
-  },
-  // 圈满才发起请求：三个操作静默并发，完成后统一提示并刷新一次状态
-  async SanlianFire() {
-    this.SanlianClearTimer()
-    if (this.sanlianFired) {
-      return
-    }
-    this.sanlianFired = true
-    const results = await Promise.all([
-      // 已点赞时跳过点赞请求（重复点赞接口会报错），视为成功
-      this.liked ? Promise.resolve({code: 0}) : global.biliclient.LikeVideo(this.vid.bvid, 1).catch(() => null),
-      global.biliclient.CoinVideo(this.vid.bvid, 1).catch(() => null),
-      global.biliclient.starVideoToDefaultFavFolderByBVID(this.vid.bvid).catch(() => false)
-    ])
-    const likeOk = results[0] && results[0].code === 0
-    const coinOk = results[1] && results[1].code === 0
-    // star 接口成功返回 0（数字），失败返回 false
-    const favOk = results[2] === 0
-    if (likeOk && coinOk && favOk) {
-      prompt.showToast({message: "三连成功！", duration: 2000})
-    } else {
-      const failed = []
-      if (!likeOk) failed.push("点赞")
-      if (!coinOk) failed.push("投币")
-      if (!favOk) failed.push("收藏")
-      prompt.showToast({message: `${failed.join("、")}失败，请重试`, duration: 4000})
-    }
-    this.UpdateVideoToolbarStatus()
-  },
-  SanlianClearTimer() {
-    if (this.sanlianTimerId !== null) {
-      clearInterval(this.sanlianTimerId)
-      this.sanlianTimerId = null
-    }
-  },
   async LikeClick() {
-    // 长按三连后的残余 click 不作处理
-    if (this.suppressLikeClick) {
-      this.suppressLikeClick = false
-      return
-    }
     // 已点赞则取消点赞（B站接口 like=2 为取消），未点赞则点赞（like=1）
     const action = this.liked ? 2 : 1
     const result = await global.biliclient.LikeVideo(this.vid.bvid, action)
