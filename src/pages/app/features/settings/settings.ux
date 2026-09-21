@@ -41,7 +41,7 @@
         <image class="arrow" src="/common/arrow_right.png"></image>
       </div>
       <div class="setbase" @click="GoChatAppearance()">
-        <image class="seticon" src="/common/mypage_messager.png"></image>
+        <image class="seticon" src="/common/settings_chatappearance.png"></image>
         <text class="setext_small">{{ $t("settings.chatAppearance") }}</text>
         <image class="arrow" src="/common/arrow_right.png"></image>
       </div>

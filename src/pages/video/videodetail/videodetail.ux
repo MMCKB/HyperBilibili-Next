@@ -55,8 +55,8 @@
           <image class="vidtoolimg" src="/common/vidtool_watchlater.png"></image>
           <text class="vidtooltext">{{ $t("video.showLater") }}</text>
         </div>
-        <div class="vidtool" @click="WatchOnPhone()">
-          <image class="vidtoolimg" src="/common/dmpage_sendbtn.png"></image>
+        <div class="vidtool" style="width: 105px" @click="WatchOnPhone()">
+          <image class="vidtoolimg" src="/common/vidtool_phone.png"></image>
           <text class="vidtooltext">在手机上看</text>
         </div>
       </scroll>
@@ -67,21 +67,6 @@
       @exit="ExitInput"></full-screen-input>
     <!-- 投币选择面板（22娘，可选投1个或2个币） -->
     <coin-picker if="{{coinpickermode}}" @select="DoCoin" @close="ExitCoinPicker"></coin-picker>
-    <!-- 在手机上看：展示视频页链接二维码，手机B站APP扫码即可跳转观看 -->
-    <div if="{{watchonphone_mode}}" class="phoneqr">
-      <div class="phoneqr-header">
-        <text class="phoneqr-title">在手机上看</text>
-        <div class="phoneqr-closebtn" @click="ClosePhoneQR">
-          <image class="phoneqr-closebtn-img" src="/common/textinput_back.png"></image>
-        </div>
-      </div>
-      <div class="phoneqr-whitebox">
-        <qrcode value="{{phone_qr_url}}" show="{{watchonphone_mode}}" style="width: 210px; height: 210px"></qrcode>
-      </div>
-      <text class="phoneqr-tip">用手机B站APP扫码</text>
-      <text class="phoneqr-tip2">继续观看本视频</text>
-      <text class="phoneqr-cancel" @click="ClosePhoneQR">取消</text>
-    </div>
   </div>
 </template>
 
@@ -105,9 +90,6 @@ export default {
     starsrc: "/common/vidtool_star.png",
     replymode: false,
     coinpickermode: false,
-    // 在手机上看：二维码弹层
-    watchonphone_mode: false,
-    phone_qr_url: "",
     renderingCover: false,
     scrclass: "",
     // 一键三连蓄力环状态
@@ -172,13 +154,14 @@ export default {
       prompt.showToast({ message: "添加失败", duration: 2000 })
     }
   },
-  // 在手机上看：生成B站视频页链接二维码，手机APP扫码跳转继续观看
+  // 在手机上看：跳转独立页展示视频链接二维码，手机APP扫码观看
   WatchOnPhone() {
-    this.phone_qr_url = "https://www.bilibili.com/video/" + this.bvid
-    this.watchonphone_mode = true
-  },
-  ClosePhoneQR() {
-    this.watchonphone_mode = false
+    router.push({
+      uri: "pages/video/watchonphone",
+      params: {
+        bvid: this.bvid
+      }
+    })
   },
   async OpenPlayer() {
     const exists = await global.savedcontent.SavedContentManager.checkVideoAudioExists(this.bvid)
