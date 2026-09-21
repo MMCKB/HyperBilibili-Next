@@ -49,11 +49,14 @@
         "title": "Watch Later",
         "count": "{count} videos",
         "clearAll": "Clear All",
-        "clearConfirm": "Are you sure to clear all watch later videos? This cannot be undone.",
+        "clearConfirm": "Are you sure you want to clear all watch later videos? This cannot be undone.",
         "confirm": "Confirm",
         "cancel": "Cancel",
         "cleared": "Cleared",
         "empty": "No watch later videos"
+    },
+    "watchonphone": {
+        "title": "Watch on Phone"
     },
     "login": {
         "scanToLogin": "Scan to Login",

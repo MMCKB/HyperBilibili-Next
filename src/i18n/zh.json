@@ -56,6 +56,9 @@
         "cleared": "已清空",
         "empty": "暂无稍后再看的视频"
     },
+    "watchonphone": {
+        "title": "在手机上看"
+    },
     "login": {
         "scanToLogin": "扫码登录",
         "goToOfficialApp": "请前往官方客户端",

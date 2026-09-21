@@ -1,11 +1,29 @@
-<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+<import name="time-view" src="@components/TimeView/TimeView.ux"></import>
 
 <template>
   <div class="page">
     <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
-      <title-bar title="在手机上看"></title-bar>
-      <!-- 白底二维码：扫描需要 -->
-      <div class="qrbox">
+      <!-- 标题栏：逐行复刻 TitleBar 组件结构与样式（返回键+标题+右上角时钟），
+           保证位置与其他页完全一致；自绘以便接管返回流程（见 LeavePage） -->
+      <div if="{{!useRowLayout}}" class="comp-root">
+        <time-view style="position: absolute"></time-view>
+        <div class="titlebar" @click="RouterBack">
+          <image src="/common/icons8-back-100.png" style="width: 30px; height: 30px; margin-right: 5px"></image>
+          <text style="font-size: 32px; font-weight: normal; margin-top: 3px">{{ $t("watchonphone.title") }}</text>
+        </div>
+      </div>
+      <div if="{{useRowLayout}}" class="comp-root row">
+        <div class="titlebar bar-row" style="{{barRowStyle}}" @click="RouterBack">
+          <image src="/common/icons8-back-100.png" style="width: 30px; height: 30px; margin-right: 5px"></image>
+          <text style="font-size: 32px; font-weight: normal">{{ $t("watchonphone.title") }}</text>
+          <time-view style="position: relative"></time-view>
+        </div>
+      </div>
+
+      <!-- 白底二维码：扫描需要。
+           qrcode 为原生渲染组件，会破坏 CSS transform 过渡动画，
+           因此进入动画播完后再渲染（qr_show 延迟置 true），返回前先卸载 -->
+      <div class="qrbox" if="{{qr_show}}">
         <qrcode value="{{qr_url}}" show="{{qr_show}}" style="width: 210px; height: 210px"></qrcode>
       </div>
       <text class="qrtip">用手机B站扫码观看本视频</text>
@@ -22,16 +40,78 @@ export default {
   private: {
     scrclass: "",
     qr_url: "",
-    qr_show: true
+    qr_show: false,
+    barRowStyle: {},
+    useRowLayout: false,
+    leaving: false
   },
   onInit() {
+    // 注册进全局 vmPool：OnBackPressTriggered 依赖它给本页设退场动画类、
+    // 给底层页设复原动画类。不注册则返回动画无法播放
+    global.ui.InitPage(this)
+
     this.qr_url = "https://www.bilibili.com/video/" + this.bvid
+
+    const deviceInfo = global.DEVICE_INFO
+    if (deviceInfo.screenShape == "rect") {
+      this.barRowStyle["width"] = `${deviceInfo.screenWidth}px`
+      this.useRowLayout = true
+    }
+
+    // 入场动画（.scroll 的 openpage-scroll，500ms）播完后再渲染二维码，
+    // 避免原生渲染的 qrcode 破坏 transform 动画
+    setTimeout(() => {
+      this.qr_show = true
+    }, 550)
+  },
+  RouterBack() {
+    this.LeavePage()
+  },
+  // 系统返回/右滑：与返回键一致
+  onBackPress() {
+    this.LeavePage()
+    return true
+  },
+  // 返回流程：先卸载二维码（原生层会破坏退场动画），再走全局返回动画
+  // （本页 scroll-backanim 退场 → router.back → 底层视频详情页 frombackanim 复原），
+  // 与其他页的返回动画完全一致
+  LeavePage() {
+    if (this.leaving) return
+    this.leaving = true
+    this.qr_show = false
+    setTimeout(() => {
+      global.ui.OnBackPressTriggered()
+    }, 60)
   }
 }
 </script>
 
 <style lang="less">
 @import '@less/global.less';
+
+// 以下标题栏类与 TitleBar 组件中的定义完全一致，保证视觉与位置统一
+.comp-root {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.row {
+  flex-direction: row;
+}
+
+.titlebar {
+  margin-top: 45px;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 10px;
+}
+
+.bar-row {
+  justify-content: flex-start;
+  margin-top: 10px;
+  margin-left: 100px;
+}
 
 .qrbox {
   margin-top: 60px;
