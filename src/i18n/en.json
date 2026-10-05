@@ -58,6 +58,10 @@
     "watchonphone": {
         "title": "Watch on Phone"
     },
+    "episodelist": {
+        "title": "Episodes",
+        "entry": "Episodes"
+    },
     "login": {
         "scanToLogin": "Scan to Login",
         "goToOfficialApp": "Please visit the official app",

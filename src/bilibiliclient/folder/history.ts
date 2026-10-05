@@ -21,6 +21,13 @@ export const BilibiliClientHistoryMethods = {
         return response.data;
     },
 
+    // 判断视频是否已在稍后再看列表中
+    async isVideoInWatchLaterByBVID(this: any, bvid: string): Promise<boolean> {
+        const data = await this.getWatchLaterList();
+        const list = (data && data.list) || [];
+        return list.some((v: any) => v.bvid === bvid);
+    },
+
     // 从稍后再看删除单个视频
     async removeFromWatchLater(this: any, aid: string): Promise<any> {
         const url = `https://api.bilibili.com/x/v2/history/toview/del`;

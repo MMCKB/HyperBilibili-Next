@@ -1,0 +1,173 @@
+<import name="title-bar" src="@components/TitleBar/TitleBar.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
+      <title-bar title="episodelist.title"></title-bar>
+
+      <!-- 分P列表：多P视频显示，点击直接听该分P -->
+      <div class="section" if="{{pages.length > 1}}">
+        <text class="sectiontitle">选集（{{pages.length}}P）</text>
+        <div class="item" for="{{pages}}" @click="PlayPage($index, $item)">
+          <text class="itemindex">P{{$index + 1}}</text>
+          <text class="itemtitle">{{$item.part}}</text>
+        </div>
+      </div>
+
+      <!-- 合集列表：点击合集内视频进入其详情页 -->
+      <div class="section" if="{{episodes.length > 0}}">
+        <text class="sectiontitle">合集：{{seasonTitle}}</text>
+        <div class="item" for="{{episodes}}" @click="OpenEpisode($item)">
+          <image class="itemcover" src="{{$item.cover}}@44w_44h"></image>
+          <div class="iteminfo">
+            <text class="itemtitle2">{{$item.title}}</text>
+            <text class="itemup">{{$item.author}}</text>
+          </div>
+        </div>
+      </div>
+
+      <text style="margin-top: 40px"></text>
+    </scroll>
+  </div>
+</template>
+
+<script>
+import router from "@system.router"
+import prompt from "@system.prompt"
+
+export default {
+  public: {
+    bvid: ""
+  },
+  private: {
+    scrclass: "",
+    pages: [],
+    episodes: [],
+    seasonTitle: ""
+  },
+  async LoadEpisodes() {
+    try {
+      const info = await global.biliclient.getVideoInfoByBVID(this.bvid)
+
+      // 分P：view 接口的 pages 字段（每P含 cid/part 名称）
+      this.pages = info.pages || []
+
+      // 合集：ugc_season.sections[].episodes[]，每集是独立视频（bvid）
+      const season = info.ugc_season
+      if (season) {
+        this.seasonTitle = season.title || "合集"
+        const eps = []
+        ;(season.sections || []).forEach((sec) => {
+          (sec.episodes || []).forEach((ep) => {
+            eps.push({
+              bvid: ep.bvid,
+              title: ep.title,
+              cover: ep.cover,
+              author: (ep.author && ep.author.name) || ""
+            })
+          })
+        })
+        this.episodes = eps
+      }
+    } catch (e) {
+      global.logger.error("[episodelist] load error:", e.toString())
+      prompt.showToast({message: "加载选集失败", duration: 3000})
+    }
+  },
+  // 听指定分P：传 pageIndex/pageName 给播放器
+  PlayPage(index, item) {
+    router.push({
+      uri: "pages/video/player",
+      params: {
+        bvid: this.bvid,
+        pageIndex: index,
+        pageName: item.part
+      }
+    })
+  },
+  // 打开合集内视频详情
+  OpenEpisode(ep) {
+    router.push({
+      uri: "pages/video/videodetail",
+      params: {
+        bvid: ep.bvid
+      }
+    })
+  },
+  onInit() {
+    this.LoadEpisodes()
+  }
+}
+</script>
+
+<style lang="less">
+@import '@less/global.less';
+
+.section {
+  width: 88%;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sectiontitle {
+  font-size: 26px;
+  font-weight: 600;
+  color: #d0d0d0;
+  margin-top: 25px;
+  margin-bottom: 5px;
+}
+
+.item {
+  flex-direction: row;
+  align-items: center;
+  width: 100%;
+  min-height: 80px;
+  border-radius: 22px;
+  background-color: #262626;
+  border-width: 2px;
+  border-color: rgba(255, 255, 255, 0.08);
+  margin-top: 12px;
+  padding: 10px 20px;
+}
+
+.itemindex {
+  font-size: 24px;
+  font-weight: 600;
+  color: #FF7DA8;
+  width: 60px;
+}
+
+.itemtitle {
+  font-size: 24px;
+  font-weight: 600;
+  color: #ffffff;
+  lines: 1;
+  flex-size: 1;
+}
+
+.itemcover {
+  width: 66px;
+  height: 42px;
+  border-radius: 8px;
+  object-fit: cover;
+  margin-right: 16px;
+}
+
+.iteminfo {
+  flex-direction: column;
+  flex-size: 1;
+}
+
+.itemtitle2 {
+  font-size: 22px;
+  font-weight: 600;
+  color: #ffffff;
+  lines: 2;
+}
+
+.itemup {
+  font-size: 18px;
+  color: #9e9e9e;
+  margin-top: 6px;
+}
+</style>

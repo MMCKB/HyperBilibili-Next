@@ -59,6 +59,10 @@
     "watchonphone": {
         "title": "在手机上看"
     },
+    "episodelist": {
+        "title": "选集/合集",
+        "entry": "选集/合集"
+    },
     "login": {
         "scanToLogin": "扫码登录",
         "goToOfficialApp": "请前往官方客户端",

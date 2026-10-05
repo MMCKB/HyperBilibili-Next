@@ -139,7 +139,7 @@
   import request from "@system.request";
   import { asyncFile } from "../../../asyncapi/file";
   export default {
-    props: { playlistId: { default: null }, startIndex: { default: 0 }, tracks: { default: null }, bvid: { default: null }, cachedAudioUri: { default: null }, cachedTitle: { default: null }, cachedCoverUrl: { default: null }, cachedAuthor: { default: null } },
+    props: { playlistId: { default: null }, startIndex: { default: 0 }, tracks: { default: null }, bvid: { default: null }, pageIndex: { default: 0 }, pageName: { default: null }, cachedAudioUri: { default: null }, cachedTitle: { default: null }, cachedCoverUrl: { default: null }, cachedAuthor: { default: null } },
     data: {
       scrclass: "",
       index: 0,
@@ -605,14 +605,16 @@
             if (requestId !== that.currentRequestId) {
               return;
             }
+            // 分P播放：曲目名后缀分P名
+            const displayName = that.pageName ? `${info.title} · ${that.pageName}` : info.title;
             that.currSong = {
               id: that.videoBvid,
-              name: info.title,
+              name: displayName,
               al: { picUrl: info.pic },
               ar: [{ name: info.owner?.name || "未知" }]
             };
             that.songList = [that.currSong];
-            const audioUrl = await global.biliclient.getVideoBestAudioUrlByBVID(that.videoBvid);
+            const audioUrl = await global.biliclient.getVideoBestAudioUrlByBVID(that.videoBvid, that.pageIndex);
             if (requestId !== that.currentRequestId) {
               return;
             }
@@ -905,10 +907,12 @@
         }
        
         const coverUrl = videoInfo.pic ? videoInfo.pic + '@319w_150h' : '';
-       
+
+        // 分P播放：曲目名后缀分P名
+        const displayName = that.pageName ? `${videoInfo.title} · ${that.pageName}` : videoInfo.title;
         that.songList = [{
           id: that.videoBvid,
-          name: videoInfo.title,
+          name: displayName,
           al: { picUrl: coverUrl },
           ar: [{ name: videoInfo.owner.name }]
         }];
@@ -916,12 +920,12 @@
         that.index = 0;
         that.imageLoaded = false;
         that.audioReady = false;
-       
+
         if (coverUrl) {
           that.downloadCoverImage(coverUrl, requestId);
         }
-       
-        return global.biliclient.getVideoBestAudioUrlByBVID(that.videoBvid);
+
+        return global.biliclient.getVideoBestAudioUrlByBVID(that.videoBvid, that.pageIndex);
       }).then((audioUrl) => {
         if (requestId !== that.currentRequestId) {
           return;

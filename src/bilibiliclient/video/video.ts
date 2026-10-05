@@ -56,9 +56,11 @@ export const BilibiliClientVideoMethods = {
         return response.data.data;
     },
 
-    async getVideoBestAudioUrlByBVID(this: any, bvid: string): Promise<string> {
+    async getVideoBestAudioUrlByBVID(this: any, bvid: string, page_index: number = 0): Promise<string> {
         const info = await this.getVideoInfoByBVID(bvid);
-        const cid = info.cid || info.pages?.[0]?.cid;
+        // 指定分P：取对应 page 的 cid；越界时回退到第一个
+        const page = (info.pages || [])[page_index] || info.pages?.[0];
+        const cid = (page && page.cid) || info.cid;
         if (!cid) {
             throw new Error("cid not found");
         }
