@@ -3,7 +3,6 @@
 <import name="default-button" src="@components/DefaultButton/DefaultButton.ux"></import>
 <import name="online-image" src="@components/BetterOnlineImage/BetterOnlineImage.ux"></import>
 <import name="coin-picker" src="@components/CoinPicker/CoinPicker.ux"></import>
-<import name="fav-folder-picker" src="@components/FavFolderPicker/FavFolderPicker.ux"></import>
 
 <template>
   <div class="page">
@@ -64,8 +63,6 @@
       @exit="ExitInput"></full-screen-input>
     <!-- 投币选择面板（22娘，可选投1个或2个币） -->
     <coin-picker if="{{coinpickermode}}" @select="DoCoin" @close="ExitCoinPicker"></coin-picker>
-    <!-- 收藏夹选择面板：选择收藏到哪个文件夹 -->
-    <fav-folder-picker if="{{favfolderpickermode}}" aid="{{vid.aid}}" @close="ExitFavFolderPicker"></fav-folder-picker>
   </div>
 </template>
 
@@ -89,7 +86,6 @@ export default {
     starsrc: "/common/vidtool_star.png",
     replymode: false,
     coinpickermode: false,
-    favfolderpickermode: false,
     // 稍后再看：已添加状态与图标（toggle 支持）
     watchlater_added: false,
     watchlatersrc: "/common/vidtool_watchlater.png",
@@ -249,13 +245,25 @@ export default {
     // 打开投币选择面板（22娘，可选投1个或2个币）
     this.coinpickermode = true
   },
-  StarClick() {
-    // 打开收藏夹选择面板：选择收藏到哪个文件夹（夹内可取消收藏）
-    this.favfolderpickermode = true
-  },
-  ExitFavFolderPicker() {
-    // 关闭后刷新总收藏状态（图标高亮）
-    this.favfolderpickermode = false
+  async StarClick() {
+    // 已收藏则取消收藏（从默认收藏夹移除），未收藏则收藏到默认收藏夹
+    if (this.stared) {
+      var unstarResult = await global.biliclient.unstarVideoFromDefaultFavFolderByBVID(this.vid.bvid)
+      var unstarMessage =
+        unstarResult === 0 ? "已取消收藏" : `取消收藏失败，原因：${unstarResult}`
+      prompt.showToast({
+        message: unstarMessage,
+        duration: unstarResult === 0 ? 2000 : 4000
+      })
+    } else {
+      var starResult = await global.biliclient.starVideoToDefaultFavFolderByBVID(this.vid.bvid)
+      var starMessage =
+        starResult === 0 ? "收藏成功" : `收藏失败，原因：${starResult}`
+      prompt.showToast({
+        message: starMessage,
+        duration: starResult === 0 ? 2000 : 4000
+      })
+    }
     this.UpdateVideoToolbarStatus()
   },
   ExitCoinPicker() {
