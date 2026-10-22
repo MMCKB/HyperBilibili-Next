@@ -150,6 +150,7 @@ export default {
     if (this.sending) return
     this.sending = true
     try {
+      // 1) 先尝试视频卡片
       const result = await global.biliclient.SendDMVideoCard(
         this.selected_uid,
         this.bvid,
@@ -159,25 +160,27 @@ export default {
         this.pic,
         this.duration
       )
-
       if (result && result.code == 0) {
         prompt.showToast({message: "已发送"})
         this.LeavePage()
         return
       }
+      const cardError = result ? `卡片${result.code}` : "卡片无响应"
 
-      // 卡片发送被拒（格式/风控）：降级为文本链接私信
+      // 2) 卡片被拒：等 1 秒再降级发文本（连续请求会触发B站私信频控，
+      //    上一轮卡片失败后立刻发文本也被拒，两连败表现为"发送失败404"）
+      await new Promise((resolve) => setTimeout(resolve, 1000))
       const link = "https://www.bilibili.com/video/" + this.bvid
       const content = `【${this.title}】 ${link}`
       const fallback = await global.biliclient.SendDMSessionMessage(this.selected_uid, 1, content)
 
       if (fallback && fallback.code == 0) {
-        prompt.showToast({message: "已发送（文本链接）"})
+        prompt.showToast({message: "卡片被拒，已改发文本链接"})
         this.LeavePage()
       } else {
-        const reason = (fallback && (fallback.message || fallback.code)) ||
-          (result && `${result.code} ${result.message}`) || "未知错误"
-        prompt.showToast({message: `发送失败：${reason}`.slice(0, 80), duration: 5000})
+        // 分层显示两层错误码，便于一次定位
+        const textError = fallback ? `${fallback.message || fallback.code}` : "无响应"
+        prompt.showToast({message: `发送失败 ${cardError}；文本${textError}`.slice(0, 100), duration: 5000})
       }
     } catch (e) {
       global.logger.error("[sharevideo.DoShare] error:", e.toString())
