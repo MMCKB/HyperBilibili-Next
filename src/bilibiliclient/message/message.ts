@@ -102,4 +102,33 @@ export const BilibiliClientMessageMethods = {
         // 返回完整响应体（含 code/message），调用方按 result.code 判断发送结果
         return response
     },
+
+    // 发送视频卡片私信（B站手机端"分享到私信"同款：msg_type=10 分享卡片，
+    // 接收方B站客户端显示可点击的视频卡片）
+    // 注意卡片消息的 content 为裸视频信息 JSON，不能按文本消息再包一层 {"content": ...}
+    async SendDMVideoCard(this: any, receiver_id: string, bvid: string, aid: number, cid: number, title: string, cover: string, duration: number) {
+        const url = "https://api.vc.bilibili.com/svr_sync/v1/svr_sync/send_msg";
+        const card = {
+            content: bvid,
+            media_type: 2,
+            bvid: bvid,
+            aid: aid,
+            cid: cid,
+            duration: duration,
+            cover_url: cover,
+            jump_url: "//www.bilibili.com/video/" + bvid,
+            jump_text: "哔哩哔哩",
+            title: title,
+            play_count: 0,
+            danmaku_count: 0
+        }
+        const body = `msg[sender_uid]=${this.accountInfo.mid}&msg[receiver_id]=${receiver_id}&msg[receiver_type]=1&msg[msg_type]=10&msg[dev_id]=${this.dm_deviceid}&msg[timestamp]=${Number.parseInt(((new Date()).getTime() / 1000).toString())}&msg[content]=${encodeURIComponent(JSON.stringify(card))}&msg[msg_status]=0&msg[new_face_version]=0&csrf=${this.biliJct}&csrf_token=${this.biliJct}`;
+
+        const response = await this.postRequest(url, body, "application/x-www-form-urlencoded");
+
+        if (!response) {
+            return { code: -1, message: "网络请求失败" }
+        }
+        return response
+    },
 };

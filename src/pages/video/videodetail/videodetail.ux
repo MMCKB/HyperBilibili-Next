@@ -175,13 +175,17 @@ export default {
       }
     })
   },
-  // 分享：跳转私信好友选择页，选中账号后以文本私信发送视频链接
+  // 分享：跳转私信好友选择页，选中账号后发送视频卡片私信
   ShareVideo() {
     router.push({
       uri: "pages/video/sharevideo",
       params: {
         bvid: this.bvid,
-        title: this.vid.title || ""
+        title: this.vid.title || "",
+        aid: this.vid.aid,
+        cid: this.vid.cid,
+        pic: this.vid.pic,
+        duration: this.vid.duration
       }
     })
   },

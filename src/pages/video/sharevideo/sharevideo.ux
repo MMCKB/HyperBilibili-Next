@@ -49,7 +49,12 @@ import prompt from "@system.prompt"
 export default {
   public: {
     bvid: "",
-    title: ""
+    title: "",
+    // 视频卡片所需数据（videodetail 传入）
+    aid: 0,
+    cid: 0,
+    pic: "",
+    duration: 0
   },
   private: {
     scrclass: "",
@@ -140,26 +145,39 @@ export default {
   SelectAccount(uid) {
     this.selected_uid = this.selected_uid === uid ? "" : uid
   },
-  // 发送视频链接私信（文本消息：标题 + 链接），成功后按标准返回动画回上一级
+  // 发送视频卡片私信（手机端同款分享卡片）；卡片被拒时降级为文本链接，确保分享总能送达
   async DoShare() {
     if (this.sending) return
     this.sending = true
     try {
-      const link = "https://www.bilibili.com/video/" + this.bvid
-      // 单行内容：标题与链接空格分隔，避免换行符触发内容风控
-      const content = `【${this.title}】 ${link}`
-      const result = await global.biliclient.SendDMSessionMessage(this.selected_uid, 1, content)
-      if (!result) {
-        // postRequest 网络失败返回 undefined 时 response.data 为空
-        prompt.showToast({message: "发送失败：无响应（网络错误或登录态失效）", duration: 5000})
-      } else if (result.code == 0) {
-        // 宽松比较：svr_sync 老接口返回的 code 是字符串 "0" 而非数字 0，
-        // 严格相等会把成功误判为失败
+      const result = await global.biliclient.SendDMVideoCard(
+        this.selected_uid,
+        this.bvid,
+        this.aid,
+        this.cid,
+        this.title,
+        this.pic,
+        this.duration
+      )
+
+      if (result && result.code == 0) {
         prompt.showToast({message: "已发送"})
         this.LeavePage()
+        return
+      }
+
+      // 卡片发送被拒（格式/风控）：降级为文本链接私信
+      const link = "https://www.bilibili.com/video/" + this.bvid
+      const content = `【${this.title}】 ${link}`
+      const fallback = await global.biliclient.SendDMSessionMessage(this.selected_uid, 1, content)
+
+      if (fallback && fallback.code == 0) {
+        prompt.showToast({message: "已发送（文本链接）"})
+        this.LeavePage()
       } else {
-        // 完整显示 B站返回的错误码与原因（同 dmpage 发送失败提示格式）
-        prompt.showToast({message: `发送失败！错误代码：${result.code} 原因：${result.message}`, duration: 5000})
+        const reason = (fallback && (fallback.message || fallback.code)) ||
+          (result && `${result.code} ${result.message}`) || "未知错误"
+        prompt.showToast({message: `发送失败：${reason}`.slice(0, 80), duration: 5000})
       }
     } catch (e) {
       global.logger.error("[sharevideo.DoShare] error:", e.toString())
