@@ -146,17 +146,22 @@ export default {
     this.sending = true
     try {
       const link = "https://www.bilibili.com/video/" + this.bvid
-      const content = `【${this.title}】\n${link}`
+      // 单行内容：标题与链接空格分隔，避免换行符触发内容风控
+      const content = `【${this.title}】 ${link}`
       const result = await global.biliclient.SendDMSessionMessage(this.selected_uid, 1, content)
-      if (result.code === 0) {
+      if (!result) {
+        // postRequest 网络失败返回 undefined 时 response.data 为空
+        prompt.showToast({message: "发送失败：无响应（网络错误或登录态失效）", duration: 5000})
+      } else if (result.code === 0) {
         prompt.showToast({message: "已发送"})
         this.LeavePage()
       } else {
-        prompt.showToast({message: `发送失败：${result.message || result.code}`, duration: 4000})
+        // 完整显示 B站返回的错误码与原因（同 dmpage 发送失败提示格式）
+        prompt.showToast({message: `发送失败！错误代码：${result.code} 原因：${result.message}`, duration: 5000})
       }
     } catch (e) {
       global.logger.error("[sharevideo.DoShare] error:", e.toString())
-      prompt.showToast({message: "发送失败，请重试", duration: 4000})
+      prompt.showToast({message: `发送失败！${(e && e.message) || e.toString()}`.slice(0, 80), duration: 5000})
     }
     this.sending = false
   },
