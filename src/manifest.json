@@ -103,6 +103,9 @@
             "pages/video/watchonphone": {
                 "component": "watchonphone"
             },
+            "pages/video/sharevideo": {
+                "component": "sharevideo"
+            },
             "pages/video/player": {
                 "component": "player"
             },

@@ -58,6 +58,9 @@
     "watchonphone": {
         "title": "Watch on Phone"
     },
+    "sharevideo": {
+        "title": "Share"
+    },
     "episodelist": {
         "title": "Episodes",
         "entry": "Episodes"

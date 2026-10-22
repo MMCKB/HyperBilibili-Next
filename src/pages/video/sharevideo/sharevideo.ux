@@ -1,0 +1,254 @@
+<import name="time-view" src="@components/TimeView/TimeView.ux"></import>
+
+<template>
+  <div class="page">
+    <scroll scroll-y="true" class="scroll {{scrclass}}" bounces="true">
+      <!-- 标题栏：复刻 TitleBar 结构与样式（返回键+标题+右上角时钟），位置与其他页一致；
+           唯一变动：选中账号后右上角时钟替换为"发送"按钮 -->
+      <div if="{{!useRowLayout}}" class="comp-root">
+        <time-view if="{{!selected_uid}}" style="position: absolute"></time-view>
+        <text if="{{selected_uid}}" class="sendbtn" @click="DoShare">发送</text>
+        <div class="titlebar" @click="RouterBack">
+          <image src="/common/icons8-back-100.png" style="width: 30px; height: 30px; margin-right: 5px"></image>
+          <text style="font-size: 32px; font-weight: normal; margin-top: 3px">{{ $t("sharevideo.title") }}</text>
+        </div>
+      </div>
+      <div if="{{useRowLayout}}" class="comp-root row">
+        <div class="titlebar bar-row" style="{{barRowStyle}}" @click="RouterBack">
+          <image src="/common/icons8-back-100.png" style="width: 30px; height: 30px; margin-right: 5px"></image>
+          <text style="font-size: 32px; font-weight: normal">{{ $t("sharevideo.title") }}</text>
+          <time-view if="{{!selected_uid}}" style="position: relative"></time-view>
+          <text if="{{selected_uid}}" class="sendbtn-row" @click="DoShare">发送</text>
+        </div>
+      </div>
+
+      <image style="position: absolute; margin-top: 245px" if="{{anims.show_loading}}" src="{{anims.loading_src.value}}">
+      </image>
+
+      <!-- 好友网格：一排三个，头像在上名称在下；选中后头像粉圈包裹+右下角打勾 -->
+      <div class="accountgrid" if="{{show_accounts}}">
+        <div class="accountitem" for="{{accounts}}" @click="SelectAccount($item.uid)">
+          <div class="avatarwrap">
+            <image class="accountface {{$item.uid === selected_uid ? 'face-selected' : ''}}"
+              src="{{$item.face}}@75w_75h" alt="/common/fullgray.png"></image>
+            <div if="{{$item.uid === selected_uid}}" class="checkbadge">
+              <image class="checkicon" src="/common/trueicon.png"></image>
+            </div>
+          </div>
+          <text class="accountname" style="lines: 1">{{$item.name}}</text>
+        </div>
+      </div>
+      <text style="margin-top: 40px"></text>
+    </scroll>
+  </div>
+</template>
+
+<script>
+import prompt from "@system.prompt"
+
+export default {
+  public: {
+    bvid: "",
+    title: ""
+  },
+  private: {
+    scrclass: "",
+    accounts: [],
+    // 选中的目标账号 UID；空串时右上角显示时钟，非空显示"发送"
+    selected_uid: "",
+    show_accounts: false,
+    barRowStyle: {},
+    useRowLayout: false,
+    sending: false,
+    anims: {
+      show_loading: false
+    }
+  },
+  onInit() {
+    // 注册全局 vmPool：返回动画依赖它（同 watchonphone）
+    global.ui.InitPage(this)
+    global.animengine.defaults.loading.CreateLoadingAnimation(this)
+
+    const deviceInfo = global.DEVICE_INFO
+    if (deviceInfo.screenShape == "rect") {
+      this.barRowStyle["width"] = `${deviceInfo.screenWidth}px`
+      this.useRowLayout = true
+    }
+
+    this.InitAccounts()
+  },
+  // 分享对象 = 最近私信会话的好友；头像/名称复用多用户信息接口（同 dmlist）
+  async InitAccounts() {
+    try {
+      this.anims.loading.start()
+      this.anims.show_loading = true
+
+      const dmData = await global.biliclient.getDMSessions(1, 2)
+      const sessionList = (dmData.session_list || []).slice(0, 20)
+
+      let uids = []
+      sessionList.forEach((session) => {
+        if (session.talker_id && uids.indexOf(session.talker_id) === -1) {
+          uids.push(session.talker_id)
+        }
+      })
+
+      const infos = await global.biliclient.getMultiUserInfoByUID(uids)
+      const accounts = uids.map((uid) => ({
+        uid: uid,
+        name: infos[uid].name,
+        face: infos[uid].face
+      }))
+
+      this.accounts.splice(0, this.accounts.length, ...accounts)
+      this.anims.loading.stop()
+      this.anims.show_loading = false
+      this.show_accounts = true
+    } catch (e) {
+      global.logger.error("[sharevideo.InitAccounts] error:", e.toString())
+      this.anims.loading.stop()
+      this.anims.show_loading = false
+      prompt.showToast({message: "加载好友列表失败，请重试", duration: 3000})
+    }
+  },
+  // 选中/取消选中：再点同一个视为取消
+  SelectAccount(uid) {
+    this.selected_uid = this.selected_uid === uid ? "" : uid
+  },
+  // 发送视频链接私信（文本消息：标题 + 链接），成功后按标准返回动画回上一级
+  async DoShare() {
+    if (this.sending) return
+    this.sending = true
+    try {
+      const link = "https://www.bilibili.com/video/" + this.bvid
+      const content = `【${this.title}】\n${link}`
+      const result = await global.biliclient.SendDMSessionMessage(this.selected_uid, 1, content)
+      if (result.code === 0) {
+        prompt.showToast({message: "已发送"})
+        this.LeavePage()
+      } else {
+        prompt.showToast({message: `发送失败：${result.message || result.code}`, duration: 4000})
+      }
+    } catch (e) {
+      global.logger.error("[sharevideo.DoShare] error:", e.toString())
+      prompt.showToast({message: "发送失败，请重试", duration: 4000})
+    }
+    this.sending = false
+  },
+  RouterBack() {
+    this.LeavePage()
+  },
+  onBackPress() {
+    this.LeavePage()
+    return true
+  },
+  // 与其他页一致的全局返回动画（本页 scroll-backanim 退场 + 底层页 frombackanim 复原）
+  LeavePage() {
+    global.ui.OnBackPressTriggered()
+  }
+}
+</script>
+
+<style lang="less">
+@import '@less/global.less';
+
+// 标题栏类与 TitleBar 组件中的定义完全一致，保证视觉与位置统一
+.comp-root {
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.row {
+  flex-direction: row;
+}
+
+.titlebar {
+  margin-top: 45px;
+  align-items: center;
+  justify-content: center;
+  padding-bottom: 10px;
+}
+
+.bar-row {
+  justify-content: flex-start;
+  margin-top: 10px;
+  margin-left: 100px;
+}
+
+// 圆屏"发送"按钮：与时钟同为 absolute 顶部定位，占据时钟位置
+.sendbtn {
+  position: absolute;
+  top: 3.5px;
+  font-size: 25px;
+  font-weight: 600;
+  color: #ff7da8;
+}
+
+// 矩形屏"发送"按钮：占据 bar-row 行内时钟位置
+.sendbtn-row {
+  font-size: 25px;
+  font-weight: 600;
+  color: #ff7da8;
+}
+
+// 好友网格：一排三个
+.accountgrid {
+  margin-top: 20px;
+  flex-direction: row;
+  flex-wrap: wrap;
+  width: 400px;
+  justify-content: center;
+}
+
+.accountitem {
+  width: 33%;
+  flex-direction: column;
+  align-items: center;
+  margin-top: 20px;
+}
+
+.avatarwrap {
+  position: relative;
+  align-items: center;
+  justify-content: center;
+}
+
+.accountface {
+  width: 75px;
+  height: 75px;
+  border-radius: 50%;
+}
+
+// 选中：粉色圆圈包裹头像
+.face-selected {
+  border: 3px solid #ff7da8;
+}
+
+// 右下角打勾徽章：粉色圆底 + 白色对勾
+.checkbadge {
+  position: absolute;
+  right: 0px;
+  bottom: 0px;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: #ff7da8;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkicon {
+  width: 18px;
+  height: 18px;
+  object-fit: scale-down;
+}
+
+.accountname {
+  margin-top: 8px;
+  font-size: 18px;
+  font-weight: 600;
+  width: 120px;
+  text-overflow: ellipsis;
+}
+</style>

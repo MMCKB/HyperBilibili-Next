@@ -59,6 +59,9 @@
     "watchonphone": {
         "title": "在手机上看"
     },
+    "sharevideo": {
+        "title": "分享"
+    },
     "episodelist": {
         "title": "选集/合集",
         "entry": "选集/合集"

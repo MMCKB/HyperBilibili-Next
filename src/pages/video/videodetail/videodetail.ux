@@ -53,6 +53,10 @@
           <image class="vidtoolimg" src="/common/vidtool_phone.png"></image>
           <text class="vidtooltext">在手机上看</text>
         </div>
+        <div class="vidtool" @click="ShareVideo()">
+          <image class="vidtoolimg" src="/common/vidtool_share.png"></image>
+          <text class="vidtooltext">分享</text>
+        </div>
       </scroll>
       <!-- 选集/合集入口：多P或属于合集时显示，点击进入独立页选择视频 -->
       <default-button text="episodelist.entry" margin-top="20px" if="{{showEpisodeEntry}}" @click="GoEpisodeList"></default-button>
@@ -168,6 +172,16 @@ export default {
       uri: "pages/video/watchonphone",
       params: {
         bvid: this.bvid
+      }
+    })
+  },
+  // 分享：跳转私信好友选择页，选中账号后以文本私信发送视频链接
+  ShareVideo() {
+    router.push({
+      uri: "pages/video/sharevideo",
+      params: {
+        bvid: this.bvid,
+        title: this.vid.title || ""
       }
     })
   },
