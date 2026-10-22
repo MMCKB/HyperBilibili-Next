@@ -85,24 +85,16 @@ export const BilibiliClientMessageMethods = {
     },
 
     // 发送私信消息
+    // 使用 svr_sync 通用端接口（app 端同款，无需 WBI 签名，风控宽松）。
+    // 原先的 web_im/v1/web_im/send_msg 是 web 端专用接口，需要 web 端 buvid 指纹匹配，
+    // 在手表环境下 fetch 会被取消（Vela code 1002 "is cancelled"）
     async SendDMSessionMessage(this: any, receiver_id: string, msg_type: number, content: string) {
-        const url = "https://api.vc.bilibili.com/web_im/v1/web_im/send_msg";
-        const body = `msg[sender_uid]=${this.accountInfo.mid}&msg[receiver_id]=${receiver_id}&msg[receiver_type]=1&msg[msg_type]=${msg_type}&msg[dev_id]=${this.dm_deviceid}&msg[timestamp]=${Number.parseInt(((new Date()).getTime() / 1000).toString())}&msg[content]=${encodeURIComponent(JSON.stringify({"content": `${content}`}))}&csrf=${this.biliJct}&csrf_token=${this.biliJct}&msg[msg_status]=0&msg[new_face_version]=0&from_firework=0&build=0&mobi_app=web`;
+        const url = "https://api.vc.bilibili.com/svr_sync/v1/svr_sync/send_msg";
+        const body = `msg[sender_uid]=${this.accountInfo.mid}&msg[receiver_id]=${receiver_id}&msg[receiver_type]=1&msg[msg_type]=${msg_type}&msg[dev_id]=${this.dm_deviceid}&msg[timestamp]=${Number.parseInt(((new Date()).getTime() / 1000).toString())}&msg[content]=${encodeURIComponent(JSON.stringify({"content": `${content}`}))}&msg[msg_status]=0&msg[new_face_version]=0&csrf=${this.biliJct}&csrf_token=${this.biliJct}`;
 
-        // 注意：不可手动设置 Host/Content-Length——二者为 HTTP 保留头，
-        // Vela fetch 底层遇到手动设置的保留头会直接抛错，导致整个请求失败
-        // （表现为调用方读 result 时报 "cannot read property 'data' of undefined"）
-        var headers = { ...this.getHeaders(), "Content-Type": "application/x-www-form-urlencoded" }
-        headers["Origin"] = "https://message.bilibili.com"
-        headers["Referer"] = "https://message.bilibili.com/"
+        const response = await this.postRequest(url, body, "application/x-www-form-urlencoded");
 
-        const response = await this.postRequestWbi(url, {
-            w_sender_uid: this.accountInfo.mid,
-            w_receiver_id: receiver_id,
-            w_dev_id: this.dm_deviceid
-        }, body, "application/x-www-form-urlencoded", headers);
-
-        // 网络层失败时 postRequestWbi 返回 undefined：
+        // 网络层失败时 postRequest 返回 undefined：
         // 返回可被调用方识别的失败响应，而不是让其读 .code 时抛 TypeError
         if (!response) {
             return { code: -1, message: "网络请求失败" }
