@@ -77,38 +77,63 @@ export default {
 
     this.InitAccounts()
   },
-  // 分享对象 = 最近私信会话的好友；头像/名称复用多用户信息接口（同 dmlist）
+  // 分享对象 = 最近私信会话 + 固定的私信用户（同 dmlist 来源）
   async InitAccounts() {
     try {
       this.anims.loading.start()
       this.anims.show_loading = true
 
-      const dmData = await global.biliclient.getDMSessions(1, 2)
-      const sessionList = (dmData.session_list || []).slice(0, 20)
-
       let uids = []
-      sessionList.forEach((session) => {
+
+      // 会话接口在未登录/风控/网络失败时 data 为 null（getRequest 失败返回 undefined，
+      // getDMSessions 再取 .data 也可能得到 null），必须防御，不能让整页崩掉
+      const dmData = await global.biliclient.getDMSessions(1, 2)
+      const sessionList = (dmData && dmData.session_list) || []
+      sessionList.slice(0, 20).forEach((session) => {
         if (session.talker_id && uids.indexOf(session.talker_id) === -1) {
           uids.push(session.talker_id)
         }
       })
 
-      const infos = await global.biliclient.getMultiUserInfoByUID(uids)
-      const accounts = uids.map((uid) => ({
-        uid: uid,
-        name: infos[uid].name,
-        face: infos[uid].face
-      }))
+      // 固定的私信用户也纳入分享对象（与 dmlist 一致）
+      global.settings.SETTINGS.pinnedDMUsers.forEach((uid) => {
+        if (uid && uids.indexOf(uid) === -1) {
+          uids.push(uid)
+        }
+      })
 
-      this.accounts.splice(0, this.accounts.length, ...accounts)
+      // user/cards 接口对空 uids 参数会报错，为空时直接展示空列表
+      if (uids.length > 0) {
+        const infos = await global.biliclient.getMultiUserInfoByUID(uids)
+        const accounts = []
+        uids.forEach((uid) => {
+          // 个别 uid 信息缺失（注销/封禁）时跳过，不能因单条缺失整体失败
+          const info = infos && infos[uid]
+          if (info && info.name) {
+            accounts.push({
+              uid: uid,
+              name: info.name,
+              face: info.face || ""
+            })
+          }
+        })
+        this.accounts.splice(0, this.accounts.length, ...accounts)
+      }
+
       this.anims.loading.stop()
       this.anims.show_loading = false
       this.show_accounts = true
+
+      if (this.accounts.length === 0) {
+        prompt.showToast({message: "暂无可分享的好友", duration: 3000})
+      }
     } catch (e) {
       global.logger.error("[sharevideo.InitAccounts] error:", e.toString())
-      this.anims.loading.stop()
+      if (this.anims.loading) this.anims.loading.stop()
       this.anims.show_loading = false
-      prompt.showToast({message: "加载好友列表失败，请重试", duration: 3000})
+      // 携带具体错误信息，便于定位接口失败的真实原因
+      const reason = e ? e.toString() : "未知错误"
+      prompt.showToast({message: `加载好友列表失败：${reason}`.slice(0, 80), duration: 5000})
     }
   },
   // 选中/取消选中：再点同一个视为取消
