@@ -152,7 +152,9 @@ export default {
       if (!result) {
         // postRequest 网络失败返回 undefined 时 response.data 为空
         prompt.showToast({message: "发送失败：无响应（网络错误或登录态失效）", duration: 5000})
-      } else if (result.code === 0) {
+      } else if (result.code == 0) {
+        // 宽松比较：svr_sync 老接口返回的 code 是字符串 "0" 而非数字 0，
+        // 严格相等会把成功误判为失败
         prompt.showToast({message: "已发送"})
         this.LeavePage()
       } else {
