@@ -1,5 +1,8 @@
 <template>
   <div class="time-comp" style="{{compStyle}}">
+    <!-- 顶部占位胶囊：仅矩形屏且由首页开启时显示。
+         与时间同处一行并垂直居中，紧贴时间左侧；无任何交互与功能 -->
+    <div if="{{showPill && useRectTime}}" class="top-pill"></div>
     <div if="{{!useRectTime}}">
       <div class="circle-time">
         <text class="timetxt">{{ hourHigh }}</text>
@@ -17,6 +20,7 @@
 
 <script>
 export default {
+  props: ["showPill"],
   data: {
     hourHigh: "",
     hourLow: "",
@@ -71,6 +75,15 @@ export default {
   font-size: 25px;
   font-weight: 600;
   top: 2px;
+}
+
+// 占位胶囊：半透明白色，圆角全高，高度与时间字号视觉一致
+.top-pill {
+  width: 90px;
+  height: 28px;
+  border-radius: 14px;
+  background-color: rgba(255, 255, 255, 0.18);
+  margin-right: 10px;
 }
 
 .rect-txt {

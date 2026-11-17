@@ -19,7 +19,7 @@
             {{ _parentVM.$t(title) }}
           </text>
         </div>
-        <time-view style="position: absolute"></time-view>
+        <time-view style="position: absolute" show-pill="{{showPill}}"></time-view>
       </div>
     </div>
   </div>
@@ -28,7 +28,7 @@
 <script>
 import router from "@system.router"
 export default {
-  props: ["title"],
+  props: ["title", "showPill"],
   data: {
     barRowStyle: {},
     useRowLayout: false

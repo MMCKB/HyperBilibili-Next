@@ -5,7 +5,7 @@
   <div class="page">
     <image style="position: absolute; left: 0px" src="{{getBgImg}}"></image>
     <scroll scroll-y="true" class="zoomscroll {{scrclass}}" bounces="true">
-      <switch-bar title="main.title"></switch-bar>
+      <switch-bar title="main.title" show-pill="{{true}}"></switch-bar>
       <text class="tip">{{ funnytip }}</text>
       <image
         style="position: absolute; margin-top: 265px"
