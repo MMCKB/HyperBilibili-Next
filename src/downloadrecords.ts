@@ -25,6 +25,13 @@ const MAX_SAMPLE_MS = 15 * 60 * 1000
 
 let records: DownloadRecord[] = []
 
+// 首页顶栏缓存进度（下载期间由采样器更新，供 TimeView 轮询展示）
+// 用可变对象而非重新赋值，保证通过 global.downloadrecords 读取到的引用始终有效
+export const cacheProgress = {
+    active: false,
+    percent: 0
+}
+
 // 网速采样器（播放器同一时刻只有一个音频缓存下载）
 let sampler: {
     filename: string
@@ -33,6 +40,7 @@ let sampler: {
     lastBytes: number
     lastTime: number
     startedAt: number
+    totalSize: number
 } | null = null
 
 function generateUUID(): string {
@@ -72,12 +80,14 @@ function stopSampler(): void {
         clearInterval(sampler.timer)
     }
     sampler = null
+    cacheProgress.active = false
+    cacheProgress.percent = 0
 }
 
 // 轮询下载目标文件的当前大小，计算瞬时网速并记录峰值
 // （request.download 无进度回调，只能通过 file.get 采样；
 //   若引擎在下载期间不暴露临时文件，采样无效，结束时回退为平均速度）
-function startSampler(filename: string, recordId: string): void {
+function startSampler(filename: string, recordId: string, totalSize: number): void {
     stopSampler()
     const record = records.find(r => r.id === recordId)
     // 记录已结束（下载极快时 finishRecord 先于本函数执行）：不再采样，防止空转
@@ -89,8 +99,12 @@ function startSampler(filename: string, recordId: string): void {
         timer: null as any,
         lastBytes: 0,
         lastTime: 0,
-        startedAt: Date.now()
+        startedAt: Date.now(),
+        totalSize: totalSize || 0
     }
+    // 开始采样即进入"缓存中"状态，首页顶栏据此展示环形进度
+    cacheProgress.active = true
+    cacheProgress.percent = 0
     state.timer = setInterval(async () => {
         const current = records.find(r => r.id === recordId)
         // 记录已被结束：停止采样器（回调持不到外部引用，需按 id 重新查找）
@@ -110,6 +124,10 @@ function startSampler(filename: string, recordId: string): void {
             }
             if (bytes > 0) {
                 current.size = bytes
+            }
+            // 采样到总大小时换算百分比；未完成前封顶 99%，完成回调再收尾
+            if (state.totalSize > 0 && bytes > 0) {
+                cacheProgress.percent = Math.max(0, Math.min(99, Math.floor(bytes / state.totalSize * 100)))
             }
             state.lastBytes = bytes
             state.lastTime = now
@@ -141,8 +159,9 @@ export class DownloadRecordManager {
         global.logger.log("loaded DownloadRecords", records.length)
     }
 
-    // 开始一条下载记录并启动网速采样（filename 为 request.download 的目标文件名）
-    static async startRecord(bvid: string, title: string, coverUrl: string, author: string, filename: string): Promise<string | void> {
+    // 开始一条下载记录并启动网速采样（filename 为 request.download 的目标文件名，
+    // totalSize 为音频流总字节数，用于换算首页顶栏的缓存百分比）
+    static async startRecord(bvid: string, title: string, coverUrl: string, author: string, filename: string, totalSize: number = 0): Promise<string | void> {
         try {
             // 新下载开始：旧的进行中记录全部标记中断
             let dirty = false
@@ -174,7 +193,7 @@ export class DownloadRecordManager {
             if (dirty) {
                 global.logger.log("[DownloadRecordManager] 之前的下载记录已标记中断")
             }
-            startSampler(filename, record.id)
+            startSampler(filename, record.id, totalSize)
             return record.id
         } catch (e) {
             global.logger.error(`[DownloadRecordManager] startRecord Error: ${e.toString()}`)

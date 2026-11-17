@@ -56,7 +56,8 @@ export const BilibiliClientVideoMethods = {
         return response.data.data;
     },
 
-    async getVideoBestAudioUrlByBVID(this: any, bvid: string, page_index: number = 0): Promise<string> {
+    // 获取最佳音频流：返回 URL 与总大小（缓存进度需要总大小作为分母）
+    async getVideoBestAudioStreamByBVID(this: any, bvid: string, page_index: number = 0): Promise<any> {
         const info = await this.getVideoInfoByBVID(bvid);
         // 指定分P：取对应 page 的 cid；越界时回退到第一个
         const page = (info.pages || [])[page_index] || info.pages?.[0];
@@ -117,6 +118,22 @@ export const BilibiliClientVideoMethods = {
 
         const selected = uniqueCandidates[0];
         global.logger.log("[getVideoBestAudioUrlByBVID] selected url:", selected);
-        return selected;
+
+        // 总大小：优先用接口返回的 size；缺失时按「带宽(bps) × 时长(s) / 8」估算
+        let totalSize = Number(best.size) || 0;
+        if (totalSize <= 0) {
+            const bandwidth = Number(best.bandwidth) || 0;
+            const duration = Number(info.duration) || 0;
+            if (bandwidth > 0 && duration > 0) {
+                totalSize = Math.round(bandwidth * duration / 8);
+            }
+        }
+        return { url: selected, size: totalSize };
+    },
+
+    // 兼容旧调用：仅取 URL
+    async getVideoBestAudioUrlByBVID(this: any, bvid: string, page_index: number = 0): Promise<string> {
+        const stream = await this.getVideoBestAudioStreamByBVID(bvid, page_index);
+        return stream.url;
     },
 };

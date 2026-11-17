@@ -614,13 +614,14 @@
               ar: [{ name: info.owner?.name || "未知" }]
             };
             that.songList = [that.currSong];
-            const audioUrl = await global.biliclient.getVideoBestAudioUrlByBVID(that.videoBvid, that.pageIndex);
+            const audioStream = await global.biliclient.getVideoBestAudioStreamByBVID(that.videoBvid, that.pageIndex);
             if (requestId !== that.currentRequestId) {
               return;
             }
+            const audioUrl = audioStream && audioStream.url;
             const maxUrlLength = 500;
             if (audioUrl && audioUrl.length > maxUrlLength) {
-              that.downloadVideoAudioToLocal(audioUrl, requestId);
+              that.downloadVideoAudioToLocal(audioUrl, requestId, audioStream.size);
               return;
             }
             that.currSong.url = audioUrl;
@@ -925,12 +926,12 @@
           that.downloadCoverImage(coverUrl, requestId);
         }
 
-        return global.biliclient.getVideoBestAudioUrlByBVID(that.videoBvid, that.pageIndex);
-      }).then((audioUrl) => {
+        return global.biliclient.getVideoBestAudioStreamByBVID(that.videoBvid, that.pageIndex);
+      }).then((audioStream) => {
         if (requestId !== that.currentRequestId) {
           return;
         }
-        that.downloadVideoAudioToLocal(audioUrl, requestId);
+        that.downloadVideoAudioToLocal(audioStream && audioStream.url, requestId, audioStream && audioStream.size);
       }).catch((error) => {
         if (requestId !== that.currentRequestId) {
           return;
@@ -976,7 +977,7 @@
         }
       });
     },
-    downloadVideoAudioToLocal(audioUrl, requestId) {
+    downloadVideoAudioToLocal(audioUrl, requestId, totalSize) {
       const that = this;
       if (!audioUrl) {
         that.toastLog('视频音频下载失败：URL为空');
@@ -992,7 +993,8 @@
           (that.currSong && that.currSong.name) || '未知视频',
           (that.currSong && that.currSong.al && that.currSong.al.picUrl) || '',
           (that.currSong && that.currSong.ar && that.currSong.ar[0] && that.currSong.ar[0].name) || '未知作者',
-          filename
+          filename,
+          totalSize
         );
       }
 
