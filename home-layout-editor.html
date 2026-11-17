@@ -301,15 +301,15 @@
       cardsTop: 0
     },
     topbar: {
-      pillW: 84,
+      pillW: 76,
       pillH: 28,
-      pillRadius: 14,
-      ringSize: 18,
+      pillRadius: 24,
+      ringSize: 24,
       ringStroke: 3,
-      iconSize: 9,
-      pctSize: 14,
-      pctWidth: 32,
-      pillGap: 4,
+      iconSize: 11,
+      pctSize: 16,
+      pctWidth: 42,
+      pillGap: 6,
       titleSize: 30,
       timeSize: 30,
       titleLeft: 57,
@@ -566,7 +566,7 @@
     el.ringArc.setAttribute("stroke-dashoffset", (circumference * (1 - pct / 100)).toFixed(2));
 
     // 胶囊装不下内容时隐藏内部，避免溢出（调大胶囊或调小内部组件即可恢复）
-    var needW = t.ringSize + t.pillGap + t.pctWidth + 8;
+    var needW = t.ringSize + t.pillGap + t.pctWidth + 2;
     var needH = Math.max(t.ringSize, t.pctSize) + 4;
     if (t.pillW < needW || t.pillH < needH) {
       el.pillInner.style.display = "none";
