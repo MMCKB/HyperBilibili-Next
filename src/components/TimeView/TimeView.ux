@@ -1,17 +1,16 @@
 <template>
   <div class="time-comp" style="{{compStyle}}">
-    <!-- 视频缓存进度：仅缓存进行中显示，位于占位胶囊左侧。
-         环形进度条内嵌下载图标，右侧显示数字百分比 -->
-    <div if="{{showPill && useRectTime && cacheActive}}" class="cache-indicator">
-      <div class="cache-ringwrap">
-        <progress class="cache-ring" type="arc" percent="{{cachePercent}}"></progress>
-        <image class="cache-icon" src="/common/icon/download.png"></image>
+    <!-- 顶部常驻胶囊：仅矩形屏且由首页开启。
+         缓存进行中时，胶囊内部展示「环形进度条（内嵌下载图标）+ 百分比」 -->
+    <div if="{{showPill && useRectTime}}" class="top-pill">
+      <div if="{{cacheActive}}" class="pill-progress">
+        <div class="pill-ringwrap">
+          <progress class="pill-ring" type="arc" percent="{{cachePercent}}"></progress>
+          <image class="pill-icon" src="/common/icon/download.png"></image>
+        </div>
+        <text class="pill-percent">{{cachePercent}}%</text>
       </div>
-      <text class="cache-percent">{{cachePercent}}%</text>
     </div>
-    <!-- 顶部占位胶囊：仅矩形屏且由首页开启时显示。
-         与时间同处一行并垂直居中，紧贴时间左侧；无任何交互与功能 -->
-    <div if="{{showPill && useRectTime}}" class="top-pill"></div>
     <div if="{{!useRectTime}}">
       <div class="circle-time">
         <text class="timetxt">{{ hourHigh }}</text>
@@ -114,56 +113,59 @@ export default {
   top: 2px;
 }
 
-// 占位胶囊：半透明白色，圆角全高，高度与时间字号视觉一致
+// 常驻胶囊：缓存进行中时内部展示进度，空闲时保持空胶囊占位
+// 半透明深色底保证白色进度内容在粉色首页背景上有足够对比度
 .top-pill {
-  width: 60px;
+  width: 84px;
   height: 28px;
   border-radius: 14px;
-  background-color: rgba(255, 255, 255, 0.18);
+  background-color: rgba(0, 0, 0, 0.28);
   margin-right: 6px;
+  align-items: center;
+  justify-content: center;
 }
 
-// 缓存进度：环形进度条 + 内嵌下载图标 + 右侧百分比
-.cache-indicator {
+// 胶囊内部：环形进度条 + 内嵌下载图标 + 百分比
+.pill-progress {
   flex-direction: row;
   align-items: center;
-  margin-right: 6px;
+  justify-content: center;
 }
 
-.cache-ringwrap {
-  width: 22px;
-  height: 22px;
+.pill-ringwrap {
+  width: 18px;
+  height: 18px;
   align-items: center;
   justify-content: center;
   position: relative;
 }
 
-.cache-ring {
+.pill-ring {
   position: absolute;
   left: 0px;
   top: 0px;
-  width: 22px;
-  height: 22px;
-  radius: 9px;
-  stroke-width: 4px;
+  width: 18px;
+  height: 18px;
+  radius: 7px;
+  stroke-width: 3px;
   start-angle: 270deg;
   total-angle: 360deg;
   color: #ffffff;
   layer-color: rgba(255, 255, 255, 0.3);
 }
 
-.cache-icon {
-  width: 11px;
-  height: 11px;
+.pill-icon {
+  width: 9px;
+  height: 9px;
   object-fit: scale-down;
 }
 
-.cache-percent {
-  font-size: 15px;
+.pill-percent {
+  font-size: 14px;
   font-weight: 600;
   color: #ffffff;
-  margin-left: 3px;
-  width: 36px;
+  margin-left: 4px;
+  width: 32px;
   text-align: center;
 }
 

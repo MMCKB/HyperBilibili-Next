@@ -20,8 +20,6 @@ const baseUri = "internal://files/bilisavedcontent/"
 const recordsFileUri = `${baseUri}downloadrecords.json`
 const MAX_RECORDS = 50
 const SAMPLE_INTERVAL = 500
-// 采样超时保护：页面销毁导致完成回调丢失时，避免采样器永久空转
-const MAX_SAMPLE_MS = 15 * 60 * 1000
 
 let records: DownloadRecord[] = []
 
@@ -99,7 +97,6 @@ function startSampler(filename: string, recordId: string, totalSize: number): vo
         timer: null as any,
         lastBytes: 0,
         lastTime: 0,
-        startedAt: Date.now(),
         totalSize: totalSize || 0
     }
     // 开始采样即进入"缓存中"状态，首页顶栏据此展示环形进度
@@ -134,9 +131,6 @@ function startSampler(filename: string, recordId: string, totalSize: number): vo
         } catch (e) {
             // 下载中的临时文件尚不可见时跳过本次采样
         }
-        if (Date.now() - state.startedAt > MAX_SAMPLE_MS) {
-            DownloadRecordManager.finishRecord(filename, "interrupted")
-        }
     }, SAMPLE_INTERVAL)
     sampler = state
 }
@@ -163,15 +157,9 @@ export class DownloadRecordManager {
     // totalSize 为音频流总字节数，用于换算首页顶栏的缓存百分比）
     static async startRecord(bvid: string, title: string, coverUrl: string, author: string, filename: string, totalSize: number = 0): Promise<string | void> {
         try {
-            // 新下载开始：旧的进行中记录全部标记中断
-            let dirty = false
-            for (const r of records) {
-                if (r.status === "downloading") {
-                    r.status = "interrupted"
-                    r.endTime = Date.now()
-                    dirty = true
-                }
-            }
+            // 不再把之前进行中的记录标记中断：下载任务已由 CacheDownloadManager
+            // 独立持有，旧任务会自行完成并调用 finishRecord。
+            // 若这里强行标记中断，会出现"文件其实缓存成功、记录却显示中断"。
             const record: DownloadRecord = {
                 id: generateUUID(),
                 bvid: bvid || "",
@@ -190,9 +178,6 @@ export class DownloadRecordManager {
                 records = records.slice(0, MAX_RECORDS)
             }
             await saveRecords()
-            if (dirty) {
-                global.logger.log("[DownloadRecordManager] 之前的下载记录已标记中断")
-            }
             startSampler(filename, record.id, totalSize)
             return record.id
         } catch (e) {

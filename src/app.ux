@@ -13,6 +13,7 @@ import * as jumpcheck from "./jumpcheck"
 import * as htmlparser from "./htmlparser"
 import * as savedcontent from "./savedcontent"
 import * as downloadrecords from "./downloadrecords"
+import * as cachedownload from "./cachedownload"
 import * as bgimg from "./bgimg"
 import * as usertracker from "./usertracker"
 import logger from "./logger/logger"
@@ -54,6 +55,8 @@ export default {
     console.log("appinit > initDownloadRecordManager")
     await downloadrecords.DownloadRecordManager.initialize()
     global.downloadrecords = downloadrecords
+    // 缓存下载任务由模块持有，页面销毁后仍继续
+    global.cachedownload = cachedownload
 
     console.log("appinit > initDeviceInfo")
     global.DEVICE_INFO = await tools.getDeviceInformation()

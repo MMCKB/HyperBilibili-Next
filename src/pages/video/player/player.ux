@@ -137,7 +137,6 @@
   import storage from "@system.storage";
   import prompt from "@system.prompt";
   import request from "@system.request";
-  import { asyncFile } from "../../../asyncapi/file";
   export default {
     props: { playlistId: { default: null }, startIndex: { default: 0 }, tracks: { default: null }, bvid: { default: null }, pageIndex: { default: 0 }, pageName: { default: null }, cachedAudioUri: { default: null }, cachedTitle: { default: null }, cachedCoverUrl: { default: null }, cachedAuthor: { default: null } },
     data: {
@@ -986,84 +985,40 @@
       }
       const filename = `${that.videoBvid || 'video'}_audio.m4s`;
       that.toastLog('开始下载视频音频');
-      // 记录本次缓存下载并启动网速采样
-      if (global.downloadrecords) {
-        global.downloadrecords.DownloadRecordManager.startRecord(
-          that.videoBvid || '',
-          (that.currSong && that.currSong.name) || '未知视频',
-          (that.currSong && that.currSong.al && that.currSong.al.picUrl) || '',
-          (that.currSong && that.currSong.ar && that.currSong.ar[0] && that.currSong.ar[0].name) || '未知作者',
-          filename,
-          totalSize
-        );
+
+      // 模块未就绪时退回直链播放，避免播放被阻断
+      if (!global.cachedownload) {
+        that.currSong.url = audioUrl;
+        that.playCurrentSong();
+        return;
       }
 
-      request.download({
-        url: audioUrl,
-        header: that.buildVideoAudioDownloadHeaders(),
+      // 下载任务由全局模块持有：离开播放器页后缓存继续下载，
+      // 完成后由模块负责校验文件、写入缓存列表并结束下载记录
+      global.cachedownload.CacheDownloadManager.start({
+        bvid: that.videoBvid || '',
+        title: (that.currSong && that.currSong.name) || '未知视频',
+        coverUrl: (that.currSong && that.currSong.al && that.currSong.al.picUrl) || '',
+        author: (that.currSong && that.currSong.ar && that.currSong.ar[0] && that.currSong.ar[0].name) || '未知作者',
         filename,
-        success: function(res) {
-          that.toastLog('下载任务创建成功');
-          request.onDownloadComplete({
-            token: res.token,
-            success: function(result) {
-              if (requestId !== that.currentRequestId) {
-                if (global.downloadrecords) {
-                  global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'interrupted');
-                }
-                return;
-              }
-              that.toastLog('下载完成，校验文件');
-              that.validateM4sFile(result.uri).then((isValid) => {
-                if (!isValid) {
-                  if (global.downloadrecords) {
-                    global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
-                  }
-                  that.toastLog('校验失败，回退直链');
-                  that.currSong.url = audioUrl;
-                  that.playCurrentSong();
-                  return;
-                }
-                if (global.downloadrecords) {
-                  global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'success', result.uri);
-                }
-                that.toastLog('校验成功，准备播放');
-                that.currSong.url = result.uri;
-                that.saveVideoAudioToSavedContent(result.uri);
-                setTimeout(() => {
-                  that.playCurrentSong();
-                }, 300);
-              }).catch((error) => {
-                if (global.downloadrecords) {
-                  global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
-                }
-                that.toastLog('校验异常，回退直链');
-                that.currSong.url = audioUrl;
-                that.playCurrentSong();
-              });
-            },
-            fail: function(error) {
-              if (global.downloadrecords) {
-                global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
-              }
-              that.toastLog('下载失败');
-              that.handlePlaybackError('视频音频下载失败');
-            }
-          });
-        },
-        fail: function(error) {
-          that.toastLog('下载任务创建失败');
-          const errorText = error && (error.message || error);
-          if (errorText && String(errorText).includes('invalid header')) {
-            // 头部无效将重试：记录保持进行中，由重试流程结束
-            that.toastLog('头部无效，重试无头部');
-            that.retryDownloadVideoAudioWithoutHeaders(audioUrl, filename, requestId);
-            return;
-          }
-          if (global.downloadrecords) {
-            global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
-          }
-          that.handlePlaybackError('视频音频下载失败');
+        url: audioUrl,
+        headers: that.buildVideoAudioDownloadHeaders(),
+        totalSize: totalSize || 0
+      }, (result) => {
+        // 页面已销毁或已切歌：缓存仍会完成，只是不再驱动当前播放
+        if (that.$valid === false || requestId !== that.currentRequestId) {
+          return;
+        }
+        if (result && result.status === 'success') {
+          that.toastLog('缓存完成，准备播放');
+          that.currSong.url = result.uri;
+          setTimeout(() => {
+            that.playCurrentSong();
+          }, 300);
+        } else {
+          that.toastLog('缓存失败，回退直链');
+          that.currSong.url = audioUrl;
+          that.playCurrentSong();
         }
       });
     },
@@ -1073,111 +1028,6 @@
         'Referer': 'https://www.bilibili.com',
         'Range': 'bytes=0-'
       });
-    },
-    retryDownloadVideoAudioWithoutHeaders(audioUrl, filename, requestId) {
-      const that = this;
-      that.toastLog('无头部重试下载');
-      request.download({
-        url: audioUrl,
-        filename,
-        success: function(res) {
-          that.toastLog('无头部下载任务创建成功');
-          request.onDownloadComplete({
-            token: res.token,
-            success: function(result) {
-              if (requestId !== that.currentRequestId) {
-                if (global.downloadrecords) {
-                  global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'interrupted');
-                }
-                return;
-              }
-              that.toastLog('无头部下载完成');
-              that.validateM4sFile(result.uri).then((isValid) => {
-                if (!isValid) {
-                  if (global.downloadrecords) {
-                    global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
-                  }
-                  that.toastLog('校验失败，回退直链');
-                  that.currSong.url = audioUrl;
-                  that.playCurrentSong();
-                  return;
-                }
-                if (global.downloadrecords) {
-                  global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'success', result.uri);
-                }
-                that.currSong.url = result.uri;
-                that.saveVideoAudioToSavedContent(result.uri);
-                setTimeout(() => {
-                  that.playCurrentSong();
-                }, 300);
-              }).catch((error) => {
-                if (global.downloadrecords) {
-                  global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
-                }
-                that.toastLog('校验异常，回退直链');
-                that.currSong.url = audioUrl;
-                that.playCurrentSong();
-              });
-            },
-            fail: function(error) {
-              if (global.downloadrecords) {
-                global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
-              }
-              that.toastLog('无头部下载失败');
-              that.handlePlaybackError('视频音频下载失败');
-            }
-          });
-        },
-        fail: function(error) {
-          if (global.downloadrecords) {
-            global.downloadrecords.DownloadRecordManager.finishRecord(filename, 'fail');
-          }
-          that.toastLog('无头部创建失败');
-          that.handlePlaybackError('视频音频下载失败');
-        }
-      });
-    },
-    async saveVideoAudioToSavedContent(audioUri) {
-      const that = this;
-      try {
-        const exists = await global.savedcontent.SavedContentManager.checkVideoAudioExists(that.videoBvid);
-        if (exists) {
-          return;
-        }
-       
-        const title = that.currSong.name || '未知视频';
-        const coverUrl = that.cachedCoverUri || that.currSong.al.picUrl || '';
-        const author = (that.currSong.ar && that.currSong.ar[0] && that.currSong.ar[0].name) || '未知作者';
-       
-        await global.savedcontent.SavedContentManager.storeVideoAudio(
-          title,
-          audioUri,
-          coverUrl,
-          author,
-          that.videoBvid
-        );
-        prompt.showToast({ message: '已保存到缓存列表', duration: 2000 });
-      } catch (e) {
-      }
-    },
-    async validateM4sFile(uri) {
-      try {
-        const fileInfo = await asyncFile.get({ uri });
-        if (!fileInfo || !fileInfo.length || fileInfo.length < 1024) {
-          return false;
-        }
-        const header = await asyncFile.readArrayBuffer({ uri, position: 0, length: 12 });
-        if (!header || header.length < 8) {
-          return false;
-        }
-        const boxType = String.fromCharCode(header[4], header[5], header[6], header[7]);
-        if (boxType !== 'ftyp') {
-          return false;
-        }
-        return true;
-      } catch (e) {
-        return false;
-      }
     },
     parseLyric(lrc) {
       const lines = lrc.split('\n');
