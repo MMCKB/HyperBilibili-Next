@@ -207,16 +207,16 @@
                   <div class="top-right" id="topRight">
                     <div class="pill" id="pill" data-sel="pill" data-resize="pill">
                       <div class="pill-inner" id="pillInner">
-                        <div class="ring-wrap">
-                          <svg class="ring" viewBox="0 0 18 18">
-                            <circle cx="9" cy="9" r="7" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="3"></circle>
+                        <div class="ring-wrap" id="ringWrap" data-sel="ring">
+                          <svg class="ring" id="ringSvg" viewBox="0 0 18 18">
+                            <circle id="ringTrack" cx="9" cy="9" r="7" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="3"></circle>
                             <circle id="ringArc" cx="9" cy="9" r="7" fill="none" stroke="#ffffff" stroke-width="3"
                               stroke-linecap="round" stroke-dasharray="43.98" stroke-dashoffset="16.3"
                               transform="rotate(-90 9 9)"></circle>
                           </svg>
                           <img class="dl-icon" id="dlIcon" alt="">
                         </div>
-                        <span class="pill-pct" id="pillPct">63%</span>
+                        <span class="pill-pct" id="pillPct" data-sel="pct">63%</span>
                       </div>
                     </div>
                     <span class="clock" id="clock">14:36</span>
@@ -238,6 +238,8 @@
       <div class="panel-tools" id="selectChips">
         <button class="chip" data-target="title">标题</button>
         <button class="chip" data-target="pill">胶囊</button>
+        <button class="chip" data-target="ring">进度环</button>
+        <button class="chip" data-target="pct">百分比</button>
         <button class="chip" data-target="card">视频卡片</button>
         <button class="chip" data-target="cover">封面</button>
         <button class="chip" data-target="tip">提示语</button>
@@ -293,6 +295,12 @@
       pillW: 84,
       pillH: 28,
       pillRadius: 14,
+      ringSize: 18,
+      ringStroke: 3,
+      iconSize: 9,
+      pctSize: 14,
+      pctWidth: 32,
+      pillGap: 4,
       titleSize: 30,
       timeSize: 30,
       topMargin: 10
@@ -332,6 +340,12 @@
         { k: "pillW", label: "胶囊宽度", min: 40, max: 160 },
         { k: "pillH", label: "胶囊高度", min: 18, max: 40 },
         { k: "pillRadius", label: "胶囊圆角", min: 0, max: 24 },
+        { k: "ringSize", label: "进度环尺寸", min: 10, max: 28 },
+        { k: "ringStroke", label: "进度环粗细", min: 1, max: 6 },
+        { k: "iconSize", label: "下载图标尺寸", min: 6, max: 18 },
+        { k: "pctSize", label: "百分比字号", min: 10, max: 22 },
+        { k: "pctWidth", label: "百分比宽度", min: 20, max: 52 },
+        { k: "pillGap", label: "内部间距", min: 0, max: 12 },
         { k: "titleSize", label: "标题字号", min: 18, max: 40 },
         { k: "timeSize", label: "时间字号", min: 18, max: 40 },
         { k: "topMargin", label: "顶栏上边距", min: 0, max: 30 }
@@ -378,6 +392,9 @@
     topRight: document.getElementById("topRight"),
     pill: document.getElementById("pill"),
     pillInner: document.getElementById("pillInner"),
+    ringWrap: document.getElementById("ringWrap"),
+    ringSvg: document.getElementById("ringSvg"),
+    ringTrack: document.getElementById("ringTrack"),
     ringArc: document.getElementById("ringArc"),
     dlIcon: document.getElementById("dlIcon"),
     pillPct: document.getElementById("pillPct"),
@@ -497,12 +514,37 @@
     var showCache = el.cacheToggle.checked;
     var pct = Number(el.cachePct.value) || 0;
     el.pillInner.style.display = showCache ? "flex" : "none";
+    el.pillInner.style.gap = t.pillGap + "px";
     el.pillPct.textContent = pct + "%";
-    var circumference = 2 * Math.PI * 7;
+    el.pillPct.style.fontSize = t.pctSize + "px";
+    el.pillPct.style.width = t.pctWidth + "px";
+
+    // 胶囊内部：进度环 / 图标 / 百分比都可独立调节
+    el.ringWrap.style.width = t.ringSize + "px";
+    el.ringWrap.style.height = t.ringSize + "px";
+    el.ringSvg.setAttribute("viewBox", "0 0 " + t.ringSize + " " + t.ringSize);
+    el.ringSvg.style.width = t.ringSize + "px";
+    el.ringSvg.style.height = t.ringSize + "px";
+    var ringR = Math.max(0.5, (t.ringSize - t.ringStroke) / 2);
+    var ringC = t.ringSize / 2;
+    [el.ringTrack, el.ringArc].forEach(function (circle) {
+      circle.setAttribute("cx", ringC);
+      circle.setAttribute("cy", ringC);
+      circle.setAttribute("r", ringR);
+      circle.setAttribute("stroke-width", t.ringStroke);
+      circle.setAttribute("transform", "rotate(-90 " + ringC + " " + ringC + ")");
+    });
+    el.dlIcon.style.width = t.iconSize + "px";
+    el.dlIcon.style.height = t.iconSize + "px";
+
+    var circumference = 2 * Math.PI * ringR;
     el.ringArc.setAttribute("stroke-dasharray", circumference.toFixed(2));
     el.ringArc.setAttribute("stroke-dashoffset", (circumference * (1 - pct / 100)).toFixed(2));
-    // 胶囊太小时隐藏内容，避免溢出
-    if (t.pillW < 56 || t.pillH < 20) {
+
+    // 胶囊装不下内容时隐藏内部，避免溢出（调大胶囊或调小内部组件即可恢复）
+    var needW = t.ringSize + t.pillGap + t.pctWidth + 8;
+    var needH = Math.max(t.ringSize, t.pctSize) + 4;
+    if (t.pillW < needW || t.pillH < needH) {
       el.pillInner.style.display = "none";
     }
 
@@ -562,16 +604,12 @@
   }
 
   function updateChips() {
-    var map = {
-      title: el.pageTitle,
-      pill: el.pill,
-      tip: el.tip,
-      refresh: el.refreshBtn
-    };
     var activeKey = null;
     if (selected) {
       if (selected === el.pageTitle) activeKey = "title";
       else if (selected === el.pill) activeKey = "pill";
+      else if (selected === el.ringWrap) activeKey = "ring";
+      else if (selected === el.pillPct) activeKey = "pct";
       else if (selected === el.tip) activeKey = "tip";
       else if (selected === el.refreshBtn) activeKey = "refresh";
       else if (selected.classList.contains("cover-wrap")) activeKey = "cover";
@@ -585,6 +623,8 @@
   function findTarget(name) {
     if (name === "title") return el.pageTitle;
     if (name === "pill") return el.pill;
+    if (name === "ring") return el.ringWrap;
+    if (name === "pct") return el.pillPct;
     if (name === "tip") return el.tip;
     if (name === "refresh") return el.refreshBtn;
     if (name === "card") return el.cards.querySelector(".card");
@@ -704,6 +744,12 @@
     lines.push("【顶栏】");
     lines.push("- 胶囊：" + t.pillW + "×" + t.pillH + "px" + mark("顶栏", "胶囊宽度") + mark("顶栏", "胶囊高度") +
       "，圆角 " + t.pillRadius + "px" + mark("顶栏", "胶囊圆角"));
+    lines.push("- 胶囊内部：进度环 " + t.ringSize + "px" + mark("顶栏", "进度环尺寸") +
+      "、粗细 " + t.ringStroke + "px" + mark("顶栏", "进度环粗细") +
+      "；下载图标 " + t.iconSize + "px" + mark("顶栏", "下载图标尺寸") +
+      "；百分比字号 " + t.pctSize + "px" + mark("顶栏", "百分比字号") +
+      "、宽度 " + t.pctWidth + "px" + mark("顶栏", "百分比宽度") +
+      "；内部间距 " + t.pillGap + "px" + mark("顶栏", "内部间距"));
     lines.push("- 标题字号：" + t.titleSize + "px" + mark("顶栏", "标题字号") +
       "；时间字号：" + t.timeSize + "px" + mark("顶栏", "时间字号") +
       "；顶栏上边距：" + t.topMargin + "px" + mark("顶栏", "顶栏上边距"));
