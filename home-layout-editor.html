@@ -16,12 +16,12 @@
     border-bottom: 1px solid #22222a; background: #101014;
   }
   .app-header .mark { width: 8px; height: 22px; border-radius: 4px; background: #ff7da8; }
-  .app-header h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: .2px; }
+  .app-header h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: .2px; white-space: nowrap; }
   .app-header .sub { font-size: 12px; color: #8a8a96; }
   .app-header .spacer { flex: 1; }
   .app-header .hint-badge {
     font-size: 11px; color: #ffb3cb; border: 1px solid #4a2a36; background: #1e1218;
-    padding: 4px 8px; border-radius: 999px;
+    padding: 4px 8px; border-radius: 999px; white-space: nowrap;
   }
 
   .main { display: flex; height: calc(100% - 56px); }
@@ -40,10 +40,10 @@
   .stage-toolbar input[type="checkbox"] { accent-color: #ff7da8; }
   .stage-toolbar input[type="range"] { width: 110px; accent-color: #ff7da8; }
   .stage-toolbar .sep { width: 1px; height: 18px; background: #262630; }
-  .stage-body { flex: 1; display: flex; align-items: center; justify-content: center; overflow: auto; padding: 24px; }
+  .stage-body { flex: 1; display: flex; overflow: auto; padding: 24px; }
   .stage-foot { padding: 0 20px 12px; color: #6f6f7c; font-size: 11px; text-align: center; }
 
-  .watch-wrap { position: relative; width: calc(432px * var(--zoom)); height: calc(526px * var(--zoom)); flex: 0 0 auto; }
+  .watch-wrap { position: relative; margin: auto; width: calc(432px * var(--zoom)); height: calc(526px * var(--zoom)); flex: 0 0 auto; }
   .watch {
     position: absolute; left: 0; top: 0; width: 432px; height: 526px;
     background: #000; border-radius: 40px; overflow: hidden;
@@ -106,6 +106,10 @@
     filter: drop-shadow(0 4px 10px rgba(0,0,0,.35));
   }
 
+  .watch { user-select: none; }
+  [data-move] { cursor: move; }
+  .page-title { cursor: move; }
+
   .sel { outline: 2px dashed #ff7da8; outline-offset: 2px; }
   .handle {
     position: absolute; right: -7px; bottom: -7px; width: 14px; height: 14px;
@@ -164,6 +168,9 @@
   }
   .toast.show { opacity: 1; transform: translate(-50%, 0); }
 
+  @media (max-width: 1200px) {
+    .app-header .sub { display: none; }
+  }
   @media (max-width: 1080px) {
     .panel { width: 330px; flex-basis: 330px; }
   }
@@ -175,7 +182,7 @@
     <h1>首页布局编辑器</h1>
     <span class="sub">矩形屏 · 设计尺寸 432 × 526 · 改动后复制配置给 AI</span>
     <div class="spacer"></div>
-    <span class="hint-badge">点击组件选中 · 拖右下角手柄缩放</span>
+    <span class="hint-badge">点击选中 · 拖动移动 · 右下角手柄缩放</span>
   </header>
 
   <div class="main">
@@ -200,11 +207,11 @@
               <img class="bg-img" id="bgImg" alt="">
               <div class="content" id="content">
                 <div class="switch-bar" id="switchBar">
-                  <div class="bar-left" id="barLeft">
+                  <div class="bar-left" id="barLeft" data-move="title">
                     <img class="switch-icon" id="switchIcon" alt="">
                     <span class="page-title" id="pageTitle" data-sel="title">首页</span>
                   </div>
-                  <div class="top-right" id="topRight">
+                  <div class="top-right" id="topRight" data-move="topRight">
                     <div class="pill" id="pill" data-sel="pill" data-resize="pill">
                       <div class="pill-inner" id="pillInner">
                         <div class="ring-wrap" id="ringWrap" data-sel="ring">
@@ -223,10 +230,10 @@
                   </div>
                 </div>
 
-                <div class="tip" id="tip" data-sel="tip">今天也要开心看视频呀</div>
-                <div class="cards" id="cards"></div>
+                <div class="tip" id="tip" data-sel="tip" data-move="tip">今天也要开心看视频呀</div>
+                <div class="cards" id="cards" data-move="cards"></div>
               </div>
-              <img class="refresh-btn" id="refreshBtn" data-sel="refresh" data-resize="refresh" alt="">
+              <img class="refresh-btn" id="refreshBtn" data-sel="refresh" data-resize="refresh" data-move="refresh" alt="">
             </div>
           </div>
         </div>
@@ -289,7 +296,9 @@
       cardRadius: 25,
       cardGap: 10,
       titleSize: 20,
-      metaSize: 14
+      metaSize: 14,
+      cardsOffsetX: 0,
+      cardsTop: 0
     },
     topbar: {
       pillW: 84,
@@ -303,11 +312,16 @@
       pillGap: 4,
       titleSize: 30,
       timeSize: 30,
-      topMargin: 10
+      titleLeft: 57,
+      topMargin: 10,
+      topRightRight: 57,
+      rightTop: 10,
+      clockGap: 6
     },
     tip: {
       tipSize: 20,
-      tipMarginTop: 0
+      tipMarginTop: 0,
+      tipOffsetX: 0
     },
     refresh: {
       refreshW: 100,
@@ -330,7 +344,9 @@
         { k: "cardRadius", label: "卡片圆角", min: 0, max: 40 },
         { k: "cardGap", label: "卡片间距", min: 0, max: 30 },
         { k: "titleSize", label: "标题字号", min: 14, max: 30 },
-        { k: "metaSize", label: "信息字号", min: 10, max: 22 }
+        { k: "metaSize", label: "信息字号", min: 10, max: 22 },
+        { k: "cardsOffsetX", label: "列表水平偏移", min: -120, max: 120 },
+        { k: "cardsTop", label: "列表上间距", min: 0, max: 80 }
       ]
     },
     {
@@ -348,7 +364,11 @@
         { k: "pillGap", label: "内部间距", min: 0, max: 12 },
         { k: "titleSize", label: "标题字号", min: 18, max: 40 },
         { k: "timeSize", label: "时间字号", min: 18, max: 40 },
-        { k: "topMargin", label: "顶栏上边距", min: 0, max: 30 }
+        { k: "titleLeft", label: "标题左边距", min: 0, max: 160 },
+        { k: "topMargin", label: "标题上边距", min: 0, max: 30 },
+        { k: "topRightRight", label: "右侧组距右", min: 0, max: 160 },
+        { k: "rightTop", label: "右侧组上边距", min: 0, max: 30 },
+        { k: "clockGap", label: "胶囊与时间间距", min: 0, max: 20 }
       ]
     },
     {
@@ -356,7 +376,8 @@
       title: "提示语",
       items: [
         { k: "tipSize", label: "字号", min: 12, max: 32 },
-        { k: "tipMarginTop", label: "上间距", min: 0, max: 30 }
+        { k: "tipMarginTop", label: "上间距", min: 0, max: 60 },
+        { k: "tipOffsetX", label: "水平偏移", min: -120, max: 120 }
       ]
     },
     {
@@ -503,8 +524,11 @@
     var r = state.refresh;
 
     // 顶栏
+    el.barLeft.style.left = t.titleLeft + "px";
     el.barLeft.style.top = t.topMargin + "px";
-    el.topRight.style.top = t.topMargin + "px";
+    el.topRight.style.right = t.topRightRight + "px";
+    el.topRight.style.top = t.rightTop + "px";
+    el.topRight.style.gap = t.clockGap + "px";
     el.pageTitle.style.fontSize = t.titleSize + "px";
     el.clock.style.fontSize = t.timeSize + "px";
     el.pill.style.width = t.pillW + "px";
@@ -551,6 +575,11 @@
     // 提示语
     el.tip.style.fontSize = tip.tipSize + "px";
     el.tip.style.marginTop = tip.tipMarginTop + "px";
+    el.tip.style.transform = "translateX(" + tip.tipOffsetX + "px)";
+
+    // 卡片组整体位置
+    el.cards.style.marginTop = (15 + v.cardsTop) + "px";
+    el.cards.style.transform = "translateX(" + v.cardsOffsetX + "px)";
 
     // 视频卡片
     el.cards.querySelectorAll(".card").forEach(function (card) {
@@ -674,8 +703,68 @@
     window.addEventListener("pointerup", onUp);
   }
 
+  // ---------- 拖动组件位置 ----------
+  var dragState = null;
+  var suppressClick = false;
+
+  document.querySelector(".watch").addEventListener("pointerdown", function (e) {
+    if (e.target.closest("[data-handle]")) return;
+    var moveEl = e.target.closest("[data-move]");
+    if (!moveEl) return;
+    dragState = {
+      kind: moveEl.getAttribute("data-move"),
+      startX: e.clientX,
+      startY: e.clientY,
+      init: JSON.parse(JSON.stringify(state)),
+      moved: false
+    };
+  });
+
+  window.addEventListener("pointermove", function (e) {
+    if (!dragState) return;
+    var dx = (e.clientX - dragState.startX) / currentZoom;
+    var dy = (e.clientY - dragState.startY) / currentZoom;
+    if (!dragState.moved && Math.abs(dx) < 3 && Math.abs(dy) < 3) return;
+    dragState.moved = true;
+    suppressClick = true;
+    var init = dragState.init;
+
+    if (dragState.kind === "title") {
+      state.topbar.titleLeft = Math.round(clamp(init.topbar.titleLeft + dx, 0, 160));
+      state.topbar.topMargin = Math.round(clamp(init.topbar.topMargin + dy, 0, 30));
+    } else if (dragState.kind === "topRight") {
+      state.topbar.topRightRight = Math.round(clamp(init.topbar.topRightRight - dx, 0, 160));
+      state.topbar.rightTop = Math.round(clamp(init.topbar.rightTop + dy, 0, 30));
+    } else if (dragState.kind === "tip") {
+      state.tip.tipOffsetX = Math.round(clamp(init.tip.tipOffsetX + dx, -120, 120));
+      state.tip.tipMarginTop = Math.round(clamp(init.tip.tipMarginTop + dy, 0, 60));
+    } else if (dragState.kind === "cards") {
+      state.video.cardsOffsetX = Math.round(clamp(init.video.cardsOffsetX + dx, -120, 120));
+      state.video.cardsTop = Math.round(clamp(init.video.cardsTop + dy, 0, 80));
+    } else if (dragState.kind === "refresh") {
+      state.refresh.refreshX = Math.round(clamp(init.refresh.refreshX + (dx / 432) * 100, 0, 100));
+      state.refresh.refreshBottom = Math.round(clamp(init.refresh.refreshBottom - dy, 0, 80));
+    } else {
+      return;
+    }
+    apply();
+    syncControls();
+    updateExport();
+  });
+
+  window.addEventListener("pointerup", function () {
+    if (dragState && dragState.moved) {
+      setTimeout(function () { suppressClick = false; }, 250);
+    }
+    dragState = null;
+  });
+
   // 点击选中
   document.querySelector(".watch").addEventListener("click", function (e) {
+    if (suppressClick) {
+      suppressClick = false;
+      return;
+    }
     var node = e.target.closest("[data-sel]");
     if (node) {
       e.stopPropagation();
@@ -741,6 +830,8 @@
       "；卡片间距：" + v.cardGap + "px" + mark("视频卡片", "卡片间距"));
     lines.push("- 标题字号：" + v.titleSize + "px" + mark("视频卡片", "标题字号") +
       "；信息字号：" + v.metaSize + "px" + mark("视频卡片", "信息字号"));
+    lines.push("- 列表位置：水平偏移 " + v.cardsOffsetX + "px" + mark("视频卡片", "列表水平偏移") +
+      "；上间距 " + v.cardsTop + "px" + mark("视频卡片", "列表上间距"));
     lines.push("【顶栏】");
     lines.push("- 胶囊：" + t.pillW + "×" + t.pillH + "px" + mark("顶栏", "胶囊宽度") + mark("顶栏", "胶囊高度") +
       "，圆角 " + t.pillRadius + "px" + mark("顶栏", "胶囊圆角"));
@@ -750,12 +841,17 @@
       "；百分比字号 " + t.pctSize + "px" + mark("顶栏", "百分比字号") +
       "、宽度 " + t.pctWidth + "px" + mark("顶栏", "百分比宽度") +
       "；内部间距 " + t.pillGap + "px" + mark("顶栏", "内部间距"));
+    lines.push("- 标题位置：左边距 " + t.titleLeft + "px" + mark("顶栏", "标题左边距") +
+      "；上边距 " + t.topMargin + "px" + mark("顶栏", "标题上边距"));
+    lines.push("- 右侧组位置：距右 " + t.topRightRight + "px" + mark("顶栏", "右侧组距右") +
+      "；上边距 " + t.rightTop + "px" + mark("顶栏", "右侧组上边距") +
+      "；胶囊与时间间距 " + t.clockGap + "px" + mark("顶栏", "胶囊与时间间距"));
     lines.push("- 标题字号：" + t.titleSize + "px" + mark("顶栏", "标题字号") +
-      "；时间字号：" + t.timeSize + "px" + mark("顶栏", "时间字号") +
-      "；顶栏上边距：" + t.topMargin + "px" + mark("顶栏", "顶栏上边距"));
+      "；时间字号：" + t.timeSize + "px" + mark("顶栏", "时间字号"));
     lines.push("【提示语】");
     lines.push("- 字号：" + tp.tipSize + "px" + mark("提示语", "字号") +
-      "；上间距：" + tp.tipMarginTop + "px" + mark("提示语", "上间距"));
+      "；上间距：" + tp.tipMarginTop + "px" + mark("提示语", "上间距") +
+      "；水平偏移：" + tp.tipOffsetX + "px" + mark("提示语", "水平偏移"));
     lines.push("【刷新按钮】");
     lines.push("- 尺寸：" + r.refreshW + "×" + r.refreshH + "px" + mark("刷新按钮", "宽度") + mark("刷新按钮", "高度") +
       "；水平位置：" + r.refreshX + "%" + mark("刷新按钮", "水平位置") +
