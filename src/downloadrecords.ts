@@ -37,7 +37,6 @@ let sampler: {
     timer: any
     lastBytes: number
     lastTime: number
-    startedAt: number
     totalSize: number
 } | null = null
 
