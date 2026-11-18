@@ -1,9 +1,9 @@
 <import name="switch-bar" src="@components/SwitchBar/SwitchBar.ux"></import>
 <import name="videoshow" src="@components/Video/Video.ux"></import>
-<import name="play-popup" src="@components/PlayPopup/PlayPopup.ux"></import>
 
 <template>
   <div class="page">
+    <stack style="width: 100%; height: 100%">
     <image style="position: absolute; left: 0px" src="{{getBgImg}}"></image>
     <scroll scroll-y="true" class="zoomscroll {{scrclass}}" bounces="true">
       <switch-bar title="main.title" show-pill="{{true}}"></switch-bar>
@@ -29,13 +29,40 @@
       style="position: absolute; bottom: {{anims.refresh_bottom.value}}px"
       src.static="/common/TranslateFX/refreshFX.png">
     </image>
-    <!-- 弹窗式播放弹层：页面最后一个子节点，盖在所有内容之上 -->
-    <play-popup></play-popup>
+    <!-- 播放弹层：与播放页音量面板同一套弹窗模式，直接作为 stack 子节点盖在最上层 -->
+    <div if="{{popupVisible}}" class="popup-overlay" @click="ClosePopup">
+      <div class="play-popup" @click="StopPropagation">
+        <div class="popup-cover">
+          <text if="{{!popupCover}}" class="cover-note">♪</text>
+          <image if="{{popupCover}}" class="popup-cover-img" src="{{popupCover}}"></image>
+        </div>
+        <div class="popup-content">
+          <text class="popup-title">{{popupTitle}}</text>
+          <div class="popup-buttons">
+            <div class="popup-btn" @click="TogglePlay">
+              <image if="{{popupPlaying}}" class="popup-btn-icon" src="/common/icon/pause.png"></image>
+              <image else class="popup-btn-icon" src="/common/icon/play.png"></image>
+            </div>
+            <div class="popup-btn volume-btn" @click="ToggleVolume">
+              <image class="popup-btn-icon" src="/common/icon/volume.png"></image>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div if="{{showVolume}}" class="volume-panel" @click="StopPropagation">
+        <image class="volume-icon" src="/common/icon/volume.png"></image>
+        <slider class="volume-slider" min="0" max="100" value="{{volumePercent}}" @change="OnVolumeChange"></slider>
+        <text class="volume-value">{{volumePercent}}%</text>
+      </div>
+    </div>
+    </stack>
   </div>
 </template>
 
 <script>
+import audio from "@system.audio"
 import prompt from "@system.prompt"
+import storage from "@system.storage"
 
 export default {
   private: {
@@ -50,7 +77,15 @@ export default {
       showRefreshFX: false,
       refresh_bottom: { value: "-350" }
     },
-    bgimg: ""
+    bgimg: "",
+    // 播放弹层
+    popupVisible: false,
+    popupPlaying: false,
+    popupTitle: "",
+    popupCover: "",
+    showVolume: false,
+    volumePercent: 50,
+    popupTimer: null
   },
   computed: {
     getBgImg() {
@@ -105,10 +140,118 @@ export default {
       global.logger.error("检查更新时出错:", error);
     }
   },
+  SyncPlayStatus() {
+    const status = global.playStatus;
+    if (!status) {
+      this.popupVisible = false;
+      this.showVolume = false;
+      return;
+    }
+    const visible = !!status.popupOpen && !!status.hasTrack;
+    if (!visible) {
+      this.showVolume = false;
+    }
+    this.popupVisible = visible;
+    this.popupPlaying = !!status.playing;
+    this.popupTitle = status.title || "正在播放";
+
+    let cover = status.cover || "";
+    if (cover.indexOf("//") === 0) {
+      cover = "https:" + cover;
+    } else if (cover.indexOf("http://") === 0) {
+      cover = "https://" + cover.substring(7);
+    }
+    if (!cover) {
+      this.popupCover = "";
+    } else if (cover.indexOf("internal://") === 0 || cover.indexOf("@") >= 0) {
+      this.popupCover = cover;
+    } else {
+      this.popupCover = cover + "@160w_160h";
+    }
+  },
+  ClosePopup() {
+    const status = global.playStatus;
+    if (status) {
+      status.popupOpen = false;
+    }
+    this.popupVisible = false;
+    this.showVolume = false;
+  },
+  StopPropagation(e) {
+    if (e && e.stopPropagation) e.stopPropagation();
+  },
+  TogglePlay() {
+    const status = global.playStatus;
+    if (!status) return;
+    if (!audio.src) {
+      prompt.showToast({ message: "当前没有可播放的音频" });
+      return;
+    }
+    if (status.playing) {
+      audio.pause();
+      status.playing = false;
+      this.popupPlaying = false;
+      this.SyncStoredPlaying(false);
+    } else {
+      audio.play();
+      status.playing = true;
+      this.popupPlaying = true;
+      this.SyncStoredPlaying(true);
+    }
+  },
+  // 同步播放页的持久化状态，避免重新进入播放页时自动恢复成错误状态
+  SyncStoredPlaying(playing) {
+    storage.get({
+      key: "playerState",
+      success: (data) => {
+        if (!data) return;
+        try {
+          const state = JSON.parse(data);
+          state.isPlaying = playing;
+          if (audio.duration > 0) {
+            state.progress = (audio.currentTime / audio.duration) * 100;
+          }
+          storage.set({
+            key: "playerState",
+            value: JSON.stringify(state)
+          });
+        } catch (e) {}
+      },
+      fail: () => {}
+    });
+  },
+  ToggleVolume() {
+    this.showVolume = !this.showVolume;
+    if (this.showVolume) {
+      this.RefreshVolume();
+    }
+  },
+  RefreshVolume() {
+    audio.getPlayState({
+      success: (state) => {
+        this.volumePercent = Math.round((state.volume || 0) * 100);
+      },
+      fail: () => {
+        this.volumePercent = 50;
+      }
+    });
+  },
+  OnVolumeChange(e) {
+    const value = Math.max(0, Math.min(100, Math.round(e.progress)));
+    this.volumePercent = value;
+    audio.volume = value / 100;
+    if (global.playStatus) {
+      global.playStatus.volume = value;
+    }
+  },
   onInit() {
     this.GetVids();
     this.funnytip = this.$app.$def.funnytips.getTips();
     this.checkUpdates();
+    this.SyncPlayStatus();
+    this.popupTimer = setInterval(() => {
+      this.SyncPlayStatus();
+    }, 200);
   },
   onReady() {
     const { refresh_bottom } = this.anims;
@@ -134,6 +277,10 @@ export default {
     if (this._timerRefreshStop) {
       clearTimeout(this._timerRefreshStop);
       this._timerRefreshStop = null;
+    }
+    if (this.popupTimer) {
+      clearInterval(this.popupTimer);
+      this.popupTimer = null;
     }
   }
 }
