@@ -1,16 +1,7 @@
 <template>
   <div class="time-comp" style="{{compStyle}}">
-    <!-- 顶部常驻胶囊：仅矩形屏且由首页开启。
-         缓存进行中时，胶囊内部展示「环形进度条（内嵌下载图标）+ 百分比」 -->
-    <div if="{{showPill && useRectTime}}" class="top-pill">
-      <div if="{{cacheActive}}" class="pill-progress">
-        <div class="pill-ringwrap">
-          <progress class="pill-ring" type="arc" percent="{{cachePercent}}"></progress>
-          <image class="pill-icon" src="/common/icon/download.png"></image>
-        </div>
-        <text class="pill-percent">{{cachePercent}}%</text>
-      </div>
-    </div>
+    <!-- 顶部常驻胶囊：仅矩形屏且由首页开启，当前为纯占位，无任何功能 -->
+    <div if="{{showPill && useRectTime}}" class="top-pill"></div>
     <div if="{{!useRectTime}}">
       <div class="circle-time">
         <text class="timetxt">{{ hourHigh }}</text>
@@ -35,27 +26,7 @@ export default {
     minuteHigh: "",
     minuteLow: "",
     compStyle: {},
-    useRectTime: false,
-    // 视频缓存进度（轮询 global.downloadrecords.cacheProgress）
-    cacheActive: false,
-    cachePercent: 0,
-    cacheTimer: null
-  },
-  // 同步缓存进度：仅在缓存进行中显示环形进度
-  SyncCacheProgress() {
-    const progress = global.downloadrecords && global.downloadrecords.cacheProgress
-    if (!progress || !progress.active) {
-      this.cacheActive = false
-      return
-    }
-    this.cacheActive = true
-    this.cachePercent = Math.max(0, Math.min(99, Math.round(progress.percent || 0)))
-  },
-  onDestroy() {
-    if (this.cacheTimer) {
-      clearInterval(this.cacheTimer)
-      this.cacheTimer = null
-    }
+    useRectTime: false
   },
   UpdateTime() {
     const hour = this.$app.$def.dayjs().hour()
@@ -79,14 +50,6 @@ export default {
       this.compStyle["top"] = "0px"
       this.compStyle["right"] = "100px"
       this.useRectTime = true
-    }
-
-    // 仅首页顶栏（showPill）需要展示缓存进度，其他页面的时钟不轮询
-    if (this.showPill) {
-      this.SyncCacheProgress()
-      this.cacheTimer = setInterval(() => {
-        this.SyncCacheProgress()
-      }, 500)
     }
   }
 }
@@ -113,8 +76,7 @@ export default {
   top: 2px;
 }
 
-// 常驻胶囊：缓存进行中时内部展示进度，空闲时保持空胶囊占位
-// 半透明深色底保证白色进度内容在粉色首页背景上有足够对比度
+// 常驻胶囊：纯占位，无内容、无交互
 .top-pill {
   width: 76px;
   height: 28px;
@@ -123,50 +85,6 @@ export default {
   margin-right: 6px;
   align-items: center;
   justify-content: center;
-}
-
-// 胶囊内部：环形进度条 + 内嵌下载图标 + 百分比
-.pill-progress {
-  flex-direction: row;
-  align-items: center;
-  justify-content: center;
-}
-
-.pill-ringwrap {
-  width: 24px;
-  height: 24px;
-  align-items: center;
-  justify-content: center;
-  position: relative;
-}
-
-.pill-ring {
-  position: absolute;
-  left: 0px;
-  top: 0px;
-  width: 24px;
-  height: 24px;
-  radius: 10px;
-  stroke-width: 3px;
-  start-angle: 270deg;
-  total-angle: 360deg;
-  color: #ffffff;
-  layer-color: rgba(255, 255, 255, 0.3);
-}
-
-.pill-icon {
-  width: 11px;
-  height: 11px;
-  object-fit: scale-down;
-}
-
-.pill-percent {
-  font-size: 16px;
-  font-weight: 600;
-  color: #ffffff;
-  margin-left: 6px;
-  width: 42px;
-  text-align: center;
 }
 
 .rect-txt {
