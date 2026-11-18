@@ -26,8 +26,8 @@
     </text>
     <div
       if="{{anims.showRefreshFX}}"
-      style="position: absolute; left: 0px; right: 0px; bottom: {{anims.refresh_bottom.value}}px; flex-direction: row; justify-content: center">
-      <image src.static="/common/TranslateFX/refreshFX.png" style="width: 642px; height: 323px; flex-shrink: 0"></image>
+      style="position: absolute; left: 0px; top: 0px; width: 100%; height: 100%; flex-direction: column; align-items: center">
+      <image style="position: absolute; bottom: {{anims.refresh_bottom.value}}px" src.static="/common/TranslateFX/refreshFX.png"></image>
     </div>
     <!-- 播放弹层：与播放页音量面板同一套弹窗模式，直接作为 stack 子节点盖在最上层 -->
     <div if="{{popupVisible}}" class="popup-overlay" @click="ClosePopup">
