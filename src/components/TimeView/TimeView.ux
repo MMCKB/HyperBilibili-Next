@@ -135,10 +135,22 @@ export default {
       return
     }
 
-    // 充电时优先打开充电弹层
+    // 充电时：正在播放则播放弹层和充电弹层一起显示；未播放只显示充电弹层
     if (status.charging) {
-      status.chargePopupOpen = !status.chargePopupOpen
-      status.popupOpen = false
+      if (status.playing) {
+        status.hasTrack = true
+        const bothOpen = status.popupOpen && status.chargePopupOpen
+        if (bothOpen) {
+          status.popupOpen = false
+          status.chargePopupOpen = false
+        } else {
+          status.popupOpen = true
+          status.chargePopupOpen = true
+        }
+      } else {
+        status.chargePopupOpen = !status.chargePopupOpen
+        status.popupOpen = false
+      }
       return
     }
 

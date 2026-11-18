@@ -29,21 +29,9 @@
       style="position: absolute; left: 0px; top: 0px; width: 100%; height: 100%; flex-direction: column; align-items: center">
       <image style="position: absolute; bottom: {{anims.refresh_bottom.value}}px" src.static="/common/TranslateFX/refreshFX.png"></image>
     </div>
-    <!-- 充电弹层：与播放弹层同一套遮罩与尺寸风格 -->
-    <div if="{{chargeVisible}}" class="popup-overlay" @click="CloseChargePopup">
-      <div class="charge-popup" @click="StopPropagation">
-        <div class="charge-popup-iconbox">
-          <image class="charge-popup-bolt" src="/common/icon/charging_green.png"></image>
-        </div>
-        <div class="charge-popup-content">
-          <text class="charge-popup-label">正在充电</text>
-          <text class="charge-popup-pct">{{chargePercent}}%</text>
-        </div>
-      </div>
-    </div>
-    <!-- 播放弹层：与播放页音量面板同一套弹窗模式，直接作为 stack 子节点盖在最上层 -->
-    <div if="{{popupVisible}}" class="popup-overlay" @click="ClosePopup">
-      <div class="play-popup" @click="StopPropagation">
+    <!-- 弹层：充电与播放共用一层遮罩，可同时显示 -->
+    <div if="{{popupVisible || chargeVisible}}" class="popup-overlay" @click="ClosePopups">
+      <div if="{{popupVisible}}" class="play-popup" style="{{playStyle}}" @click="StopPropagation">
         <div class="popup-cover">
           <text if="{{!popupCover}}" class="cover-note">♪</text>
           <image if="{{popupCover}}" class="popup-cover-img" src="{{popupCover}}"></image>
@@ -61,7 +49,16 @@
           </div>
         </div>
       </div>
-      <div if="{{showVolume}}" class="volume-panel" @click="StopPropagation">
+      <div if="{{chargeVisible}}" class="charge-popup" @click="StopPropagation">
+        <div class="charge-popup-iconbox">
+          <image class="charge-popup-bolt" src="/common/icon/charging_green.png"></image>
+        </div>
+        <div class="charge-popup-content">
+          <text class="charge-popup-label">正在充电</text>
+          <text class="charge-popup-pct">{{chargePercent}}%</text>
+        </div>
+      </div>
+      <div if="{{popupVisible && showVolume}}" class="volume-panel" style="{{volumeStyle}}" @click="StopPropagation">
         <image class="volume-icon" src="/common/icon/volume.png"></image>
         <slider class="volume-slider" min="0" max="100" value="{{volumePercent}}" @change="OnVolumeChange"></slider>
         <text class="volume-value">{{volumePercent}}%</text>
@@ -99,6 +96,8 @@ export default {
     volumePercent: 50,
     chargeVisible: false,
     chargePercent: 0,
+    playStyle: { top: "60px" },
+    volumeStyle: { top: "156px" },
     popupTimer: null
   },
   computed: {
@@ -163,17 +162,19 @@ export default {
     }
     const visible = !!status.popupOpen && !!status.hasTrack;
     const chargeVisible = !!status.chargePopupOpen && !!status.charging;
-    if (chargeVisible) {
-      status.popupOpen = false;
-      this.showVolume = false;
-    }
-    this.chargeVisible = chargeVisible;
-    this.chargePercent = typeof status.batteryPercent === "number" ? status.batteryPercent : 0;
 
     if (!visible) {
       this.showVolume = false;
     }
-    this.popupVisible = chargeVisible ? false : visible;
+    this.popupVisible = visible;
+    this.chargeVisible = chargeVisible;
+    this.chargePercent = typeof status.batteryPercent === "number" ? status.batteryPercent : 0;
+
+    // 充电弹层在上，播放弹层在下，音量面板再往下，互不遮挡
+    const both = visible && chargeVisible;
+    this.playStyle["top"] = both ? "156px" : "60px";
+    this.volumeStyle["top"] = both ? "252px" : "156px";
+
     this.popupPlaying = !!status.playing;
     this.popupTitle = status.title || "正在播放";
 
@@ -191,20 +192,15 @@ export default {
       this.popupCover = cover + "@160w_160h";
     }
   },
-  ClosePopup() {
+  ClosePopups() {
     const status = global.playStatus;
     if (status) {
       status.popupOpen = false;
-    }
-    this.popupVisible = false;
-    this.showVolume = false;
-  },
-  CloseChargePopup() {
-    const status = global.playStatus;
-    if (status) {
       status.chargePopupOpen = false;
     }
+    this.popupVisible = false;
     this.chargeVisible = false;
+    this.showVolume = false;
   },
   StopPropagation(e) {
     if (e && e.stopPropagation) e.stopPropagation();
