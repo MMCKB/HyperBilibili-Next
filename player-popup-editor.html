@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>播放弹层布局编辑器 · 澎湃哔哩</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: #0c0c0f; color: #e8e8ee; overflow: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+  }
+  .app-header {
+    height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 20px;
+    border-bottom: 1px solid #22222a; background: #101014;
+  }
+  .app-header .mark { width: 8px; height: 22px; border-radius: 4px; background: #ff7da8; }
+  .app-header h1 { font-size: 15px; margin: 0; font-weight: 600; letter-spacing: .2px; white-space: nowrap; }
+  .app-header .sub { font-size: 12px; color: #8a8a96; }
+  .app-header .spacer { flex: 1; }
+  .app-header .hint-badge {
+    font-size: 11px; color: #ffb3cb; border: 1px solid #4a2a36; background: #1e1218;
+    padding: 4px 8px; border-radius: 999px; white-space: nowrap;
+  }
+
+  .main { display: flex; height: calc(100% - 56px); }
+
+  .stage { flex: 1; min-width: 0; display: flex; flex-direction: column; background: radial-gradient(900px 500px at 50% 0%, #1a1a22 0%, #0c0c0f 70%); }
+  .stage-toolbar {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    padding: 10px 20px; border-bottom: 1px solid #1b1b22;
+  }
+  .zoom-group { display: flex; background: #16161c; border: 1px solid #262630; border-radius: 8px; overflow: hidden; }
+  .zoom-group button {
+    background: transparent; border: 0; color: #b9b9c6; padding: 5px 10px; font-size: 12px; cursor: pointer;
+  }
+  .zoom-group button.active { background: #ff7da8; color: #141418; font-weight: 700; }
+  .stage-toolbar label { font-size: 12px; color: #b7b7c4; display: flex; align-items: center; gap: 6px; cursor: pointer; }
+  .stage-toolbar input[type="checkbox"] { accent-color: #ff7da8; }
+  .stage-toolbar .sep { width: 1px; height: 18px; background: #262630; }
+  .stage-body { flex: 1; display: flex; overflow: auto; padding: 24px; }
+  .stage-foot { padding: 0 20px 12px; color: #6f6f7c; font-size: 11px; text-align: center; }
+
+  .watch-wrap { position: relative; margin: auto; width: calc(432px * var(--zoom)); height: calc(526px * var(--zoom)); flex: 0 0 auto; }
+  .watch {
+    position: absolute; left: 0; top: 0; width: 432px; height: 526px;
+    background: #000; border-radius: 40px; overflow: hidden;
+    transform: scale(var(--zoom)); transform-origin: top left;
+    box-shadow: 0 0 0 7px #191920, 0 0 0 9px #2a2a33, 0 24px 60px rgba(0,0,0,.65);
+    user-select: none;
+  }
+  .screen { position: absolute; inset: 0; background: #000; overflow: hidden; }
+  .bg-glow {
+    position: absolute; inset: 0;
+    background:
+      radial-gradient(300px 240px at 16% 10%, rgba(255,122,162,.32), transparent 70%),
+      radial-gradient(260px 220px at 88% 34%, rgba(255,86,138,.16), transparent 70%),
+      radial-gradient(220px 180px at 50% 100%, rgba(255,122,162,.08), transparent 70%),
+      #060608;
+  }
+  .content { position: absolute; inset: 0; overflow: hidden; }
+
+  .switch-bar { position: relative; height: 57px; }
+  .bar-left { position: absolute; left: 57px; top: 10px; display: flex; align-items: center; white-space: nowrap; }
+  .switch-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; color: #fff; }
+  .page-title { color: #fff; font-weight: 600; margin-left: 9px; font-size: 30px; white-space: nowrap; }
+  .top-right { position: absolute; right: 57px; top: 10px; display: flex; align-items: center; gap: 6px; }
+  .clock { color: #fff; font-weight: 600; white-space: nowrap; font-size: 30px; line-height: 28px; }
+
+  .pill {
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,.28); cursor: pointer; flex: 0 0 auto;
+    overflow: hidden; white-space: nowrap;
+  }
+  .pill-text { color: #fff; font-weight: 500; line-height: 1; }
+
+  .tip { text-align: center; color: rgba(255,255,255,.72); font-size: 16px; margin-top: 12px; }
+
+  .cards { display: flex; flex-direction: column; align-items: center; gap: 10px; margin-top: 16px; }
+  .card {
+    width: 295px; padding: 15px; border-radius: 25px; background: rgba(38,38,38,.686);
+    display: flex; flex-direction: column;
+  }
+  .card-cover {
+    width: 265px; height: 150px; border-radius: 30px; overflow: hidden;
+    background: linear-gradient(135deg, #4a3d4b 0%, #2a2a34 55%, #23202a 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .card-cover .play-dot {
+    width: 34px; height: 34px; border-radius: 50%; background: rgba(255,255,255,.18);
+    display: flex; align-items: center; justify-content: center; color: rgba(255,255,255,.85);
+  }
+  .card-title-line { height: 15px; border-radius: 4px; background: rgba(255,255,255,.68); margin-top: 12px; width: 86%; }
+  .card-title-line.short { width: 52%; margin-top: 8px; background: rgba(255,255,255,.4); }
+
+  /* ---------- 播放弹层 ---------- */
+  .popup-wrap { position: absolute; z-index: 50; }
+  .popup {
+    position: relative; width: 100%; height: 100%;
+    display: flex; overflow: visible;
+  }
+  .popup-inner {
+    flex: 1; min-width: 0; display: flex; align-items: center;
+  }
+  .popup-inner.mode-cover-left { flex-direction: row; }
+  .popup-inner.mode-cover-right { flex-direction: row-reverse; }
+  .popup-inner.mode-cover-top { flex-direction: column; align-items: center; }
+  .popup-inner.mode-cover-top .pcontent { width: 100%; }
+
+  .thumb { position: relative; flex: 0 0 auto; }
+  .thumb-img {
+    width: 100%; height: 100%; overflow: hidden;
+    background: linear-gradient(135deg, #ff8fb3 0%, #8d4a63 55%, #2a1f27 100%);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .thumb-img svg { width: 38%; height: 38%; color: rgba(255,255,255,.55); }
+
+  .pcontent {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: center;
+  }
+  .ptitle {
+    width: 100%; color: #fff; line-height: 1.3;
+    display: -webkit-box; -webkit-box-orient: vertical; overflow: hidden;
+    word-break: break-all;
+  }
+  .pbtns { display: flex; width: 100%; align-items: center; }
+  .pbtn {
+    position: relative; display: flex; align-items: center; justify-content: center;
+    padding: 0; cursor: pointer; flex: 0 0 auto; outline: none;
+  }
+  .picon { display: flex; align-items: center; justify-content: center; color: inherit; }
+  .pbtn svg { width: var(--icon-size, 16px); height: var(--icon-size, 16px); display: block; color: var(--icon-color, #fff); }
+
+  /* ---------- 选中与手柄 ---------- */
+  .sel { outline: 2px dashed #ff7da8; outline-offset: 2px; }
+  .handle {
+    display: none; position: absolute; right: -7px; bottom: -7px; width: 14px; height: 14px;
+    background: #ff7da8; border: 2px solid #111; border-radius: 4px;
+    cursor: nwse-resize; z-index: 70;
+  }
+  .sel > .handle { display: block; }
+  .panel-handle { left: -7px; right: auto; cursor: nesw-resize; }
+
+  /* ---------- 右侧面板 ---------- */
+  .panel { width: 380px; flex: 0 0 380px; border-left: 1px solid #1e1e26; background: #101014; display: flex; flex-direction: column; }
+  .panel-head { padding: 13px 14px 10px; border-bottom: 1px solid #1e1e26; display: flex; align-items: center; gap: 8px; }
+  .panel-head h2 { font-size: 13px; margin: 0; font-weight: 600; }
+  .panel-head .badge { margin-left: auto; font-size: 10px; color: #ff9dbb; background: #2a1c23; border: 1px solid #4a2a36; border-radius: 999px; padding: 3px 8px; white-space: nowrap; }
+  .panel-tools { display: flex; flex-wrap: wrap; gap: 6px; padding: 10px 14px; border-bottom: 1px solid #1e1e26; }
+  .chip {
+    border: 1px solid #2a2a34; background: #17171d; color: #b9b9c6; border-radius: 999px;
+    padding: 5px 10px; font-size: 11px; cursor: pointer;
+  }
+  .chip.active { background: #2a1c23; border-color: #ff7da8; color: #ff9dbb; }
+  .panel-scroll { flex: 1; overflow-y: auto; padding: 12px 14px 16px; }
+  .group { border: 1px solid #22222b; border-radius: 10px; margin-bottom: 10px; overflow: hidden; }
+  .group-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 12px; background: #16161c; cursor: pointer; user-select: none;
+  }
+  .group-head h3 { font-size: 12px; margin: 0; font-weight: 600; }
+  .group-head .count { font-size: 10px; color: #7d7d8a; }
+  .group-body { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 10px; }
+  .group.collapsed .group-body { display: none; }
+
+  .ctrl { display: flex; flex-direction: column; gap: 5px; }
+  .ctrl-top { display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: 11px; color: #b7b7c4; }
+  .ctrl-top .val { display: flex; align-items: center; gap: 4px; }
+  .ctrl-top input[type="number"] {
+    width: 58px; background: #0b0b0e; border: 1px solid #2a2a34; color: #fff;
+    border-radius: 6px; padding: 3px 6px; font-size: 11px; text-align: right; outline: none;
+  }
+  .ctrl-top .unit { color: #6f6f7c; width: 20px; font-size: 10px; }
+  .ctrl input[type="range"] { width: 100%; accent-color: #ff7da8; height: 4px; cursor: pointer; }
+  .ctrl select {
+    background: #0b0b0e; border: 1px solid #2a2a34; color: #fff; border-radius: 6px;
+    padding: 4px 6px; font-size: 11px; outline: none; cursor: pointer;
+  }
+  .color-val { display: flex; align-items: center; gap: 7px; }
+  .color-val input[type="color"] {
+    width: 28px; height: 22px; padding: 0; border: 0; background: transparent; cursor: pointer;
+  }
+  .color-val input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
+  .color-val input[type="color"]::-webkit-color-swatch { border: 1px solid #33333d; border-radius: 5px; }
+  .color-val .hex { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10px; color: #9a9aa8; width: 62px; }
+
+  .export-group .group-body { gap: 8px; }
+  .export-group textarea {
+    width: 100%; height: 150px; resize: vertical; background: #0b0b0e; color: #b9b9c6;
+    border: 1px solid #262630; border-radius: 8px; padding: 9px 10px;
+    font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 10px; line-height: 1.55;
+  }
+  .btnrow { display: flex; flex-wrap: wrap; gap: 7px; }
+  .act {
+    border: 1px solid #2a2a34; background: #17171d; color: #d7d7e2; border-radius: 7px;
+    padding: 6px 10px; font-size: 11px; cursor: pointer;
+  }
+  .act:hover { border-color: #444452; }
+  .act.primary { background: #ff7da8; border-color: #ff7da8; color: #1a1014; font-weight: 700; }
+  .act.ghost { color: #8f8f9c; }
+
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%) translateY(10px);
+    background: #ff7da8; color: #1a1014; font-size: 12px; font-weight: 600;
+    padding: 8px 14px; border-radius: 999px; opacity: 0; pointer-events: none;
+    transition: opacity .18s, transform .18s; z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  @media (max-width: 1100px) {
+    .panel { width: 340px; flex-basis: 340px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="mark"></div>
+  <h1>播放弹层布局编辑器</h1>
+  <span class="sub">点击胶囊开关弹层 · 拖动移动 · 粉色手柄调尺寸</span>
+  <span class="spacer"></span>
+  <span class="hint-badge">所有样式可调，导出后即可落地</span>
+</header>
+
+<div class="main">
+  <section class="stage">
+    <div class="stage-toolbar">
+      <div class="zoom-group" id="zoomGroup">
+        <button data-zoom="0.75">75%</button>
+        <button data-zoom="1" class="active">100%</button>
+        <button data-zoom="1.25">125%</button>
+      </div>
+      <span class="sep"></span>
+      <label><input type="checkbox" id="openToggle" checked> 显示弹层</label>
+      <label><input type="checkbox" id="playingToggle" checked> 正在播放</label>
+    </div>
+    <div class="stage-body">
+      <div class="watch-wrap" id="watchWrap" style="--zoom:1">
+        <div class="watch" id="watch">
+          <div class="screen">
+            <div class="bg-glow"></div>
+            <div class="content">
+              <div class="switch-bar">
+                <div class="bar-left">
+                  <div class="switch-icon">
+                    <svg viewBox="0 0 24 24" width="26" height="26"><path d="M4 7h16M4 12h11M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  </div>
+                  <div class="page-title">首页</div>
+                </div>
+                <div class="top-right">
+                  <div class="pill" id="pill" data-sel="pill">
+                    <span class="pill-text" id="pillText">正在播放</span>
+                  </div>
+                  <div class="clock">12:34</div>
+                </div>
+              </div>
+
+              <div class="tip">点击胶囊，打开播放卡片</div>
+
+              <div class="cards">
+                <div class="card">
+                  <div class="card-cover">
+                    <div class="play-dot">
+                      <svg viewBox="0 0 24 24" width="14" height="14"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+                    </div>
+                  </div>
+                  <div class="card-title-line"></div>
+                  <div class="card-title-line short"></div>
+                </div>
+                <div class="card">
+                  <div class="card-cover">
+                    <div class="play-dot">
+                      <svg viewBox="0 0 24 24" width="14" height="14"><path d="M8 5v14l11-7z" fill="currentColor"/></svg>
+                    </div>
+                  </div>
+                  <div class="card-title-line"></div>
+                  <div class="card-title-line short"></div>
+                </div>
+              </div>
+            </div>
+
+            <div class="popup-wrap" id="popupWrap">
+              <div class="popup" id="popup" data-sel="panel">
+                <div class="popup-inner mode-cover-left" id="popupInner">
+                  <div class="thumb" id="thumb" data-sel="cover">
+                    <div class="thumb-img" id="thumbImg">
+                      <svg viewBox="0 0 24 24"><path d="M9 18V5l10-2v13" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="7" cy="18" r="2.2" fill="currentColor"/><circle cx="17" cy="16" r="2.2" fill="currentColor"/></svg>
+                    </div>
+                    <span class="handle" data-handle="cover"></span>
+                  </div>
+                  <div class="pcontent" id="pcontent">
+                    <div class="ptitle" id="ptitle" data-sel="title">正在播放的视频标题，最多显示两行，用于测试截断效果</div>
+                    <div class="pbtns" id="pbtns">
+                      <button class="pbtn" id="btnPlay" data-sel="play">
+                        <span class="picon" id="playIcon"></span>
+                        <span class="handle" data-handle="buttons"></span>
+                      </button>
+                      <button class="pbtn" id="btnVol" data-sel="volume">
+                        <span class="picon" id="volIcon"></span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+                <span class="handle panel-handle" data-handle="panel"></span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="stage-foot">弹层的位置、尺寸、颜色、边框、圆角、间距均可调；导出的数值会直接落到代码里</div>
+  </section>
+
+  <aside class="panel">
+    <div class="panel-head">
+      <h2>样式参数</h2>
+      <span class="badge" id="changeBadge">0 项修改</span>
+    </div>
+    <div class="panel-tools" id="chips">
+      <button class="chip active" data-target="panel">弹层</button>
+      <button class="chip" data-target="cover">封面</button>
+      <button class="chip" data-target="title">标题</button>
+      <button class="chip" data-target="play">播放键</button>
+      <button class="chip" data-target="volume">音量键</button>
+      <button class="chip" data-target="pill">胶囊</button>
+    </div>
+    <div class="panel-scroll" id="groups"></div>
+    <div class="panel-scroll" style="flex:0 0 auto; border-top:1px solid #1e1e26; padding-top:10px;">
+      <div class="group export-group" style="margin-bottom:0">
+        <div class="group-head" data-static="1"><h3>导出配置</h3><span class="count" id="exportHint">调好后复制给我</span></div>
+        <div class="group-body">
+          <textarea id="exportText" readonly></textarea>
+          <div class="btnrow">
+            <button class="act primary" id="copyAi">复制给 AI</button>
+            <button class="act" id="copyJson">复制 JSON</button>
+            <button class="act" id="downloadJson">下载 JSON</button>
+            <button class="act ghost" id="resetAll">重置全部</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+(function () {
+  "use strict";
+
+  var DEFAULTS = {
+    panel: {
+      w: 250, h: 104, top: 44, right: 57, radius: 18, padding: 12,
+      bg: "#14141a", bgOpacity: 92,
+      borderColor: "#ffffff", borderOpacity: 18, borderWidth: 1
+    },
+    layout: {
+      mode: "cover-left", contentGap: 12, titleBtnGap: 8,
+      contentAlign: "flex-start", buttonsAlign: "flex-start", buttonsOrder: "play-first"
+    },
+    cover: {
+      w: 64, h: 64, radius: 12,
+      borderColor: "#ffffff", borderOpacity: 0, borderWidth: 0
+    },
+    title: { size: 15, color: "#ffffff", lines: 2, weight: 600 },
+    buttons: {
+      w: 30, h: 30, radius: 15, gap: 10,
+      bg: "#ffffff", bgOpacity: 12,
+      borderColor: "#ffffff", borderOpacity: 0, borderWidth: 0,
+      iconSize: 16, iconColor: "#ffffff"
+    },
+    pill: { w: 76, h: 28, radius: 24, textSize: 14, textColor: "#ffffff" }
+  };
+
+  var SCHEMA = [
+    { key: "panel", title: "弹层", items: [
+      { k: "w", label: "宽度", min: 160, max: 380, unit: "px" },
+      { k: "h", label: "高度", min: 72, max: 200, unit: "px" },
+      { k: "top", label: "距顶", min: 28, max: 160, unit: "px" },
+      { k: "right", label: "距右", min: 0, max: 200, unit: "px" },
+      { k: "radius", label: "圆角", min: 0, max: 40, unit: "px" },
+      { k: "padding", label: "内边距", min: 0, max: 24, unit: "px" },
+      { k: "bg", label: "背景色", type: "color" },
+      { k: "bgOpacity", label: "背景不透明度", min: 0, max: 100, unit: "%" },
+      { k: "borderColor", label: "边框色", type: "color" },
+      { k: "borderOpacity", label: "边框不透明度", min: 0, max: 100, unit: "%" },
+      { k: "borderWidth", label: "边框粗细", min: 0, max: 6, unit: "px" }
+    ]},
+    { key: "layout", title: "内部布局", items: [
+      { k: "mode", label: "封面位置", type: "select", options: [["cover-left", "封面在左"], ["cover-right", "封面在右"], ["cover-top", "封面在上"]] },
+      { k: "contentGap", label: "封面与内容间距", min: 0, max: 24, unit: "px" },
+      { k: "titleBtnGap", label: "标题与按钮间距", min: 0, max: 20, unit: "px" },
+      { k: "contentAlign", label: "内容对齐", type: "select", options: [["flex-start", "左对齐"], ["center", "居中"], ["flex-end", "右对齐"]] },
+      { k: "buttonsAlign", label: "按钮对齐", type: "select", options: [["flex-start", "左对齐"], ["center", "居中"], ["flex-end", "右对齐"]] },
+      { k: "buttonsOrder", label: "按钮顺序", type: "select", options: [["play-first", "播放在前"], ["volume-first", "音量在前"]] }
+    ]},
+    { key: "cover", title: "封面", items: [
+      { k: "w", label: "宽度", min: 32, max: 140, unit: "px" },
+      { k: "h", label: "高度", min: 32, max: 140, unit: "px" },
+      { k: "radius", label: "圆角", min: 0, max: 40, unit: "px" },
+      { k: "borderColor", label: "边框色", type: "color" },
+      { k: "borderOpacity", label: "边框不透明度", min: 0, max: 100, unit: "%" },
+      { k: "borderWidth", label: "边框粗细", min: 0, max: 6, unit: "px" }
+    ]},
+    { key: "title", title: "标题", items: [
+      { k: "size", label: "字号", min: 10, max: 28, unit: "px" },
+      { k: "color", label: "颜色", type: "color" },
+      { k: "lines", label: "最多行数", min: 1, max: 3, unit: "行" },
+      { k: "weight", label: "字重", type: "select", options: [[400, "常规"], [500, "中等"], [600, "半粗"], [700, "粗体"]], numeric: true }
+    ]},
+    { key: "buttons", title: "按钮", items: [
+      { k: "w", label: "按钮宽度", min: 20, max: 64, unit: "px" },
+      { k: "h", label: "按钮高度", min: 20, max: 64, unit: "px" },
+      { k: "radius", label: "圆角", min: 0, max: 32, unit: "px" },
+      { k: "gap", label: "按钮间距", min: 0, max: 24, unit: "px" },
+      { k: "bg", label: "按钮背景", type: "color" },
+      { k: "bgOpacity", label: "背景不透明度", min: 0, max: 100, unit: "%" },
+      { k: "borderColor", label: "边框色", type: "color" },
+      { k: "borderOpacity", label: "边框不透明度", min: 0, max: 100, unit: "%" },
+      { k: "borderWidth", label: "边框粗细", min: 0, max: 5, unit: "px" },
+      { k: "iconSize", label: "图标大小", min: 10, max: 32, unit: "px" },
+      { k: "iconColor", label: "图标颜色", type: "color" }
+    ]},
+    { key: "pill", title: "顶栏胶囊", items: [
+      { k: "w", label: "宽度", min: 56, max: 120, unit: "px" },
+      { k: "h", label: "高度", min: 20, max: 40, unit: "px" },
+      { k: "radius", label: "圆角", min: 0, max: 24, unit: "px" },
+      { k: "textSize", label: "文字大小", min: 10, max: 20, unit: "px" },
+      { k: "textColor", label: "文字颜色", type: "color" }
+    ]}
+  ];
+
+  var SAVE_KEY = "hyperbili_popup_editor_v1";
+  var ui = { open: true, playing: true, muted: false };
+  var state = loadState();
+  var selected = "panel";
+  var controlRefs = {};
+  var drag = null;
+  var resize = null;
+
+  var $ = function (id) { return document.getElementById(id); };
+  var watchWrap = $("watchWrap");
+  var watch = $("watch");
+  var popupWrap = $("popupWrap");
+  var popup = $("popup");
+  var popupInner = $("popupInner");
+  var thumb = $("thumb");
+  var thumbImg = $("thumbImg");
+  var pcontent = $("pcontent");
+  var ptitle = $("ptitle");
+  var pbtns = $("pbtns");
+  var btnPlay = $("btnPlay");
+  var btnVol = $("btnVol");
+  var playIcon = $("playIcon");
+  var volIcon = $("volIcon");
+  var pill = $("pill");
+  var pillText = $("pillText");
+  var groupsEl = $("groups");
+  var exportText = $("exportText");
+  var changeBadge = $("changeBadge");
+  var toastEl = $("toast");
+
+  var ICONS = {
+    play: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.2v13.6L19 12z" fill="currentColor"/></svg>',
+    pause: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 5h4v14h-4zM13.5 5h4v14h-4z" fill="currentColor"/></svg>',
+    volume: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 8.5a5 5 0 010 7M18.5 5.8a8.6 8.6 0 010 12.4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
+    muted: '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9h4l5-4v14l-5-4H4z" fill="currentColor"/><path d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>'
+  };
+
+  function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
+
+  function mergeDefaults(def, saved) {
+    var out = deepClone(def);
+    if (!saved || typeof saved !== "object") return out;
+    Object.keys(def).forEach(function (k) {
+      if (typeof def[k] === "object" && def[k] !== null) {
+        out[k] = mergeDefaults(def[k], saved[k]);
+      } else if (typeof saved[k] === typeof def[k]) {
+        out[k] = saved[k];
+      }
+    });
+    return out;
+  }
+
+  function loadState() {
+    try {
+      var raw = localStorage.getItem(SAVE_KEY);
+      if (raw) return mergeDefaults(DEFAULTS, JSON.parse(raw));
+    } catch (e) {}
+    return deepClone(DEFAULTS);
+  }
+
+  function saveState() {
+    try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function getPath(obj, path) {
+    return path.split(".").reduce(function (o, k) { return o[k]; }, obj);
+  }
+
+  function setPath(obj, path, val) {
+    var keys = path.split(".");
+    var last = keys.pop();
+    var cur = obj;
+    keys.forEach(function (k) { cur = cur[k]; });
+    cur[last] = val;
+  }
+
+  function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+  function hexToRgb(hex) {
+    hex = String(hex || "#000000").replace("#", "");
+    if (hex.length === 3) hex = hex.split("").map(function (c) { return c + c; }).join("");
+    var n = parseInt(hex, 16);
+    if (isNaN(n)) return [0, 0, 0];
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+
+  function rgba(hex, opacityPercent) {
+    var c = hexToRgb(hex);
+    return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + (opacityPercent / 100).toFixed(3) + ")";
+  }
+
+  function getScale() {
+    return watch.getBoundingClientRect().width / 432 || 1;
+  }
+
+  function apply() {
+    var p = state.panel, l = state.layout, c = state.cover, t = state.title, b = state.buttons, pl = state.pill;
+
+    popupWrap.style.top = p.top + "px";
+    popupWrap.style.right = p.right + "px";
+    popupWrap.style.width = p.w + "px";
+    popupWrap.style.height = p.h + "px";
+    popupWrap.style.display = ui.open ? "block" : "none";
+
+    popup.style.padding = p.padding + "px";
+    popup.style.borderRadius = p.radius + "px";
+    popup.style.background = rgba(p.bg, p.bgOpacity);
+    popup.style.border = p.borderWidth + "px solid " + rgba(p.borderColor, p.borderOpacity);
+
+    popupInner.className = "popup-inner mode-" + l.mode;
+    popupInner.style.gap = l.contentGap + "px";
+    pcontent.style.gap = l.titleBtnGap + "px";
+    pcontent.style.alignItems = l.contentAlign;
+    pbtns.style.justifyContent = l.buttonsAlign;
+    btnPlay.style.order = l.buttonsOrder === "play-first" ? 1 : 2;
+    btnVol.style.order = l.buttonsOrder === "play-first" ? 2 : 1;
+    pbtns.style.gap = b.gap + "px";
+
+    thumb.style.width = c.w + "px";
+    thumb.style.height = c.h + "px";
+    thumbImg.style.borderRadius = c.radius + "px";
+    thumbImg.style.border = c.borderWidth + "px solid " + rgba(c.borderColor, c.borderOpacity);
+
+    ptitle.style.fontSize = t.size + "px";
+    ptitle.style.color = t.color;
+    ptitle.style.fontWeight = t.weight;
+    ptitle.style.webkitLineClamp = t.lines;
+
+    [btnPlay, btnVol].forEach(function (btn) {
+      btn.style.width = b.w + "px";
+      btn.style.height = b.h + "px";
+      btn.style.borderRadius = b.radius + "px";
+      btn.style.background = rgba(b.bg, b.bgOpacity);
+      btn.style.border = b.borderWidth + "px solid " + rgba(b.borderColor, b.borderOpacity);
+    });
+    pbtns.style.setProperty("--icon-size", b.iconSize + "px");
+    pbtns.style.setProperty("--icon-color", b.iconColor);
+
+    pill.style.width = pl.w + "px";
+    pill.style.height = pl.h + "px";
+    pill.style.borderRadius = pl.radius + "px";
+    pillText.style.fontSize = pl.textSize + "px";
+    pillText.style.color = pl.textColor;
+  }
+
+  function renderIcons() {
+    playIcon.innerHTML = ui.playing ? ICONS.pause : ICONS.play;
+    volIcon.innerHTML = ui.muted ? ICONS.muted : ICONS.volume;
+  }
+
+  function select(name) {
+    selected = name;
+    Array.prototype.forEach.call(document.querySelectorAll("[data-sel]"), function (el) {
+      el.classList.toggle("sel", el.getAttribute("data-sel") === name);
+    });
+    Array.prototype.forEach.call(document.querySelectorAll(".chip"), function (chip) {
+      chip.classList.toggle("active", chip.getAttribute("data-target") === name);
+    });
+  }
+
+  // ---------------- 控件生成 ----------------
+  function buildControl(groupKey, item) {
+    var path = groupKey + "." + item.k;
+    var def = getPath(DEFAULTS, path);
+    var val = getPath(state, path);
+    var wrap = document.createElement("div");
+    wrap.className = "ctrl";
+
+    if (item.type === "color") {
+      var top = document.createElement("div");
+      top.className = "ctrl-top";
+      var label = document.createElement("span");
+      label.textContent = item.label;
+      var box = document.createElement("div");
+      box.className = "color-val";
+      var input = document.createElement("input");
+      input.type = "color";
+      input.value = val;
+      var hex = document.createElement("span");
+      hex.className = "hex";
+      hex.textContent = val;
+      box.appendChild(input);
+      box.appendChild(hex);
+      top.appendChild(label);
+      top.appendChild(box);
+      wrap.appendChild(top);
+
+      input.addEventListener("input", function () {
+        setPath(state, path, input.value);
+        hex.textContent = input.value;
+        apply();
+        refreshMeta();
+        saveState();
+      });
+      controlRefs[path] = { type: "color", input: input, hex: hex };
+      return wrap;
+    }
+
+    if (item.type === "select") {
+      var top2 = document.createElement("div");
+      top2.className = "ctrl-top";
+      var label2 = document.createElement("span");
+      label2.textContent = item.label;
+      var sel = document.createElement("select");
+      item.options.forEach(function (opt) {
+        var o = document.createElement("option");
+        o.value = String(opt[0]);
+        o.textContent = opt[1];
+        sel.appendChild(o);
+      });
+      sel.value = String(val);
+      top2.appendChild(label2);
+      top2.appendChild(sel);
+      wrap.appendChild(top2);
+
+      sel.addEventListener("change", function () {
+        var next = item.numeric ? Number(sel.value) : sel.value;
+        setPath(state, path, next);
+        apply();
+        refreshMeta();
+        saveState();
+      });
+      controlRefs[path] = { type: "select", input: sel };
+      return wrap;
+    }
+
+    var top3 = document.createElement("div");
+    top3.className = "ctrl-top";
+    var label3 = document.createElement("span");
+    label3.textContent = item.label;
+    var valBox = document.createElement("div");
+    valBox.className = "val";
+    var num = document.createElement("input");
+    num.type = "number";
+    num.value = val;
+    num.min = item.min;
+    num.max = item.max;
+    var unit = document.createElement("span");
+    unit.className = "unit";
+    unit.textContent = item.unit || "";
+    valBox.appendChild(num);
+    valBox.appendChild(unit);
+    top3.appendChild(label3);
+    top3.appendChild(valBox);
+
+    var range = document.createElement("input");
+    range.type = "range";
+    range.min = item.min;
+    range.max = item.max;
+    range.step = 1;
+    range.value = val;
+
+    wrap.appendChild(top3);
+    wrap.appendChild(range);
+
+    function commit(raw) {
+      var v = clamp(Math.round(Number(raw) || 0), item.min, item.max);
+      setPath(state, path, v);
+      num.value = v;
+      range.value = v;
+      apply();
+      refreshMeta();
+      saveState();
+    }
+
+    range.addEventListener("input", function () { commit(range.value); });
+    num.addEventListener("change", function () { commit(num.value); });
+
+    controlRefs[path] = { type: "number", range: range, num: num };
+    return wrap;
+  }
+
+  function renderControls() {
+    groupsEl.innerHTML = "";
+    controlRefs = {};
+    SCHEMA.forEach(function (group) {
+      var groupEl = document.createElement("div");
+      groupEl.className = "group";
+
+      var head = document.createElement("div");
+      head.className = "group-head";
+      head.innerHTML = "<h3>" + group.title + "</h3><span class='count'>" + group.items.length + " 项</span>";
+      head.addEventListener("click", function () { groupEl.classList.toggle("collapsed"); });
+
+      var body = document.createElement("div");
+      body.className = "group-body";
+      group.items.forEach(function (item) {
+        body.appendChild(buildControl(group.key, item));
+      });
+
+      groupEl.appendChild(head);
+      groupEl.appendChild(body);
+      groupsEl.appendChild(groupEl);
+    });
+  }
+
+  function syncControls() {
+    Object.keys(controlRefs).forEach(function (path) {
+      var ref = controlRefs[path];
+      var val = getPath(state, path);
+      if (ref.type === "number") {
+        ref.range.value = val;
+        ref.num.value = val;
+      } else if (ref.type === "color") {
+        ref.input.value = val;
+        ref.hex.textContent = val;
+      } else if (ref.type === "select") {
+        ref.input.value = String(val);
+      }
+    });
+  }
+
+  // ---------------- 导出 ----------------
+  function countChanges(def, cur) {
+    var n = 0;
+    Object.keys(def).forEach(function (k) {
+      if (typeof def[k] === "object" && def[k] !== null) {
+        n += countChanges(def[k], cur[k]);
+      } else if (cur[k] !== def[k]) {
+        n++;
+      }
+    });
+    return n;
+  }
+
+  function optionLabel(item, val) {
+    for (var i = 0; i < item.options.length; i++) {
+      if (String(item.options[i][0]) === String(val)) return item.options[i][1];
+    }
+    return String(val);
+  }
+
+  function buildExport() {
+    var lines = [];
+    lines.push("播放弹层配置（矩形屏，designWidth 432，设计尺寸 432×526）：");
+    SCHEMA.forEach(function (group) {
+      lines.push("");
+      lines.push("【" + group.title + "】");
+      group.items.forEach(function (item) {
+        var path = group.key + "." + item.k;
+        var val = getPath(state, path);
+        var def = getPath(DEFAULTS, path);
+        var text;
+        if (item.type === "select") text = optionLabel(item, val);
+        else if (item.type === "color") text = val;
+        else text = val + (item.unit || "");
+        var mark = val !== def ? "（修改）" : "";
+        lines.push("- " + item.label + "：" + text + mark);
+      });
+    });
+    lines.push("");
+    lines.push("说明：标注“（修改）”的项为相对默认值的改动，其余保持默认。");
+    lines.push("图标使用现有 /common/icon/play.png、pause.png、volume.png；封面使用当前歌曲封面。");
+    lines.push("标题最多显示 " + state.title.lines + " 行，超出省略。");
+    return lines.join("\n");
+  }
+
+  function refreshMeta() {
+    var n = countChanges(DEFAULTS, state);
+    changeBadge.textContent = n + " 项修改";
+    exportText.value = buildExport();
+    $("exportHint").textContent = n ? n + " 项有改动" : "当前为默认值";
+  }
+
+  // ---------------- 交互 ----------------
+  function onPopupDown(e) {
+    if (e.target.closest(".handle") || e.target.closest(".pbtn")) return;
+    var selEl = e.target.closest("[data-sel]");
+    select(selEl ? selEl.getAttribute("data-sel") : "panel");
+    drag = {
+      startX: e.clientX, startY: e.clientY,
+      top: state.panel.top, right: state.panel.right,
+      scale: getScale(), moved: false
+    };
+    window.addEventListener("pointermove", onDragMove);
+    window.addEventListener("pointerup", onDragUp);
+    e.preventDefault();
+  }
+
+  function onDragMove(e) {
+    if (!drag) return;
+    var dx = (e.clientX - drag.startX) / drag.scale;
+    var dy = (e.clientY - drag.startY) / drag.scale;
+    if (Math.abs(dx) > 2 || Math.abs(dy) > 2) drag.moved = true;
+    state.panel.top = Math.round(clamp(drag.top + dy, 28, 180));
+    state.panel.right = Math.round(clamp(drag.right - dx, 0, 220));
+    apply();
+    syncControls();
+  }
+
+  function onDragUp() {
+    if (drag) saveState();
+    drag = null;
+    window.removeEventListener("pointermove", onDragMove);
+    window.removeEventListener("pointerup", onDragUp);
+    refreshMeta();
+  }
+
+  function onHandleDown(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    var kind = e.currentTarget.getAttribute("data-handle");
+    var init = kind === "panel" ? deepClone(state.panel) : kind === "cover" ? deepClone(state.cover) : deepClone(state.buttons);
+    resize = { kind: kind, startX: e.clientX, startY: e.clientY, init: init, scale: getScale() };
+    window.addEventListener("pointermove", onResizeMove);
+    window.addEventListener("pointerup", onResizeUp);
+  }
+
+  function onResizeMove(e) {
+    if (!resize) return;
+    var dx = (e.clientX - resize.startX) / resize.scale;
+    var dy = (e.clientY - resize.startY) / resize.scale;
+    if (resize.kind === "panel") {
+      state.panel.w = Math.round(clamp(resize.init.w - dx, 160, 380));
+      state.panel.h = Math.round(clamp(resize.init.h + dy, 72, 200));
+    } else if (resize.kind === "cover") {
+      state.cover.w = Math.round(clamp(resize.init.w + dx, 32, 140));
+      state.cover.h = Math.round(clamp(resize.init.h + dy, 32, 140));
+    } else {
+      state.buttons.w = Math.round(clamp(resize.init.w + dx, 20, 64));
+      state.buttons.h = Math.round(clamp(resize.init.h + dy, 20, 64));
+    }
+    apply();
+    syncControls();
+  }
+
+  function onResizeUp() {
+    resize = null;
+    window.removeEventListener("pointermove", onResizeMove);
+    window.removeEventListener("pointerup", onResizeUp);
+    saveState();
+    refreshMeta();
+  }
+
+  function toast(msg) {
+    toastEl.textContent = msg;
+    toastEl.classList.add("show");
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(function () { toastEl.classList.remove("show"); }, 1600);
+  }
+
+  function copyText(text, okMsg) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () { toast(okMsg); }, function () { fallbackCopy(text, okMsg); });
+    } else {
+      fallbackCopy(text, okMsg);
+    }
+  }
+
+  function fallbackCopy(text, okMsg) {
+    var ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand("copy"); toast(okMsg); } catch (e) { toast("复制失败，请手动选中"); }
+    document.body.removeChild(ta);
+  }
+
+  // ---------------- 事件绑定 ----------------
+  popup.addEventListener("pointerdown", onPopupDown);
+
+  [btnPlay, btnVol].forEach(function (btn) {
+    btn.addEventListener("pointerdown", function (e) {
+      e.stopPropagation();
+      select(btn.getAttribute("data-sel"));
+    });
+    btn.addEventListener("click", function (e) {
+      e.stopPropagation();
+      if (btn === btnPlay) {
+        ui.playing = !ui.playing;
+        $("playingToggle").checked = ui.playing;
+      } else {
+        ui.muted = !ui.muted;
+      }
+      renderIcons();
+      // 点击按钮不改变设计参数，但保持选中
+      select(btn.getAttribute("data-sel"));
+    });
+  });
+
+  pill.addEventListener("pointerdown", function (e) {
+    e.stopPropagation();
+    select("pill");
+  });
+  pill.addEventListener("click", function (e) {
+    e.stopPropagation();
+    ui.open = !ui.open;
+    $("openToggle").checked = ui.open;
+    apply();
+    select("pill");
+  });
+
+  $("openToggle").addEventListener("change", function (e) {
+    ui.open = e.target.checked;
+    apply();
+  });
+
+  $("playingToggle").addEventListener("change", function (e) {
+    ui.playing = e.target.checked;
+    renderIcons();
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll("[data-handle]"), function (handle) {
+    handle.addEventListener("pointerdown", onHandleDown);
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll("#chips .chip"), function (chip) {
+    chip.addEventListener("click", function () {
+      select(chip.getAttribute("data-target"));
+    });
+  });
+
+  Array.prototype.forEach.call(document.querySelectorAll("#zoomGroup button"), function (btn) {
+    btn.addEventListener("click", function () {
+      Array.prototype.forEach.call(document.querySelectorAll("#zoomGroup button"), function (b) { b.classList.remove("active"); });
+      btn.classList.add("active");
+      watchWrap.style.setProperty("--zoom", btn.getAttribute("data-zoom"));
+    });
+  });
+
+  $("copyAi").addEventListener("click", function () { copyText(buildExport(), "已复制，发给 AI 即可"); });
+  $("copyJson").addEventListener("click", function () { copyText(JSON.stringify(state, null, 2), "JSON 已复制"); });
+  $("downloadJson").addEventListener("click", function () {
+    var blob = new Blob([JSON.stringify(state, null, 2)], { type: "application/json" });
+    var a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "player-popup-layout.json";
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  });
+  $("resetAll").addEventListener("click", function () {
+    state = deepClone(DEFAULTS);
+    renderControls();
+    apply();
+    refreshMeta();
+    saveState();
+    toast("已重置为默认值");
+  });
+
+  // ---------------- 初始化 ----------------
+  renderControls();
+  renderIcons();
+  apply();
+  select("panel");
+  refreshMeta();
+})();
+</script>
+</body>
+</html>
