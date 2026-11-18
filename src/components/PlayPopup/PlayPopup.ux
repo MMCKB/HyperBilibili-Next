@@ -1,7 +1,8 @@
 <template>
-  <div class="popup-layer" style="{{layerStyle}}">
-    <!-- 播放弹层：位于首页内容层之上 -->
-    <div if="{{visible}}" class="play-popup">
+  <!-- 全屏弹窗式遮罩：参考播放页音量面板的做法，位于页面根节点最后一个子节点，天然盖在所有内容之上 -->
+  <div if="{{visible}}" class="popup-overlay" @click="ClosePopup">
+    <!-- 播放弹层：胶囊下方 -->
+    <div class="play-popup" @click="StopPropagation">
       <div class="popup-cover">
         <text if="{{!coverSrc}}" class="cover-note">♪</text>
         <image if="{{coverSrc}}" class="popup-cover-img" src="{{coverSrc}}"></image>
@@ -21,7 +22,7 @@
     </div>
 
     <!-- 音量面板：在播放弹层下方展开，不覆盖弹层 -->
-    <div if="{{visible && showVolume}}" class="volume-panel">
+    <div if="{{showVolume}}" class="volume-panel" @click="StopPropagation">
       <image class="volume-icon" src="/common/icon/volume.png"></image>
       <slider class="volume-slider" min="0" max="100" value="{{volumePercent}}" @change="OnVolumeChange"></slider>
       <text class="volume-value">{{volumePercent}}%</text>
@@ -42,26 +43,13 @@ export default {
     coverSrc: "",
     showVolume: false,
     volumePercent: 50,
-    layerStyle: { top: "0px", width: "0px", height: "0px" },
     timer: null
-  },
-  UpdateLayerStyle() {
-    if (!this.visible) {
-      this.layerStyle = { top: "0px", width: "0px", height: "0px" }
-      return
-    }
-    this.layerStyle = {
-      top: "60px",
-      width: "315px",
-      height: this.showVolume ? "148px" : "88px"
-    }
   },
   SyncPlayStatus() {
     const status = global.playStatus
     if (!status) {
       this.visible = false
       this.showVolume = false
-      this.UpdateLayerStyle()
       return
     }
     const visible = !!status.popupOpen && !!status.hasTrack
@@ -69,7 +57,6 @@ export default {
       this.showVolume = false
     }
     this.visible = visible
-    this.UpdateLayerStyle()
     this.playing = !!status.playing
     this.title = status.title || "正在播放"
 
@@ -86,6 +73,17 @@ export default {
     } else {
       this.coverSrc = cover + "@160w_160h"
     }
+  },
+  ClosePopup() {
+    const status = global.playStatus
+    if (status) {
+      status.popupOpen = false
+    }
+    this.visible = false
+    this.showVolume = false
+  },
+  StopPropagation(e) {
+    if (e && e.stopPropagation) e.stopPropagation()
   },
   TogglePlay() {
     const status = global.playStatus
@@ -129,7 +127,6 @@ export default {
   },
   ToggleVolume() {
     this.showVolume = !this.showVolume
-    this.UpdateLayerStyle()
     if (this.showVolume) {
       this.RefreshVolume()
     }
@@ -170,17 +167,20 @@ export default {
 <style lang="less">
 @import "@less/global.less";
 
-.popup-layer {
+// 全屏遮罩：与播放页 adjust-volume-overlay 同一套写法
+.popup-overlay {
   position: absolute;
   top: 0px;
-  right: 56px;
-  z-index: 50;
+  left: 0px;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
 .play-popup {
   position: absolute;
-  left: 0px;
-  top: 0px;
+  top: 60px;
+  right: 56px;
   width: 315px;
   height: 88px;
   padding: 12px;
@@ -261,8 +261,8 @@ export default {
 
 .volume-panel {
   position: absolute;
-  top: 96px;
-  right: 0px;
+  top: 156px;
+  right: 56px;
   width: 315px;
   height: 52px;
   padding: 0px 12px;

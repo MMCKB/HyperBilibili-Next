@@ -18,8 +18,6 @@
         <text style="margin-top: 25px" static></text>
       </div>
     </scroll>
-    <!-- 放在 scroll 之后，保证弹层盖在首页文案/卡片之上 -->
-    <play-popup></play-popup>
     <div style="position: absolute; bottom: 0px" @click="Refresh()">
       <image src="/common/main_floatingrefresh.png" static></image>
     </div>
@@ -31,6 +29,8 @@
       style="position: absolute; bottom: {{anims.refresh_bottom.value}}px"
       src.static="/common/TranslateFX/refreshFX.png">
     </image>
+    <!-- 弹窗式播放弹层：页面最后一个子节点，盖在所有内容之上 -->
+    <play-popup></play-popup>
   </div>
 </template>
 
