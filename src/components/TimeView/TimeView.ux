@@ -1,7 +1,9 @@
 <template>
   <div class="time-comp" style="{{compStyle}}">
-    <!-- 顶部常驻胶囊：仅矩形屏且由首页开启，当前为纯占位，无任何功能 -->
-    <div if="{{showPill && useRectTime}}" class="top-pill"></div>
+    <!-- 顶部常驻胶囊：仅矩形屏且由首页开启。离开播放页后若仍在播放，显示「正在播放」 -->
+    <div if="{{showPill && useRectTime}}" class="top-pill">
+      <text if="{{nowPlaying}}" class="pill-playing">正在播放</text>
+    </div>
     <div if="{{!useRectTime}}">
       <div class="circle-time">
         <text class="timetxt">{{ hourHigh }}</text>
@@ -26,7 +28,20 @@ export default {
     minuteHigh: "",
     minuteLow: "",
     compStyle: {},
-    useRectTime: false
+    useRectTime: false,
+    // 播放页已退出但音频仍在播放
+    nowPlaying: false,
+    playTimer: null
+  },
+  SyncPlayStatus() {
+    const status = global.playStatus
+    this.nowPlaying = !!(status && status.playing && !status.pageVisible)
+  },
+  onDestroy() {
+    if (this.playTimer) {
+      clearInterval(this.playTimer)
+      this.playTimer = null
+    }
   },
   UpdateTime() {
     const hour = this.$app.$def.dayjs().hour()
@@ -50,6 +65,14 @@ export default {
       this.compStyle["top"] = "0px"
       this.compStyle["right"] = "100px"
       this.useRectTime = true
+    }
+
+    // 仅首页顶栏需要感知「正在播放」
+    if (this.showPill) {
+      this.SyncPlayStatus()
+      this.playTimer = setInterval(() => {
+        this.SyncPlayStatus()
+      }, 500)
     }
   }
 }
@@ -76,7 +99,7 @@ export default {
   top: 2px;
 }
 
-// 常驻胶囊：纯占位，无内容、无交互
+// 常驻胶囊：空闲时占位，离开播放页后显示「正在播放」
 .top-pill {
   width: 76px;
   height: 28px;
@@ -85,6 +108,13 @@ export default {
   margin-right: 6px;
   align-items: center;
   justify-content: center;
+}
+
+.pill-playing {
+  font-size: 14px;
+  font-weight: 500;
+  color: #ffffff;
+  lines: 1;
 }
 
 .rect-txt {

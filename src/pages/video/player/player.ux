@@ -231,6 +231,7 @@
       prompt.showToast({ message: errorMessage || '播放发生错误', duration: 3000 });
       that.isPlaying = false;
       that.playerState.isPlaying = false;
+      that.setGlobalPlaying(false);
       if (that.playTimeoutId) {
         clearTimeout(that.playTimeoutId);
         that.playTimeoutId = null;
@@ -240,11 +241,41 @@
         that.change(1);
       }
     },
+    setGlobalPlaying(playing) {
+      if (!global.playStatus) {
+        global.playStatus = { playing: false, pageVisible: false, title: "", updatedAt: 0 };
+      }
+      global.playStatus.playing = !!playing;
+      if (this.currSong && this.currSong.name) {
+        global.playStatus.title = this.currSong.name;
+      }
+      global.playStatus.updatedAt = Date.now();
+    },
+    // 缓存音频分支不会走 bindAudioEvents，这里单独绑定播放状态
+    bindPlayStatusEvents() {
+      const that = this;
+      audio.onplay = () => {
+        that.setGlobalPlaying(true);
+      };
+      audio.onpause = () => {
+        that.setGlobalPlaying(false);
+      };
+      audio.onstop = () => {
+        that.setGlobalPlaying(false);
+      };
+      audio.onctrlplay = () => {
+        that.setGlobalPlaying(true);
+      };
+      audio.onctrlpause = () => {
+        that.setGlobalPlaying(false);
+      };
+    },
     bindAudioEvents() {
       audio.onplay = () => {
         if (!this.playerState.isPlaying) {
           this.playerState.isPlaying = true;
           this.isPlaying = true;
+          this.setGlobalPlaying(true);
           if (this.playTimeoutId) {
             clearTimeout(this.playTimeoutId);
             this.playTimeoutId = null;
@@ -257,6 +288,7 @@
         if (this.playerState.isPlaying) {
           this.playerState.isPlaying = false;
           this.isPlaying = false;
+          this.setGlobalPlaying(false);
           audio.pause();
         }
       };
@@ -264,6 +296,7 @@
         if (!this.playerState.isPlaying) {
           this.playerState.isPlaying = true;
           this.isPlaying = true;
+          this.setGlobalPlaying(true);
           if (this.playTimeoutId) {
             clearTimeout(this.playTimeoutId);
             this.playTimeoutId = null;
@@ -276,12 +309,14 @@
         if (this.playerState.isPlaying) {
           this.playerState.isPlaying = false;
           this.isPlaying = false;
+          this.setGlobalPlaying(false);
           audio.pause();
         }
       };
       audio.onstop = () => {
         this.playerState.isPlaying = false;
         this.isPlaying = false;
+        this.setGlobalPlaying(false);
         if (this.playTimeoutId) {
           clearTimeout(this.playTimeoutId);
           this.playTimeoutId = null;
@@ -349,12 +384,17 @@
     },
     onInit() {
       const that = this;
+      if (!global.playStatus) {
+        global.playStatus = { playing: false, pageVisible: false, title: "", updatedAt: 0 };
+      }
+      global.playStatus.pageVisible = true;
       // 注册进全局 UI 池：返回时才能拿到卡片退场/底层页回归动画
       global.ui.InitPage(this);
       that.loadPlayerToolbarAppearance();
       that.isPlaying = false;
       that.playerState.isPlaying = false;
       if (that.cachedAudioUri && that.cachedTitle) {
+        that.bindPlayStatusEvents();
         that.videoMode = true;
         that.videoBvid = that.bvid;
         that.playlistId = `video_bvid_${that.bvid}`;
@@ -534,6 +574,9 @@
     },
     onShow() {
       const that = this;
+      if (global.playStatus) {
+        global.playStatus.pageVisible = true;
+      }
       that.loadLyricSettings();
       const hasNewPlaylist = that.playlistId && !(that.fromAppStart || false);
       if (hasNewPlaylist) {
@@ -563,6 +606,9 @@
     },
     onHide() {
       const that = this;
+      if (global.playStatus) {
+        global.playStatus.pageVisible = false;
+      }
       if (!that.currSong && that.songList && that.songList.length > 0 && that.index >= 0) {
         that.currSong = that.songList[that.index];
       }
@@ -590,6 +636,11 @@
         success: function() { },
         fail: function(data, code) { }
       });
+    },
+    onDestroy() {
+      if (global.playStatus) {
+        global.playStatus.pageVisible = false;
+      }
     },
     fetchAndPlay(forceReload = false) {
       const that = this;
@@ -706,14 +757,19 @@
           audio.oncanplay = null;
           that.isPlaying = true;
           that.playerState.isPlaying = true;
+          that.setGlobalPlaying(true);
           audio.play();
         };
         audio.ontimeupdate = function() {
           that.progress = audio.percent;
           that.updateLyric();
         };
+        audio.onended = function() {
+          that.setGlobalPlaying(false);
+        };
         audio.onerror = function() {
           that.audioReady = false;
+          that.setGlobalPlaying(false);
           audio.onerror = null;
           audio.oncanplay = null;
           audio.ontimeupdate = null;

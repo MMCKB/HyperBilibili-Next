@@ -29,6 +29,14 @@ export default {
   async onCreate() {
     console.log("app created")
 
+    // 全局播放状态：供首页胶囊等跨页面 UI 展示「正在播放」
+    global.playStatus = {
+      playing: false,
+      pageVisible: false,
+      title: "",
+      updatedAt: 0
+    }
+
     console.log("create global logger")
     global.logger = logger
 
