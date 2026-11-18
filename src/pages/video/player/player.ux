@@ -245,6 +245,7 @@
       if (!global.playStatus) {
         global.playStatus = {
           playing: false, pageVisible: false, hasTrack: false, popupOpen: false,
+          charging: false, batteryPercent: 0, chargePopupOpen: false,
           title: "", cover: "", volume: 50, updatedAt: 0
         };
       }
@@ -402,6 +403,7 @@
       if (!global.playStatus) {
         global.playStatus = {
           playing: false, pageVisible: false, hasTrack: false, popupOpen: false,
+          charging: false, batteryPercent: 0, chargePopupOpen: false,
           title: "", cover: "", volume: 50, updatedAt: 0
         };
       }

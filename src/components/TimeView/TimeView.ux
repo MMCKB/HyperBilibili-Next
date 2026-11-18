@@ -1,8 +1,17 @@
 <template>
   <div class="time-comp" style="{{compStyle}}" @click="TogglePlayPopup">
-    <!-- 顶部常驻胶囊：仅矩形屏且由首页开启。离开播放页后若仍在播放，显示「正在播放」 -->
-    <div if="{{showPill && useRectTime}}" class="top-pill">
-      <text if="{{nowPlaying}}" class="pill-playing">正在播放</text>
+    <!-- 顶部常驻胶囊：仅矩形屏且由首页开启 -->
+    <div if="{{showPill && useRectTime}}" class="{{pillClass}}">
+      <!-- 检测到充电开始：绿色胶囊 + 闪电 + 电量，1.5 秒后消失 -->
+      <div if="{{chargingFlash}}" class="charge-flash">
+        <image class="charge-bolt" src="/common/icon/charging.png"></image>
+        <text class="charge-pct">{{batteryPercent}}%</text>
+      </div>
+      <!-- 正在播放：充电时在文字右侧显示绿色小点 -->
+      <div if="{{!chargingFlash && nowPlaying}}" class="playing-row">
+        <text class="pill-playing">正在播放</text>
+        <div if="{{charging}}" class="charge-dot"></div>
+      </div>
     </div>
     <div if="{{!useRectTime}}">
       <div class="circle-time">
@@ -21,6 +30,7 @@
 
 <script>
 import prompt from "@system.prompt"
+import battery from "@system.battery"
 
 export default {
   props: ["showPill"],
@@ -33,11 +43,73 @@ export default {
     useRectTime: false,
     // 播放页已退出但音频仍在播放
     nowPlaying: false,
-    playTimer: null
+    playTimer: null,
+    // 充电状态
+    charging: false,
+    batteryPercent: 0,
+    chargingFlash: false,
+    pillClass: "top-pill",
+    flashTimer: null,
+    batteryTimer: null
+  },
+  UpdatePillClass() {
+    const green = this.chargingFlash || (this.charging && !this.nowPlaying)
+    this.pillClass = green ? "top-pill pill-green" : "top-pill"
   },
   SyncPlayStatus() {
     const status = global.playStatus
     this.nowPlaying = !!(status && status.playing && !status.pageVisible)
+    if (status) {
+      if (typeof status.charging === "boolean") {
+        this.charging = status.charging
+      }
+      if (typeof status.batteryPercent === "number") {
+        this.batteryPercent = status.batteryPercent
+      }
+    }
+    this.UpdatePillClass()
+  },
+  RefreshBattery() {
+    battery.getStatus({
+      success: (data) => {
+        const level = typeof data.level === "number"
+          ? Math.round(data.level * 100)
+          : this.batteryPercent
+        const charging = data.charging === true
+        const started = charging && !this.charging
+
+        this.batteryPercent = level
+        this.charging = charging
+        if (global.playStatus) {
+          global.playStatus.charging = charging
+          global.playStatus.batteryPercent = level
+          if (!charging) {
+            global.playStatus.chargePopupOpen = false
+          }
+        }
+
+        if (started) {
+          this.chargingFlash = true
+          if (this.flashTimer) {
+            clearTimeout(this.flashTimer)
+          }
+          this.flashTimer = setTimeout(() => {
+            this.chargingFlash = false
+            this.flashTimer = null
+            this.UpdatePillClass()
+          }, 1500)
+        }
+        if (!charging) {
+          this.chargingFlash = false
+          if (this.flashTimer) {
+            clearTimeout(this.flashTimer)
+            this.flashTimer = null
+          }
+        }
+        this.UpdatePillClass()
+      },
+      fail: () => {}
+    })
   },
   TogglePlayPopup(e) {
     // 非首页时钟保持原有行为：交给上层顶栏处理
@@ -49,6 +121,14 @@ export default {
       prompt.showToast({ message: "当前没有正在播放的内容" })
       return
     }
+
+    // 充电时优先打开充电弹层
+    if (status.charging) {
+      status.chargePopupOpen = !status.chargePopupOpen
+      status.popupOpen = false
+      return
+    }
+
     // 兼容旧状态：正在播放但尚未写入 hasTrack
     if (status.playing) {
       status.hasTrack = true
@@ -58,11 +138,20 @@ export default {
       return
     }
     status.popupOpen = !status.popupOpen
+    status.chargePopupOpen = false
   },
   onDestroy() {
     if (this.playTimer) {
       clearInterval(this.playTimer)
       this.playTimer = null
+    }
+    if (this.batteryTimer) {
+      clearInterval(this.batteryTimer)
+      this.batteryTimer = null
+    }
+    if (this.flashTimer) {
+      clearTimeout(this.flashTimer)
+      this.flashTimer = null
     }
   },
   UpdateTime() {
@@ -89,12 +178,20 @@ export default {
       this.useRectTime = true
     }
 
-    // 仅首页顶栏需要感知「正在播放」
+    // 仅首页顶栏需要感知「正在播放」和充电状态
     if (this.showPill) {
+      if (global.playStatus) {
+        this.charging = !!global.playStatus.charging
+        this.batteryPercent = global.playStatus.batteryPercent || 0
+      }
       this.SyncPlayStatus()
       this.playTimer = setInterval(() => {
         this.SyncPlayStatus()
       }, 500)
+      this.RefreshBattery()
+      this.batteryTimer = setInterval(() => {
+        this.RefreshBattery()
+      }, 3000)
     }
   }
 }
@@ -130,6 +227,46 @@ export default {
   margin-right: 6px;
   align-items: center;
   justify-content: center;
+}
+
+// 充电中未播放：整个胶囊绿色
+.top-pill.pill-green {
+  background-color: #16a34a;
+}
+
+// 充电开始提示：闪电 + 电量
+.charge-flash {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.charge-bolt {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+}
+
+.charge-pct {
+  font-size: 14px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-left: 5px;
+}
+
+// 正在播放 + 充电小绿点
+.playing-row {
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.charge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background-color: #2ecc71;
+  margin-left: 5px;
 }
 
 .pill-playing {
