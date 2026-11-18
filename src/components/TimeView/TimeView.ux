@@ -16,40 +16,11 @@
     <div if="{{useRectTime}}" class="rect">
       <text class="timetxt rect-txt">{{ hourHigh }}{{ hourLow }}:{{ minuteHigh }}{{ minuteLow }}</text>
     </div>
-
-    <!-- 播放弹层：胶囊下方 -->
-    <div if="{{showPill && popupOpen && hasTrack}}" class="play-popup" @click="StopPropagation">
-      <div class="popup-cover">
-        <text if="{{!popupCover}}" class="cover-note">♪</text>
-        <image if="{{popupCover}}" class="popup-cover-img" src="{{popupCover}}"></image>
-      </div>
-      <div class="popup-content">
-        <text class="popup-title">{{popupTitle}}</text>
-        <div class="popup-buttons">
-          <div class="popup-btn" @click="TogglePlay">
-            <image if="{{playing}}" class="popup-btn-icon" src="/common/icon/pause.png"></image>
-            <image else class="popup-btn-icon" src="/common/icon/play.png"></image>
-          </div>
-          <div class="popup-btn volume-btn" @click="ToggleVolume">
-            <image class="popup-btn-icon" src="/common/icon/volume.png"></image>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- 音量面板：在播放弹层下方展开，不覆盖弹层 -->
-    <div if="{{showPill && popupOpen && hasTrack && showVolume}}" class="volume-panel" @click="StopPropagation">
-      <image class="volume-icon" src="/common/icon/volume.png"></image>
-      <slider class="volume-slider" min="0" max="100" value="{{volumePercent}}" @change="OnVolumeChange"></slider>
-      <text class="volume-value">{{volumePercent}}%</text>
-    </div>
   </div>
 </template>
 
 <script>
-import audio from "@system.audio"
 import prompt from "@system.prompt"
-import storage from "@system.storage"
 
 export default {
   props: ["showPill"],
@@ -62,52 +33,11 @@ export default {
     useRectTime: false,
     // 播放页已退出但音频仍在播放
     nowPlaying: false,
-    playTimer: null,
-    // 播放弹层
-    popupOpen: false,
-    hasTrack: false,
-    playing: false,
-    popupTitle: "",
-    popupCover: "",
-    showVolume: false,
-    volumePercent: 50
+    playTimer: null
   },
   SyncPlayStatus() {
     const status = global.playStatus
-    if (!status) {
-      this.nowPlaying = false
-      this.hasTrack = false
-      this.playing = false
-      this.popupOpen = false
-      this.showVolume = false
-      return
-    }
-    this.playing = !!status.playing
-    this.hasTrack = !!status.hasTrack
-    this.nowPlaying = this.playing && !status.pageVisible
-
-    if (!this.hasTrack) {
-      this.popupOpen = false
-      this.showVolume = false
-    } else {
-      this.popupOpen = !!status.popupOpen
-    }
-
-    this.popupTitle = status.title || "正在播放"
-
-    let cover = status.cover || ""
-    if (cover.indexOf("//") === 0) {
-      cover = "https:" + cover
-    } else if (cover.indexOf("http://") === 0) {
-      cover = "https://" + cover.substring(7)
-    }
-    if (!cover) {
-      this.popupCover = ""
-    } else if (cover.indexOf("internal://") === 0 || cover.indexOf("@") >= 0) {
-      this.popupCover = cover
-    } else {
-      this.popupCover = cover + "@160w_160h"
-    }
+    this.nowPlaying = !!(status && status.playing && !status.pageVisible)
   },
   TogglePlayPopup(e) {
     // 非首页时钟保持原有行为：交给上层顶栏处理
@@ -127,81 +57,7 @@ export default {
       prompt.showToast({ message: "当前没有正在播放的内容" })
       return
     }
-
-    // 立即同步一次，避免本地 hasTrack/标题/封面比全局慢半秒
-    this.SyncPlayStatus()
-
-    const next = !this.popupOpen
-    this.popupOpen = next
-    this.showVolume = next ? this.showVolume : false
-    status.popupOpen = next
-  },
-  StopPropagation(e) {
-    if (e && e.stopPropagation) e.stopPropagation()
-  },
-  TogglePlay() {
-    const status = global.playStatus
-    if (!status) return
-    if (!audio.src) {
-      prompt.showToast({ message: "当前没有可播放的音频" })
-      return
-    }
-    if (status.playing) {
-      audio.pause()
-      status.playing = false
-      this.playing = false
-      this.SyncStoredPlaying(false)
-    } else {
-      audio.play()
-      status.playing = true
-      this.playing = true
-      this.SyncStoredPlaying(true)
-    }
-  },
-  // 同步播放页的持久化状态，避免重新进入播放页时自动恢复成错误状态
-  SyncStoredPlaying(playing) {
-    storage.get({
-      key: "playerState",
-      success: (data) => {
-        if (!data) return
-        try {
-          const state = JSON.parse(data)
-          state.isPlaying = playing
-          if (audio.duration > 0) {
-            state.progress = (audio.currentTime / audio.duration) * 100
-          }
-          storage.set({
-            key: "playerState",
-            value: JSON.stringify(state)
-          })
-        } catch (e) {}
-      },
-      fail: () => {}
-    })
-  },
-  ToggleVolume() {
-    this.showVolume = !this.showVolume
-    if (this.showVolume) {
-      this.RefreshVolume()
-    }
-  },
-  RefreshVolume() {
-    audio.getPlayState({
-      success: (state) => {
-        this.volumePercent = Math.round((state.volume || 0) * 100)
-      },
-      fail: () => {
-        this.volumePercent = 50
-      }
-    })
-  },
-  OnVolumeChange(e) {
-    const value = Math.max(0, Math.min(100, Math.round(e.progress)))
-    this.volumePercent = value
-    audio.volume = value / 100
-    if (global.playStatus) {
-      global.playStatus.volume = value
-    }
+    status.popupOpen = !status.popupOpen
   },
   onDestroy() {
     if (this.playTimer) {
@@ -233,7 +89,7 @@ export default {
       this.useRectTime = true
     }
 
-    // 仅首页顶栏需要感知「正在播放」和播放弹层
+    // 仅首页顶栏需要感知「正在播放」
     if (this.showPill) {
       this.SyncPlayStatus()
       this.playTimer = setInterval(() => {
@@ -253,7 +109,6 @@ export default {
   justify-content: center;
   position: absolute;
   top: 3.5px;
-  overflow: visible;
 }
 
 .circle-time {
@@ -287,128 +142,5 @@ export default {
 .rect-txt {
   font-size: 30px;
   padding: 0px;
-}
-
-// ---------------- 播放弹层 ----------------
-.play-popup {
-  position: absolute;
-  top: 50px;
-  right: 56px;
-  width: 315px;
-  height: 88px;
-  padding: 12px;
-  border-radius: 19px;
-  background-color: #14141a;
-  border: 1px solid rgba(255, 255, 255, 0.37);
-  flex-direction: row;
-  align-items: center;
-  z-index: 50;
-}
-
-.popup-cover {
-  width: 65px;
-  height: 64px;
-  border-radius: 19px;
-  background-color: #2a2a33;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-
-.popup-cover-img {
-  width: 65px;
-  height: 64px;
-  object-fit: cover;
-}
-
-.cover-note {
-  font-size: 28px;
-  color: rgba(255, 255, 255, 0.55);
-}
-
-.popup-content {
-  flex: 1;
-  min-width: 0px;
-  height: 64px;
-  margin-left: 11px;
-  flex-direction: column;
-  justify-content: center;
-  align-items: flex-start;
-}
-
-.popup-title {
-  width: 100%;
-  font-size: 15px;
-  font-weight: 600;
-  color: #ffffff;
-  lines: 2;
-  text-overflow: ellipsis;
-}
-
-.popup-buttons {
-  width: 100%;
-  margin-top: 8px;
-  flex-direction: row;
-  justify-content: center;
-  align-items: center;
-}
-
-.popup-btn {
-  width: 64px;
-  height: 27px;
-  border-radius: 32px;
-  background-color: rgba(255, 255, 255, 0.12);
-  align-items: center;
-  justify-content: center;
-}
-
-.volume-btn {
-  margin-left: 5px;
-}
-
-.popup-btn-icon {
-  width: 16px;
-  height: 16px;
-  object-fit: scale-down;
-}
-
-// ---------------- 音量面板 ----------------
-.volume-panel {
-  position: absolute;
-  top: 146px;
-  right: 56px;
-  width: 315px;
-  height: 52px;
-  padding: 0px 12px;
-  border-radius: 19px;
-  background-color: #14141a;
-  border: 1px solid rgba(255, 255, 255, 0.37);
-  flex-direction: row;
-  align-items: center;
-  z-index: 49;
-}
-
-.volume-icon {
-  width: 20px;
-  height: 20px;
-  object-fit: scale-down;
-  flex-shrink: 0;
-}
-
-.volume-slider {
-  width: 207px;
-  height: 32px;
-  margin-left: 10px;
-  block-color: #ff7da8;
-  selected-color: #ff7da8;
-}
-
-.volume-value {
-  width: 38px;
-  font-size: 14px;
-  color: #ffffff;
-  text-align: right;
-  margin-left: 8px;
 }
 </style>

@@ -1,5 +1,6 @@
 <import name="switch-bar" src="@components/SwitchBar/SwitchBar.ux"></import>
 <import name="videoshow" src="@components/Video/Video.ux"></import>
+<import name="play-popup" src="@components/PlayPopup/PlayPopup.ux"></import>
 
 <template>
   <div class="page">
@@ -17,6 +18,8 @@
         <text style="margin-top: 25px" static></text>
       </div>
     </scroll>
+    <!-- 放在 scroll 之后，保证弹层盖在首页文案/卡片之上 -->
+    <play-popup></play-popup>
     <div style="position: absolute; bottom: 0px" @click="Refresh()">
       <image src="/common/main_floatingrefresh.png" static></image>
     </div>
