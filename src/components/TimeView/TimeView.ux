@@ -128,6 +128,9 @@ export default {
       return
     }
 
+    // 立即同步一次，避免本地 hasTrack/标题/封面比全局慢半秒
+    this.SyncPlayStatus()
+
     const next = !this.popupOpen
     this.popupOpen = next
     this.showVolume = next ? this.showVolume : false
@@ -250,6 +253,7 @@ export default {
   justify-content: center;
   position: absolute;
   top: 3.5px;
+  overflow: visible;
 }
 
 .circle-time {
