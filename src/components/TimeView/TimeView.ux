@@ -1,7 +1,7 @@
 <template>
   <div class="time-comp" style="{{compStyle}}" @click="TogglePlayPopup">
     <!-- 顶部常驻胶囊：仅矩形屏且由首页开启 -->
-    <div if="{{showPill && useRectTime}}" class="{{pillClass}}">
+    <div if="{{showPill && useRectTime}}" class="top-pill" style="{{pillStyle}}">
       <!-- 检测到充电开始：绿色胶囊 + 闪电 + 电量，1.5 秒后消失 -->
       <div if="{{chargingFlash}}" class="charge-flash">
         <image class="charge-bolt" src="/common/icon/charging.png"></image>
@@ -48,13 +48,13 @@ export default {
     charging: false,
     batteryPercent: 0,
     chargingFlash: false,
-    pillClass: "top-pill",
+    pillStyle: { "background-color": "rgba(0, 0, 0, 0.28)" },
     flashTimer: null,
     batteryTimer: null
   },
-  UpdatePillClass() {
+  UpdatePillVisual() {
     const green = this.chargingFlash || (this.charging && !this.nowPlaying)
-    this.pillClass = green ? "top-pill pill-green" : "top-pill"
+    this.pillStyle["background-color"] = green ? "#16a34a" : "rgba(0, 0, 0, 0.28)"
   },
   SyncPlayStatus() {
     const status = global.playStatus
@@ -67,7 +67,7 @@ export default {
         this.batteryPercent = status.batteryPercent
       }
     }
-    this.UpdatePillClass()
+    this.UpdatePillVisual()
   },
   RefreshBattery() {
     battery.getStatus({
@@ -96,7 +96,7 @@ export default {
           this.flashTimer = setTimeout(() => {
             this.chargingFlash = false
             this.flashTimer = null
-            this.UpdatePillClass()
+            this.UpdatePillVisual()
           }, 1500)
         }
         if (!charging) {
@@ -106,9 +106,22 @@ export default {
             this.flashTimer = null
           }
         }
-        this.UpdatePillClass()
+        this.UpdatePillVisual()
       },
-      fail: () => {}
+      fail: () => {
+        // 读取失败时按未充电处理，避免残留绿色状态
+        this.charging = false
+        this.chargingFlash = false
+        if (this.flashTimer) {
+          clearTimeout(this.flashTimer)
+          this.flashTimer = null
+        }
+        if (global.playStatus) {
+          global.playStatus.charging = false
+          global.playStatus.chargePopupOpen = false
+        }
+        this.UpdatePillVisual()
+      }
     })
   },
   TogglePlayPopup(e) {
@@ -229,10 +242,7 @@ export default {
   justify-content: center;
 }
 
-// 充电中未播放：整个胶囊绿色
-.top-pill.pill-green {
-  background-color: #16a34a;
-}
+// 充电中未播放：整个胶囊绿色（实际颜色由 pillStyle 控制）
 
 // 充电开始提示：闪电 + 电量
 .charge-flash {

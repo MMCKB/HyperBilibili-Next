@@ -150,25 +150,51 @@
     position: absolute;
     top: 60px;
     right: 56px;
-    width: 100px;
-    height: 40px;
-    border-radius: 20px;
-    background-color: #16a34a;
+    width: 315px;
+    height: 88px;
+    padding: 12px;
+    border-radius: 19px;
+    background-color: #14141a;
+    border: 1px solid rgba(255, 255, 255, 0.37);
     flex-direction: row;
     align-items: center;
-    justify-content: center;
     z-index: 50;
 }
 
+.charge-popup-iconbox {
+    width: 65px;
+    height: 64px;
+    border-radius: 19px;
+    background-color: rgba(46, 204, 113, 0.16);
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
 .charge-popup-bolt {
-    width: 18px;
-    height: 18px;
+    width: 34px;
+    height: 34px;
     object-fit: contain;
 }
 
-.charge-popup-pct {
-    font-size: 14px;
+.charge-popup-content {
+    flex: 1;
+    height: 64px;
+    margin-left: 11px;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+.charge-popup-label {
+    font-size: 13px;
     font-weight: 600;
+    color: #2ecc71;
+}
+
+.charge-popup-pct {
+    font-size: 24px;
+    font-weight: 700;
     color: #ffffff;
-    margin-left: 6px;
+    margin-top: 4px;
 }
