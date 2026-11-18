@@ -1,0 +1,295 @@
+<template>
+  <div if="{{visible}}" class="{{layerClass}}">
+    <!-- 播放弹层：胶囊下方，尺寸/颜色按设计稿 -->
+    <div class="play-popup">
+      <div class="popup-cover">
+        <text if="{{!coverSrc}}" class="cover-note">♪</text>
+        <image if="{{coverSrc}}" class="popup-cover-img" src="{{coverSrc}}"></image>
+      </div>
+      <div class="popup-content">
+        <text class="popup-title">{{title}}</text>
+        <div class="popup-buttons">
+          <div class="popup-btn" @click="TogglePlay">
+            <image if="{{playing}}" class="popup-btn-icon" src="/common/icon/pause.png"></image>
+            <image else class="popup-btn-icon" src="/common/icon/play.png"></image>
+          </div>
+          <div class="popup-btn volume-btn" @click="ToggleVolume">
+            <image class="popup-btn-icon" src="/common/icon/volume.png"></image>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 音量面板：在播放弹层下方展开，不覆盖弹层 -->
+    <div if="{{showVolume}}" class="volume-panel">
+      <image class="volume-icon" src="/common/icon/volume.png"></image>
+      <slider class="volume-slider" min="0" max="100" value="{{volumePercent}}" @change="OnVolumeChange"></slider>
+      <text class="volume-value">{{volumePercent}}%</text>
+    </div>
+  </div>
+</template>
+
+<script>
+import audio from "@system.audio";
+import prompt from "@system.prompt";
+import storage from "@system.storage";
+
+export default {
+  data: {
+    visible: false,
+    playing: false,
+    title: "",
+    coverSrc: "",
+    showVolume: false,
+    volumePercent: 50,
+    layerClass: "popup-layer",
+    timer: null
+  },
+  UpdateLayerClass() {
+    this.layerClass = this.showVolume ? "popup-layer with-volume" : "popup-layer";
+  },
+  SyncPlayStatus() {
+    const status = global.playStatus;
+    if (!status) {
+      this.visible = false;
+      return;
+    }
+    const visible = !!status.popupOpen && !!status.hasTrack;
+    if (!visible) {
+      this.showVolume = false;
+      this.UpdateLayerClass();
+    }
+    this.visible = visible;
+    this.playing = !!status.playing;
+    this.title = status.title || "正在播放";
+
+    let cover = status.cover || "";
+    if (cover.indexOf("//") === 0) {
+      cover = "https:" + cover;
+    } else if (cover.indexOf("http://") === 0) {
+      cover = "https://" + cover.substring(7);
+    }
+    if (!cover) {
+      this.coverSrc = "";
+    } else if (cover.indexOf("internal://") === 0 || cover.indexOf("@") >= 0) {
+      this.coverSrc = cover;
+    } else {
+      this.coverSrc = cover + "@160w_160h";
+    }
+  },
+  TogglePlay() {
+    const status = global.playStatus;
+    if (!status) return;
+    if (!audio.src) {
+      prompt.showToast({ message: "当前没有可播放的音频" });
+      return;
+    }
+    if (status.playing) {
+      audio.pause();
+      status.playing = false;
+      this.playing = false;
+      this.SyncStoredPlaying(false);
+    } else {
+      audio.play();
+      status.playing = true;
+      this.playing = true;
+      this.SyncStoredPlaying(true);
+    }
+  },
+  // 同步播放页的持久化状态，避免重新进入播放页时自动恢复成错误状态
+  SyncStoredPlaying(playing) {
+    storage.get({
+      key: "playerState",
+      success: (data) => {
+        if (!data) return;
+        try {
+          const state = JSON.parse(data);
+          state.isPlaying = playing;
+          if (audio.duration > 0) {
+            state.progress = (audio.currentTime / audio.duration) * 100;
+          }
+          storage.set({
+            key: "playerState",
+            value: JSON.stringify(state)
+          });
+        } catch (e) {}
+      },
+      fail: () => {}
+    });
+  },
+  ToggleVolume() {
+    this.showVolume = !this.showVolume;
+    this.UpdateLayerClass();
+    if (this.showVolume) {
+      this.RefreshVolume();
+    }
+  },
+  RefreshVolume() {
+    audio.getPlayState({
+      success: (state) => {
+        this.volumePercent = Math.round((state.volume || 0) * 100);
+      },
+      fail: () => {
+        this.volumePercent = 50;
+      }
+    });
+  },
+  OnVolumeChange(e) {
+    const value = Math.max(0, Math.min(100, Math.round(e.progress)));
+    this.volumePercent = value;
+    audio.volume = value / 100;
+    if (global.playStatus) {
+      global.playStatus.volume = value;
+    }
+  },
+  onInit() {
+    this.SyncPlayStatus();
+    this.timer = setInterval(() => {
+      this.SyncPlayStatus();
+    }, 500);
+  },
+  onDestroy() {
+    if (this.timer) {
+      clearInterval(this.timer);
+      this.timer = null;
+    }
+  }
+};
+</script>
+
+<style lang="less">
+@import "@less/global.less";
+
+.popup-layer {
+  position: absolute;
+  top: 60px;
+  right: 56px;
+  width: 315px;
+  height: 88px;
+  z-index: 50;
+}
+
+.popup-layer.with-volume {
+  height: 148px;
+}
+
+.play-popup {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  width: 315px;
+  height: 88px;
+  padding: 12px;
+  border-radius: 19px;
+  background-color: #14141a;
+  border: 1px solid rgba(255, 255, 255, 0.37);
+  flex-direction: row;
+  align-items: center;
+}
+
+.popup-cover {
+  width: 65px;
+  height: 64px;
+  border-radius: 19px;
+  background-color: #2a2a33;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+
+.popup-cover-img {
+  width: 65px;
+  height: 64px;
+  object-fit: cover;
+}
+
+.cover-note {
+  font-size: 28px;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.popup-content {
+  flex: 1;
+  min-width: 0px;
+  height: 64px;
+  margin-left: 11px;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.popup-title {
+  width: 100%;
+  font-size: 15px;
+  font-weight: 600;
+  color: #ffffff;
+  lines: 2;
+  text-overflow: ellipsis;
+}
+
+.popup-buttons {
+  width: 100%;
+  margin-top: 8px;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+}
+
+.popup-btn {
+  width: 64px;
+  height: 27px;
+  border-radius: 32px;
+  background-color: rgba(255, 255, 255, 0.12);
+  align-items: center;
+  justify-content: center;
+}
+
+.volume-btn {
+  margin-left: 5px;
+}
+
+.popup-btn-icon {
+  width: 16px;
+  height: 16px;
+  object-fit: scale-down;
+}
+
+.volume-panel {
+  position: absolute;
+  top: 96px;
+  right: 0px;
+  width: 315px;
+  height: 52px;
+  padding: 0px 12px;
+  border-radius: 19px;
+  background-color: #14141a;
+  border: 1px solid rgba(255, 255, 255, 0.37);
+  flex-direction: row;
+  align-items: center;
+  z-index: 49;
+}
+
+.volume-icon {
+  width: 20px;
+  height: 20px;
+  object-fit: scale-down;
+  flex-shrink: 0;
+}
+
+.volume-slider {
+  width: 207px;
+  height: 32px;
+  margin-left: 10px;
+  block-color: #ff7da8;
+  selected-color: #ff7da8;
+}
+
+.volume-value {
+  width: 38px;
+  font-size: 14px;
+  color: #ffffff;
+  text-align: right;
+  margin-left: 8px;
+}
+</style>

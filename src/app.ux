@@ -33,7 +33,11 @@ export default {
     global.playStatus = {
       playing: false,
       pageVisible: false,
+      hasTrack: false,
+      popupOpen: false,
       title: "",
+      cover: "",
+      volume: 50,
       updatedAt: 0
     }
 

@@ -1,7 +1,7 @@
 <template>
   <div class="time-comp" style="{{compStyle}}">
     <!-- 顶部常驻胶囊：仅矩形屏且由首页开启。离开播放页后若仍在播放，显示「正在播放」 -->
-    <div if="{{showPill && useRectTime}}" class="top-pill">
+    <div if="{{showPill && useRectTime}}" class="top-pill" @click="TogglePlayPopup">
       <text if="{{nowPlaying}}" class="pill-playing">正在播放</text>
     </div>
     <div if="{{!useRectTime}}">
@@ -20,6 +20,8 @@
 </template>
 
 <script>
+import prompt from "@system.prompt"
+
 export default {
   props: ["showPill"],
   data: {
@@ -36,6 +38,15 @@ export default {
   SyncPlayStatus() {
     const status = global.playStatus
     this.nowPlaying = !!(status && status.playing && !status.pageVisible)
+  },
+  TogglePlayPopup(e) {
+    if (e && e.stopPropagation) e.stopPropagation()
+    const status = global.playStatus
+    if (!status || !status.hasTrack) {
+      prompt.showToast({ message: "当前没有正在播放的内容" })
+      return
+    }
+    status.popupOpen = !status.popupOpen
   },
   onDestroy() {
     if (this.playTimer) {
@@ -101,8 +112,8 @@ export default {
 
 // 常驻胶囊：空闲时占位，离开播放页后显示「正在播放」
 .top-pill {
-  width: 76px;
-  height: 28px;
+  width: 88px;
+  height: 40px;
   border-radius: 24px;
   background-color: rgba(0, 0, 0, 0.28);
   margin-right: 6px;

@@ -231,7 +231,7 @@
       prompt.showToast({ message: errorMessage || '播放发生错误', duration: 3000 });
       that.isPlaying = false;
       that.playerState.isPlaying = false;
-      that.setGlobalPlaying(false);
+      that.setGlobalStopped();
       if (that.playTimeoutId) {
         clearTimeout(that.playTimeoutId);
         that.playTimeoutId = null;
@@ -243,12 +243,27 @@
     },
     setGlobalPlaying(playing) {
       if (!global.playStatus) {
-        global.playStatus = { playing: false, pageVisible: false, title: "", updatedAt: 0 };
+        global.playStatus = {
+          playing: false, pageVisible: false, hasTrack: false, popupOpen: false,
+          title: "", cover: "", volume: 50, updatedAt: 0
+        };
       }
       global.playStatus.playing = !!playing;
+      if (playing) {
+        global.playStatus.hasTrack = true;
+      }
       if (this.currSong && this.currSong.name) {
         global.playStatus.title = this.currSong.name;
       }
+      if (this.currSong && this.currSong.al) {
+        global.playStatus.cover = this.currSong.al.picUrl || "";
+      }
+      global.playStatus.updatedAt = Date.now();
+    },
+    setGlobalStopped() {
+      if (!global.playStatus) return;
+      global.playStatus.playing = false;
+      global.playStatus.hasTrack = false;
       global.playStatus.updatedAt = Date.now();
     },
     // 缓存音频分支不会走 bindAudioEvents，这里单独绑定播放状态
@@ -261,7 +276,7 @@
         that.setGlobalPlaying(false);
       };
       audio.onstop = () => {
-        that.setGlobalPlaying(false);
+        that.setGlobalStopped();
       };
       audio.onctrlplay = () => {
         that.setGlobalPlaying(true);
@@ -316,7 +331,7 @@
       audio.onstop = () => {
         this.playerState.isPlaying = false;
         this.isPlaying = false;
-        this.setGlobalPlaying(false);
+        this.setGlobalStopped();
         if (this.playTimeoutId) {
           clearTimeout(this.playTimeoutId);
           this.playTimeoutId = null;
@@ -385,9 +400,13 @@
     onInit() {
       const that = this;
       if (!global.playStatus) {
-        global.playStatus = { playing: false, pageVisible: false, title: "", updatedAt: 0 };
+        global.playStatus = {
+          playing: false, pageVisible: false, hasTrack: false, popupOpen: false,
+          title: "", cover: "", volume: 50, updatedAt: 0
+        };
       }
       global.playStatus.pageVisible = true;
+      global.playStatus.popupOpen = false;
       // 注册进全局 UI 池：返回时才能拿到卡片退场/底层页回归动画
       global.ui.InitPage(this);
       that.loadPlayerToolbarAppearance();
@@ -576,6 +595,7 @@
       const that = this;
       if (global.playStatus) {
         global.playStatus.pageVisible = true;
+        global.playStatus.popupOpen = false;
       }
       that.loadLyricSettings();
       const hasNewPlaylist = that.playlistId && !(that.fromAppStart || false);
@@ -765,11 +785,11 @@
           that.updateLyric();
         };
         audio.onended = function() {
-          that.setGlobalPlaying(false);
+          that.setGlobalStopped();
         };
         audio.onerror = function() {
           that.audioReady = false;
-          that.setGlobalPlaying(false);
+          that.setGlobalStopped();
           audio.onerror = null;
           audio.oncanplay = null;
           audio.ontimeupdate = null;
