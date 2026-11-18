@@ -18,17 +18,17 @@
         <text style="margin-top: 25px" static></text>
       </div>
     </scroll>
-    <div style="position: absolute; bottom: 0px" @click="Refresh()">
+    <div style="position: absolute; bottom: 0px; left: 166px" @click="Refresh()">
       <image src="/common/main_floatingrefresh.png" static></image>
     </div>
     <text style="position: absolute; color: rgba(0, 0, 0, 0); width: 0px; top: 50px">
       {{ anims.refresh_bottom.value }}
     </text>
-    <image
+    <div
       if="{{anims.showRefreshFX}}"
-      style="position: absolute; bottom: {{anims.refresh_bottom.value}}px"
-      src.static="/common/TranslateFX/refreshFX.png">
-    </image>
+      style="position: absolute; left: 0px; right: 0px; bottom: {{anims.refresh_bottom.value}}px; flex-direction: row; justify-content: center">
+      <image src.static="/common/TranslateFX/refreshFX.png"></image>
+    </div>
     <!-- 播放弹层：与播放页音量面板同一套弹窗模式，直接作为 stack 子节点盖在最上层 -->
     <div if="{{popupVisible}}" class="popup-overlay" @click="ClosePopup">
       <div class="play-popup" @click="StopPropagation">
